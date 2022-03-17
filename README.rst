@@ -1,4 +1,4 @@
-My BenchOpt Benchmark
+Benchmark repository for ResNet fitting on classification
 =====================
 |Build Status| |Python 3.6+|
 
