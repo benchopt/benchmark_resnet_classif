@@ -2,21 +2,25 @@ from benchopt import BaseObjective
 
 
 class Objective(BaseObjective):
-    name = "Ordinary Least Squares"
+    name = "ResNet classification fitting"
 
+    # XXX: this might be a good spot to specify the size of the ResNet
     parameters = {
-        'fit_intercept': [False],
     }
 
-    def __init__(self, fit_intercept=False):
-        self.fit_intercept = fit_intercept
 
-    def set_data(self, X, y):
-        self.X, self.y = X, y
+    def __init__(self,):
+        pass
+
+    def set_data(self, X=None, y=None, dataset=None):
+        self.X = X
+        self.y = y
+        self.dataset = dataset
 
     def compute(self, beta):
+        # TODO: change
         diff = self.y - self.X.dot(beta)
         return .5 * diff.dot(diff)
 
     def to_dict(self):
-        return dict(X=self.X, y=self.y, fit_intercept=self.fit_intercept)
+        return dict(X=self.X, y=self.y, dataset=self.dataset)
