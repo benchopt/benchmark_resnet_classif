@@ -14,12 +14,10 @@ class Dataset(BaseDataset):
 
     def __init__(self):
         self.mnist_trainset = datasets.MNIST(root='./data', train=True, download=True, transform=None)
-        self.X = self.mnist_trainset.data.numpy()
-        self.y = self.mnist_trainset.targets.numpy()
-        self.n_features = self.X.shape[1]*self.X.shape[2]
+        self.n_features = 28**2
 
 
     def get_data(self):
-        data = dict(X=self.X, y=self.y)
+        data = dict(dataset=self.mnist_trainset)
 
         return self.n_features, data

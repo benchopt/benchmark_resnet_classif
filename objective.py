@@ -20,13 +20,8 @@ class Objective(BaseObjective):
         self._debug = _debug
         self.trainer = Trainer()
 
-    def set_data(self, X, y):
-        self.X = X
-        self.y = y
-        if self._debug:
-            self.X = self.X[:10]
-            self.y = self.y[:10]
-        self.dataset = TensorDataset(Tensor(X), Tensor(y))
+    def set_data(self, dataset):
+        self.dataset = dataset
         self.data_loader = DataLoader(self.dataset, batch_size=64)
         self.pl_module = BenchPLModule(self.model, self.data_loader)
 
