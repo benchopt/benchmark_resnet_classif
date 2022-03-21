@@ -71,4 +71,4 @@ class BenchPLModule(LightningModule):
         return super().train_dataloader()
 
     def test_dataloader(self):
-        return self.test_loader
+        return self.loader
