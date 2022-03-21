@@ -12,10 +12,9 @@ class Objective(BaseObjective):
     def __init__(self,):
         pass
 
-    def set_data(self, X=None, y=None, dataset=None):
+    def set_data(self, X=None, y=None):
         self.X = X
         self.y = y
-        self.dataset = dataset
 
     def compute(self, beta):
         # TODO: change
@@ -23,4 +22,4 @@ class Objective(BaseObjective):
         return .5 * diff.dot(diff)
 
     def to_dict(self):
-        return dict(X=self.X, y=self.y, dataset=self.dataset)
+        return dict(X=self.X, y=self.y)
