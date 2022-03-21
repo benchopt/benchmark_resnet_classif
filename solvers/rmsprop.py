@@ -1,8 +1,9 @@
-from .base_nn_solver import BaseNNSolver
+from benchopt import BaseSolver
+from pytorch_lightning import Trainer
 from torch.optim import RMSprop
 
 
-class Solver(BaseNNSolver):
+class Solver(BaseSolver):
     """RMSPROP solver"""
     name = 'RMSPROP'
 
@@ -17,10 +18,20 @@ class Solver(BaseNNSolver):
         return False, None
 
     def set_objective(self, pl_module, trainer):
-        super().set_objective(pl_module, trainer)
+        self.pl_module = pl_module
+        self.main_trainer = trainer  # we use this in order
+        # to access some elements from the trainer when3
+        # initializing it below
         self.pl_module.configure_optimizers = lambda: RMSprop(
             self.pl_module.parameters(),
             lr=self.lr,
             momentum=self.momentum,
             alpha=self.alpha,
         )
+
+    def run(self, n_iter):
+        trainer = Trainer(max_steps=n_iter)
+        trainer.fit(self.pl_module)
+
+    def get_result(self):
+        return self.pl_module
