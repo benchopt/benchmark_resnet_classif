@@ -12,7 +12,7 @@ class Objective(BaseObjective):
     def __init__(self,):
         pass
 
-    def set_data(self, X=None, y=None):
+    def set_data(self, X, y):
         self.X = X
         self.y = y
 
