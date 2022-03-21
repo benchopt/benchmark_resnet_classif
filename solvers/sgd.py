@@ -8,10 +8,14 @@ class Solver(BaseSolver):
 
     # any parameter defined here is accessible as a class attribute
     parameters = {
-        'use_acceleration': [False, True],
+        'nesterov': [False, True],
         'lr': [1e-3],
         'momentum': [0, 0.9],
     }
+
+    def skip(self, pl_module, trainer):
+        if not self.momentum and self.nesterov:
+            return True, 'Nesterov cannot be used without momentum'
 
     def set_objective(self, pl_module, trainer):
         self.pl_module = pl_module
@@ -20,7 +24,7 @@ class Solver(BaseSolver):
             self.pl_module.parameters(),
             lr=self.lr,
             momentum=self.momentum,
-            nesterov=self.use_acceleration,
+            nesterov=self.nesterov,
         )
 
 
