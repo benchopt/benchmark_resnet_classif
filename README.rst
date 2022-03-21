@@ -30,6 +30,16 @@ Apart from the problem, options can be passed to `benchopt run`, to restrict the
 
 	$ benchopt run benchmark_resnet_classif -s solver1 -d dataset2 --max-runs 10 --n-repetitions 10
 
+Current workaround for https://github.com/benchopt/benchopt/issues/306:
+
+..code-block::
+
+      $ benchopt install -e .
+      $ conda activate benchopt_benchmark_resnet_classif
+      $ conda install pytorch torchvision cpuonly -c pytorch
+      $ conda install -c conda-forge pytorch-lightning
+
+
 
 Use `benchopt run -h` for more details about these options, or visit https://benchopt.github.io/api.html.
 
