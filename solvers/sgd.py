@@ -7,14 +7,19 @@ class Solver(BaseSolver):
     name = 'SGD'
 
     # any parameter defined here is accessible as a class attribute
-    parameters = {'use_acceleration': [False, True]}
+    parameters = {
+        'use_acceleration': [False, True],
+        'lr': [1e-3],
+        'momentum': [0, 0.9],
+    }
 
     def set_objective(self, pl_module, trainer):
         self.pl_module = pl_module
         self.trainer = trainer
         self.pl_module.configure_optimizers = lambda: SGD(
             self.pl_module.parameters(),
-            lr=1e-3,
+            lr=self.lr,
+            momentum=self.momentum,
             nesterov=self.use_acceleration,
         )
 
