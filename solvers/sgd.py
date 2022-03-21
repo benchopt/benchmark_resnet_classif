@@ -14,6 +14,8 @@ class Solver(BaseSolver):
         'momentum': [0, 0.9],
     }
 
+    stopping_strategy = 'iteration'
+
     def skip(self, pl_module, trainer):
         if not self.momentum and self.nesterov:
             return True, 'Nesterov cannot be used without momentum'

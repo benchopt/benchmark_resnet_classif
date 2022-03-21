@@ -12,6 +12,8 @@ class Solver(BaseSolver):
         'lr': [1e-3],
     }
 
+    stopping_strategy = 'iteration'
+
     def skip(self, pl_module, trainer):
         return False, None
 
