@@ -2,6 +2,7 @@ import numpy as np
 
 from benchopt import BaseDataset
 import torchvision
+from torchvision import transforms
 import torchvision.datasets as datasets
 
 
@@ -13,7 +14,16 @@ class Dataset(BaseDataset):
     }
 
     def __init__(self):
-        self.mnist_trainset = datasets.MNIST(root='./data', train=True, download=True, transform=None)
+        transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+        ])
+        self.mnist_trainset = datasets.MNIST(
+            root='./data',
+            train=True,
+            download=True,
+            transform=transform,
+        )
         self.n_features = 28**2
 
 
