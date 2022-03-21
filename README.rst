@@ -34,10 +34,10 @@ Current workaround for https://github.com/benchopt/benchopt/issues/306:
 
 ..code-block::
 
-      $ benchopt install -e .
-      $ conda activate benchopt_benchmark_resnet_classif
-      $ conda install pytorch torchvision cpuonly -c pytorch
-      $ conda install -c conda-forge pytorch-lightning
+   $ benchopt install -e .
+   $ conda activate benchopt_benchmark_resnet_classif
+   $ conda install pytorch torchvision cpuonly -c pytorch
+   $ conda install -c conda-forge pytorch-lightning
 
 
 
