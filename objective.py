@@ -43,7 +43,9 @@ class Objective(BaseObjective):
 
 
 class BenchPLModule(LightningModule):
-    """Lightning module for benchopt"""
+    """Lightning module for benchopt
+    inspired by https://colab.research.google.com/github/PyTorchLightning/lightning-tutorials/blob/publication/.notebooks/lightning_examples/mnist-hello-world.ipynb#scrollTo=bd97d928
+    """
     def __init__(self, model, loader):
 
         super().__init__()
