@@ -16,9 +16,10 @@ class Objective(BaseObjective):
     }
 
 
-    def __init__(self):
+    def __init__(self, batch_size=64):
         self.model = models.resnet18()
         self.trainer = Trainer()
+        self.batch_size = batch_size
 
     def set_data(self, dataset):
         self.dataset = dataset
