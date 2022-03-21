@@ -28,6 +28,9 @@ class Objective(BaseObjective):
 
     def compute(self, pl_module):
         loss = self.trainer.test(pl_module)
+        # XXX: allow to return accuracy as well
+        # this will allow to have a more encompassing benchmark that also
+        # captures speed on accuracy
         return loss
 
     def to_dict(self):
