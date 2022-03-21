@@ -19,7 +19,7 @@ class Dataset(BaseDataset):
         ])
         self.svhn_trainset = datasets.SVHN(
             root='./data',
-            train=True,
+            split='train',
             download=True,
             transform=transform,
         )
