@@ -33,7 +33,7 @@ class Objective(BaseObjective):
         # XXX: allow to return accuracy as well
         # this will allow to have a more encompassing benchmark that also
         # captures speed on accuracy
-        return loss
+        return loss[0]['train_loss']
 
     def to_dict(self):
         return dict(
@@ -59,16 +59,18 @@ class BenchPLModule(LightningModule):
 
 
     def test_step(self, batch, batch_idx):
+        loss = self.training_step(batch, batch_idx)
+        self.log("train_loss", loss, prog_bar=True)
+        return loss
+
+    def training_step(self, batch, batch_idx):
         x, y = batch
         logits = self(x)
         loss = F.nll_loss(logits, y)
         return loss
 
-    def training_step(self, batch, batch_idx):
-        return self.test_step(batch, batch_idx)
-
     def train_dataloader(self):
-        return super().train_dataloader()
+        return self.loader
 
     def test_dataloader(self):
         return self.loader
