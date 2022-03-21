@@ -12,17 +12,17 @@ class Objective(BaseObjective):
 
     # XXX: this might be a good spot to specify the size of the ResNet
     parameters = {
+        'batch_size': [64],
     }
 
 
-    def __init__(self, _debug=False):
+    def __init__(self):
         self.model = models.resnet18()
-        self._debug = _debug
         self.trainer = Trainer()
 
     def set_data(self, dataset):
         self.dataset = dataset
-        self.data_loader = DataLoader(self.dataset, batch_size=64)
+        self.data_loader = DataLoader(self.dataset, batch_size=self.batch_size)
         self.pl_module = BenchPLModule(self.model, self.data_loader)
 
     def compute(self, pl_module):
