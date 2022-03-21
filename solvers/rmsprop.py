@@ -1,5 +1,5 @@
 from benchopt import BaseSolver
-from torch.optim import RMSPROP
+from torch.optim import RMSprop
 
 
 class Solver(BaseSolver):
@@ -19,7 +19,7 @@ class Solver(BaseSolver):
     def set_objective(self, pl_module, trainer):
         self.pl_module = pl_module
         self.trainer = trainer
-        self.pl_module.configure_optimizers = lambda: RMSPROP(
+        self.pl_module.configure_optimizers = lambda: RMSprop(
             self.pl_module.parameters(),
             lr=self.lr,
             momentum=self.momentum,
