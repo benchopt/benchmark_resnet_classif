@@ -6,6 +6,8 @@ from torchvision import transforms
 import torchvision.datasets as datasets
 
 
+def grayscale_to_rbg(image):
+    return image.repeat(3, 1, 1)
 class Dataset(BaseDataset):
 
     name = "MNIST"
@@ -16,7 +18,10 @@ class Dataset(BaseDataset):
     def __init__(self):
         transform = transforms.Compose([
             transforms.ToTensor(),
-            transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+            # because of this transform,
+            # the dataset is not picklable, and therefore
+            # we cannot use it in benchopt.
+            transforms.Lambda(grayscale_to_rbg),
         ])
         self.mnist_trainset = datasets.MNIST(
             root='./data',
