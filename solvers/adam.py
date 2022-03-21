@@ -20,7 +20,7 @@ class Solver(BaseSolver):
     def set_objective(self, pl_module, trainer):
         self.pl_module = pl_module
         self.main_trainer = trainer  # we use this in order
-        # to access some elements from the trainer when3
+        # to access some elements from the trainer when
         # initializing it below
         self.pl_module.configure_optimizers = lambda: Adam(
             self.pl_module.parameters(),
