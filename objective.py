@@ -18,6 +18,8 @@ class Objective(BaseObjective):
 
     def __init__(self, batch_size=64):
         self.model = models.resnet18()
+        # XXX: seed everything correctly (https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#reproducibility)
+        # XXX: modify this with the correct amount of CPUs/GPUs
         self.trainer = Trainer()
         self.batch_size = batch_size
 
