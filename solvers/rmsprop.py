@@ -1,9 +1,9 @@
-from benchopt import BaseSolver
-from pytorch_lightning import Trainer
+from benchopt import safe_import_context
 from torch.optim import RMSprop
+with safe_import_context() as import_ctx:
+    TorchSolver = import_ctx.import_from('torch_solver', 'TorchSolver')
 
-
-class Solver(BaseSolver):
+class Solver(TorchSolver):
     """RMSPROP solver"""
     name = 'RMSPROP'
 
@@ -20,20 +20,10 @@ class Solver(BaseSolver):
         return False, None
 
     def set_objective(self, pl_module, trainer):
-        self.pl_module = pl_module
-        self.main_trainer = trainer  # we use this in order
-        # to access some elements from the trainer when3
-        # initializing it below
+        super().set_objective(pl_module, trainer)
         self.pl_module.configure_optimizers = lambda: RMSprop(
             self.pl_module.parameters(),
             lr=self.lr,
             momentum=self.momentum,
             alpha=self.alpha,
         )
-
-    def run(self, n_iter):
-        trainer = Trainer(max_steps=n_iter)
-        trainer.fit(self.pl_module)
-
-    def get_result(self):
-        return self.pl_module
