@@ -1,32 +1,26 @@
-import numpy as np
+from benchopt import BaseDataset, safe_import_context
 
-from benchopt import BaseDataset
-import torchvision
-from torchvision import transforms
-import torchvision.datasets as datasets
+with safe_import_context() as import_ctx:
+    from torchvision import transforms
+    import torchvision.datasets as datasets
 
 
 class Dataset(BaseDataset):
 
     name = "CIFAR"
 
-    parameters = {
-    }
-
-    def __init__(self):
+    def get_data(self):
         transform = transforms.Compose([
             transforms.ToTensor(),
         ])
-        self.cifar_trainset = datasets.CIFAR10(
+        cifar_trainset = datasets.CIFAR10(
             root='./data',
             train=True,
             download=True,
             transform=transform,
         )
-        self.n_features = (32**2)*3
+        n_features = (32**2)*3
 
+        data = dict(dataset=cifar_trainset)
 
-    def get_data(self):
-        data = dict(dataset=self.cifar_trainset)
-
-        return self.n_features, data
+        return n_features, data

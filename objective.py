@@ -1,9 +1,11 @@
-from benchopt import BaseObjective
-from pytorch_lightning import LightningModule, Trainer
-from torch import Tensor
-from torch.nn import functional as F
-from torch.utils.data import DataLoader, TensorDataset
-import torchvision.models as models
+from benchopt import BaseObjective, safe_import_context
+
+with safe_import_context() as import_ctx:
+    from pytorch_lightning import LightningModule, Trainer
+
+    from torch.nn import functional as F
+    from torch.utils.data import DataLoader
+    import torchvision.models as models
 
 
 class Objective(BaseObjective):
@@ -15,16 +17,16 @@ class Objective(BaseObjective):
         'batch_size': [64],
     }
 
-
     def __init__(self, batch_size=64):
-        self.model = models.resnet18()
-        # XXX: seed everything correctly (https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#reproducibility)
+        # XXX: seed everything correctly
+        # https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#reproducibility
         # XXX: modify this with the correct amount of CPUs/GPUs
         self.trainer = Trainer()
         self.batch_size = batch_size
 
     def set_data(self, dataset):
         self.dataset = dataset
+        self.model = models.resnet18()
         self.data_loader = DataLoader(self.dataset, batch_size=self.batch_size)
         self.pl_module = BenchPLModule(self.model, self.data_loader)
 
@@ -43,8 +45,8 @@ class Objective(BaseObjective):
 
 
 class BenchPLModule(LightningModule):
-    """Lightning module for benchopt
-    inspired by https://colab.research.google.com/github/PyTorchLightning/lightning-tutorials/blob/publication/.notebooks/lightning_examples/mnist-hello-world.ipynb#scrollTo=bd97d928
+    """Lightning module for benchopt inspired by
+    https://colab.research.google.com/github/PyTorchLightning/lightning-tutorials/blob/publication/.notebooks/lightning_examples/mnist-hello-world.ipynb#scrollTo=bd97d928
     """
     def __init__(self, model, loader):
 
@@ -52,11 +54,9 @@ class BenchPLModule(LightningModule):
         self.model = model
         self.loader = loader
 
-
     def forward(self, x):
         x = self.model(x)
         return F.log_softmax(x, dim=1)
-
 
     def test_step(self, batch, batch_idx):
         loss = self.training_step(batch, batch_idx)
