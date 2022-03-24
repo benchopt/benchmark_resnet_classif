@@ -26,9 +26,6 @@ class Objective(BaseObjective):
 
     def set_data(self, dataset):
         self.dataset = dataset
-        self.model = models.resnet18()
-        self.data_loader = DataLoader(self.dataset, batch_size=self.batch_size)
-        self.pl_module = BenchPLModule(self.model, self.data_loader)
 
     def compute(self, pl_module):
         loss = self.trainer.test(pl_module)
@@ -38,8 +35,11 @@ class Objective(BaseObjective):
         return loss[0]['train_loss']
 
     def to_dict(self):
+        model = models.resnet18()
+        data_loader = DataLoader(self.dataset, batch_size=self.batch_size)
+        pl_module = BenchPLModule(model, data_loader)
         return dict(
-            pl_module=self.pl_module,
+            pl_module=pl_module,
             trainer=self.trainer,
         )
 
