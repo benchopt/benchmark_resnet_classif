@@ -15,8 +15,6 @@ class Solver(TorchSolver):
         'lr': [1e-3],
     }
 
-    stopping_strategy = 'iteration'
-
     def set_objective(self, pl_module, trainer):
         super().set_objective(pl_module, trainer)
 
