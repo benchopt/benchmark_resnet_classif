@@ -16,6 +16,10 @@ class TorchSolver(BaseSolver):
         # initializing it below
 
     def run(self, callback):
+        # Initial evaluation
+        callback(self.pl_module)
+
+        # Setup the trainer
         trainer = Trainer(
             max_epochs=-1, callbacks=[BenchoptCallback(callback)]
         )
