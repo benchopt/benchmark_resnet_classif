@@ -3,7 +3,8 @@ from benchopt import safe_import_context
 
 with safe_import_context() as import_ctx:
     from torch.optim import Adam
-    TorchSolver = import_ctx.import_from('torch_solver', 'TorchSolver')
+
+TorchSolver = import_ctx.import_from('torch_solver', 'TorchSolver')
 
 
 class Solver(TorchSolver):

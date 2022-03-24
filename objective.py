@@ -1,16 +1,21 @@
 from benchopt import BaseObjective, safe_import_context
 
 with safe_import_context() as import_ctx:
-    from pytorch_lightning import LightningModule, Trainer
+    from pytorch_lightning import Trainer
 
-    from torch.nn import functional as F
     from torch.utils.data import DataLoader
     import torchvision.models as models
+    BenchPLModule = import_ctx.import_from('torch_helper', 'BenchPLModule')
 
 
 class Objective(BaseObjective):
     """Classification objective"""
     name = "ResNet classification fitting"
+
+    install_cmd = 'conda'
+    requirements = [
+        'pytorch', 'torchvision', 'pytorch-lightning '
+    ]
 
     # XXX: this might be a good spot to specify the size of the ResNet
     parameters = {
@@ -42,35 +47,3 @@ class Objective(BaseObjective):
             pl_module=pl_module,
             trainer=self.trainer,
         )
-
-
-class BenchPLModule(LightningModule):
-    """Lightning module for benchopt inspired by
-    https://colab.research.google.com/github/PyTorchLightning/lightning-tutorials/blob/publication/.notebooks/lightning_examples/mnist-hello-world.ipynb#scrollTo=bd97d928
-    """
-    def __init__(self, model, loader):
-
-        super().__init__()
-        self.model = model
-        self.loader = loader
-
-    def forward(self, x):
-        x = self.model(x)
-        return F.log_softmax(x, dim=1)
-
-    def test_step(self, batch, batch_idx):
-        loss = self.training_step(batch, batch_idx)
-        self.log("train_loss", loss, prog_bar=True)
-        return loss
-
-    def training_step(self, batch, batch_idx):
-        x, y = batch
-        logits = self(x)
-        loss = F.nll_loss(logits, y)
-        return loss
-
-    def train_dataloader(self):
-        return self.loader
-
-    def test_dataloader(self):
-        return self.loader

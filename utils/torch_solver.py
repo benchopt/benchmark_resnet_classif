@@ -1,7 +1,11 @@
-from benchopt import BaseSolver
+from benchopt import BaseSolver, safe_import_context
 
-from pytorch_lightning import Trainer
-from pytorch_lightning.callbacks import Callback
+with safe_import_context() as import_ctx:
+
+    from pytorch_lightning import Trainer
+    BenchoptCallback = import_ctx.import_from(
+        'torch_helper', 'BenchoptCallback'
+    )
 
 
 class TorchSolver(BaseSolver):
@@ -27,14 +31,3 @@ class TorchSolver(BaseSolver):
 
     def get_result(self):
         return self.pl_module
-
-
-# Convert benchopt benchmark into a lightning callback, used to monitor the
-# objective and to stop the solver when needed.
-class BenchoptCallback(Callback):
-    def __init__(self, callback):
-        super().__init__()
-        self.cb_ = callback
-
-    def on_train_epoch_end(self, trainer, pl_module):
-        trainer.should_stop = not self.cb_(pl_module)
