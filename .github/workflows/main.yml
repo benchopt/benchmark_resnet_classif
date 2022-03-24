@@ -55,7 +55,10 @@ jobs:
         user=${BENCHOPT_BRANCH%:*}
         branch=${BENCHOPT_BRANCH##*:}
         pip install -U git+https://github.com/$user/benchopt@$branch
+
+        # Create an env with minimal deps from the benchmarks and pytest
         benchopt install . --minimal --env-name bench_test_env
+        conda install -n bench_test_env pytest
 
     - name: Test
       run: |
