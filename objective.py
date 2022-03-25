@@ -40,10 +40,13 @@ class Objective(BaseObjective):
         # captures speed on accuracy
         return loss[0]['train_loss']
 
-    def to_dict(self):
+    def get_one_beta(self):
         model = models.resnet18()
         data_loader = DataLoader(self.dataset, batch_size=self.batch_size)
-        pl_module = BenchPLModule(model, data_loader)
+        return BenchPLModule(model, data_loader)
+
+    def to_dict(self):
+        pl_module = self.get_one_beta()
         return dict(
             pl_module=pl_module,
             trainer=self.trainer,
