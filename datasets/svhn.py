@@ -19,6 +19,5 @@ class Dataset(BaseDataset):
             download=True,
             transform=transform,
         )
-        n_features = (32**2) * 3
 
-        return n_features, dict(dataset=svhn_trainset)
+        return 'object', dict(dataset=svhn_trainset)

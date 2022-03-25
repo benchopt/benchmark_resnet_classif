@@ -11,6 +11,7 @@ with safe_import_context() as import_ctx:
 class Objective(BaseObjective):
     """Classification objective"""
     name = "ResNet classification fitting"
+    is_convex = False
 
     install_cmd = 'conda'
     requirements = [

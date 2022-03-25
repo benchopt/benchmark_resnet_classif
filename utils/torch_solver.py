@@ -19,6 +19,10 @@ class TorchSolver(BaseSolver):
         # to access some elements from the trainer when
         # initializing it below
 
+    @staticmethod
+    def get_next(stop_val):
+        return stop_val + 1
+
     def run(self, callback):
         # Initial evaluation
         callback(self.pl_module)
