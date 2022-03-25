@@ -9,7 +9,7 @@ TorchSolver = import_ctx.import_from('torch_solver', 'TorchSolver')
 
 class Solver(TorchSolver):
     """RMSPROP solver"""
-    name = 'RMSPROP'
+    name = 'RMSPROP-torch'
 
     # any parameter defined here is accessible as a class attribute
     parameters = {

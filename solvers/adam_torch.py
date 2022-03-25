@@ -9,7 +9,7 @@ TorchSolver = import_ctx.import_from('torch_solver', 'TorchSolver')
 
 class Solver(TorchSolver):
     """Adam solver"""
-    name = 'Adam'
+    name = 'Adam-torch'
 
     # any parameter defined here is accessible as a class attribute
     parameters = {

@@ -8,7 +8,7 @@ TorchSolver = import_ctx.import_from('torch_solver', 'TorchSolver')
 
 class Solver(TorchSolver):
     """Stochastic Gradient descent solver"""
-    name = 'SGD'
+    name = 'SGD-torch'
 
     # any parameter defined here is accessible as a class attribute
     parameters = {
