@@ -32,6 +32,4 @@ class Dataset(BaseDataset):
         if self.debug:
             mnist_trainset = Subset(mnist_trainset, range(1000))
 
-        n_features = 28**2
-
-        return n_features, dict(dataset=mnist_trainset)
+        return 'object', dict(dataset=mnist_trainset)

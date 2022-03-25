@@ -19,8 +19,7 @@ class Dataset(BaseDataset):
             download=True,
             transform=transform,
         )
-        n_features = (32**2)*3
 
         data = dict(dataset=cifar_trainset)
 
-        return n_features, data
+        return 'object', data
