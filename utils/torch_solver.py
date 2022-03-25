@@ -13,7 +13,7 @@ class TorchSolver(BaseSolver):
 
     stopping_strategy = 'callback'
 
-    def set_objective(self, pl_module, trainer):
+    def set_objective(self, pl_module, trainer, tf_model, tf_dataset):
         self.pl_module = pl_module
         self.main_trainer = trainer  # we use this in order
         # to access some elements from the trainer when
@@ -21,7 +21,7 @@ class TorchSolver(BaseSolver):
 
     def run(self, callback):
         # Initial evaluation
-        callback(self.pl_module)
+        callback(self.pl_module, None)
 
         # Setup the trainer
         trainer = Trainer(
@@ -30,4 +30,4 @@ class TorchSolver(BaseSolver):
         trainer.fit(self.pl_module)
 
     def get_result(self):
-        return self.pl_module
+        return self.pl_module, None
