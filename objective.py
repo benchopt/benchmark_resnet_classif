@@ -75,7 +75,10 @@ class Objective(BaseObjective):
     def get_one_beta(self):
         # XXX: should we have both tf and pl here?
         model = models.resnet18(num_classes=self.n_classes)
-        data_loader = DataLoader(self.torch_dataset, batch_size=self.batch_size)
+        data_loader = DataLoader(
+            self.torch_dataset,
+            batch_size=self.batch_size,
+        )
         return BenchPLModule(model, data_loader)
 
     def to_dict(self):
