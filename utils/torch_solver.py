@@ -34,4 +34,4 @@ class TorchSolver(BaseSolver):
         trainer.fit(self.pl_module)
 
     def get_result(self):
-        return self.pl_module, None
+        return self.pl_module

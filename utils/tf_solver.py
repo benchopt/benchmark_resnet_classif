@@ -34,4 +34,4 @@ class TFSolver(BaseSolver):
 
 
     def get_result(self):
-        return None, self.tf_model
+        return self.tf_model
