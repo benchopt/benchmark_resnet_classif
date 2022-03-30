@@ -2,12 +2,12 @@ from benchopt import BaseSolver, safe_import_context
 
 with safe_import_context() as import_ctx:
 
-    import tensorflow as tf
     BenchoptCallback = import_ctx.import_from(
         'tf_helper', 'BenchoptCallback'
     )
 
 MAX_EPOCHS = int(1e9)
+
 
 class TFSolver(BaseSolver):
     """TF base solver"""
@@ -36,7 +36,6 @@ class TFSolver(BaseSolver):
             callbacks=[BenchoptCallback(callback)],
             epochs=MAX_EPOCHS,
         )
-
 
     def get_result(self):
         return self.tf_model
