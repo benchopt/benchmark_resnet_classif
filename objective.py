@@ -35,14 +35,24 @@ class Objective(BaseObjective):
 
     def set_data(self, dataset):
         self.torch_dataset = dataset
-        X = self.torch_dataset.data
-        y = self.torch_dataset.targets
+        try:
+            X = self.torch_dataset.data
+        except AttributeError:
+            _loader = DataLoader(self.torch_dataset, batch_size=len(self.torch_dataset))
+            _sample = next(iter(_loader))
+            X = _sample[0]
+            y = _sample[1]
+        else:
+            y = self.torch_dataset.targets
         try:
             X = X.numpy()
         except AttributeError:
             pass
         else:
             y = y.numpy()
+        if X.shape[1] in [1, 3]:
+            # reshape X from NCHW to NHWC
+            X = np.transpose(X, (0, 2, 3, 1))
         self.width = X.shape[1]
         self.n_classes = len(np.unique(y))
         if not isinstance(y[0], np.ndarray) or not len(y) > 1:
