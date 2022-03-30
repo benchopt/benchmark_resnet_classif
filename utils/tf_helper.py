@@ -12,5 +12,5 @@ class BenchoptCallback(tf.keras.callbacks.Callback):
         super().__init__()
         self.cb_ = callback
 
-    def on_epoch_end(self, logs=None):
+    def on_epoch_end(self, epoch, logs=None):
         self.model.stop_training = not self.cb_(self.model)
