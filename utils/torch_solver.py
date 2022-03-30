@@ -25,7 +25,7 @@ class TorchSolver(BaseSolver):
 
     def run(self, callback):
         # Initial evaluation
-        callback(self.pl_module, None)
+        callback(self.pl_module)
 
         # Setup the trainer
         trainer = Trainer(

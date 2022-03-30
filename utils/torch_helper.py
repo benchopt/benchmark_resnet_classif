@@ -16,7 +16,7 @@ class BenchoptCallback(Callback):
         self.cb_ = callback
 
     def on_train_epoch_end(self, trainer, pl_module):
-        trainer.should_stop = not self.cb_(pl_module, None)
+        trainer.should_stop = not self.cb_(pl_module)
 
 
 class BenchPLModule(LightningModule):

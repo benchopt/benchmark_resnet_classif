@@ -23,7 +23,7 @@ class TFSolver(BaseSolver):
 
     def run(self, callback):
         # Initial evaluation
-        callback(self.tf_model, self.tf_dataset)
+        callback(self.tf_model)
 
         # Launch training
         self.tf_model.fit(self.tf_dataset, callbacks=[BenchoptCallback(callback)])

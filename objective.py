@@ -43,16 +43,16 @@ class Objective(BaseObjective):
             pass
         else:
             y = y.numpy()
+        self.width = X.shape[1]
         self.n_classes = len(np.unique(y))
         self.tf_dataset = tf.data.Dataset.from_tensor_slices((X, y))
 
-    def compute(self, pl_module, tf_model):
-        assert xor(pl_module is not None, tf_model is not None), 'You cannot set both pl module and tf model'
-        if pl_module is not None:
-            loss = self.trainer.test(pl_module)
-            loss = loss[0]['train_loss']
+    def compute(self, model):
+        if isinstance(model, tf.keras.models.Model):
+            loss = model.evaluate(self.tf_dataset)
         else:
-            loss = tf_model.evaluate(self.tf_dataset)
+            loss = self.trainer.test(model)
+            loss = loss[0]['train_loss']
         # XXX: allow to return accuracy as well
         # this will allow to have a more encompassing benchmark that also
         # captures speed on accuracy
@@ -66,6 +66,7 @@ class Objective(BaseObjective):
             weights=None,
             classes=self.n_classes,
             classifier_activation='softmax',
+            input_shape=(self.width, self.width, 3),
         )
         tf_dataset = self.tf_dataset.map(
             lambda x, y: (tf.keras.applications.vgg16.preprocess_input(x), y),
