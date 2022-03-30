@@ -58,10 +58,14 @@ class Objective(BaseObjective):
         # captures speed on accuracy
         return loss
 
-    def to_dict(self):
-        torch_model = models.resnet18(num_classes=self.n_classes)
+    def get_one_beta(self):
+        # XXX: should we have both tf and pl here?
+        model = models.resnet18(num_classes=self.n_classes)
         data_loader = DataLoader(self.torch_dataset, batch_size=self.batch_size)
-        pl_module = BenchPLModule(torch_model, data_loader)
+        return BenchPLModule(model, data_loader)
+
+    def to_dict(self):
+        pl_module = self.get_one_beta()
         tf_model = tf.keras.applications.vgg16.VGG16(
             weights=None,
             classes=self.n_classes,
