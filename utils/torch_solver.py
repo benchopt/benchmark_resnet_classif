@@ -1,12 +1,17 @@
-from benchopt import BaseSolver
-from pytorch_lightning import Trainer
+from benchopt import BaseSolver, safe_import_context
+
+with safe_import_context() as import_ctx:
+
+    from pytorch_lightning import Trainer
+    BenchoptCallback = import_ctx.import_from(
+        'torch_helper', 'BenchoptCallback'
+    )
 
 
 class TorchSolver(BaseSolver):
     """Torch base solver"""
 
-    stopping_strategy = 'iteration'
-
+    stopping_strategy = 'callback'
 
     def set_objective(self, pl_module, trainer):
         self.pl_module = pl_module
@@ -14,8 +19,18 @@ class TorchSolver(BaseSolver):
         # to access some elements from the trainer when
         # initializing it below
 
-    def run(self, n_iter):
-        trainer = Trainer(max_steps=n_iter)
+    @staticmethod
+    def get_next(stop_val):
+        return stop_val + 1
+
+    def run(self, callback):
+        # Initial evaluation
+        callback(self.pl_module)
+
+        # Setup the trainer
+        trainer = Trainer(
+            max_epochs=-1, callbacks=[BenchoptCallback(callback)]
+        )
         trainer.fit(self.pl_module)
 
     def get_result(self):

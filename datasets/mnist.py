@@ -1,38 +1,35 @@
-import numpy as np
 
-from benchopt import BaseDataset
-import torchvision
-from torchvision import transforms
-import torchvision.datasets as datasets
+from benchopt import BaseDataset, safe_import_context
+
+with safe_import_context() as import_ctx:
+    from torch.utils.data import Subset
+    from torchvision import transforms
+    import torchvision.datasets as datasets
 
 
 def grayscale_to_rbg(image):
     return image.repeat(3, 1, 1)
+
+
 class Dataset(BaseDataset):
 
     name = "MNIST"
-
     parameters = {
+        'debug': [True]
     }
 
-    def __init__(self):
+    def get_data(self):
         transform = transforms.Compose([
             transforms.ToTensor(),
-            # because of this transform,
-            # the dataset is not picklable, and therefore
-            # we cannot use it in benchopt.
             transforms.Lambda(grayscale_to_rbg),
         ])
-        self.mnist_trainset = datasets.MNIST(
+        mnist_trainset = datasets.MNIST(
             root='./data',
             train=True,
             download=True,
             transform=transform,
         )
-        self.n_features = 28**2
+        if self.debug:
+            mnist_trainset = Subset(mnist_trainset, range(1000))
 
-
-    def get_data(self):
-        data = dict(dataset=self.mnist_trainset)
-
-        return self.n_features, data
+        return 'object', dict(dataset=mnist_trainset)
