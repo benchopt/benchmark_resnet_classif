@@ -21,7 +21,7 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-          - os: macos-latest
+          # - os: macos-latest
     env:
       CONDA_ENV: 'test_env'
       VERSION_PYTHON: ${{ matrix.version_python }}
