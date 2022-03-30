@@ -21,6 +21,10 @@ class TFSolver(BaseSolver):
         )
         self.tf_dataset = tf_dataset
 
+    @staticmethod
+    def get_next(stop_val):
+        return stop_val + 1
+
     def run(self, callback):
         # Initial evaluation
         callback(self.tf_model)
