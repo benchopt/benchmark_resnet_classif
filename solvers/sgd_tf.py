@@ -2,14 +2,14 @@ from benchopt import safe_import_context
 
 
 with safe_import_context() as import_ctx:
-    from tensorflow.keras.optimizers import RMSProp
+    from tensorflow.keras.optimizers import SGD
 
 TFSolver = import_ctx.import_from('tf_solver', 'TFSolver')
 
 
 class Solver(TFSolver):
-    """RMSProp solver"""
-    name = 'RMSProp-tf'
+    """SGD solver"""
+    name = 'SGD-tf'
 
     # any parameter defined here is accessible as a class attribute
     parameters = {
@@ -18,7 +18,7 @@ class Solver(TFSolver):
     }
 
     def set_objective(self, pl_module, trainer, tf_model, tf_dataset):
-        self.optimizer = RMSProp(
+        self.optimizer = SGD(
             learning_rate=self.lr,
             momentum=self.momentum,
             nesterov=self.nesterov,
