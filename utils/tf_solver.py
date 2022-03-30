@@ -7,6 +7,7 @@ with safe_import_context() as import_ctx:
         'tf_helper', 'BenchoptCallback'
     )
 
+MAX_EPOCHS = int(1e9)
 
 class TFSolver(BaseSolver):
     """TF base solver"""
@@ -30,7 +31,11 @@ class TFSolver(BaseSolver):
         callback(self.tf_model)
 
         # Launch training
-        self.tf_model.fit(self.tf_dataset, callbacks=[BenchoptCallback(callback)])
+        self.tf_model.fit(
+            self.tf_dataset,
+            callbacks=[BenchoptCallback(callback)],
+            epochs=MAX_EPOCHS,
+        )
 
 
     def get_result(self):

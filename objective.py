@@ -45,11 +45,13 @@ class Objective(BaseObjective):
             y = y.numpy()
         self.width = X.shape[1]
         self.n_classes = len(np.unique(y))
+        if not isinstance(y[0], np.ndarray) or not len(y) > 1:
+            y = tf.one_hot(y, self.n_classes)
         self.tf_dataset = tf.data.Dataset.from_tensor_slices((X, y))
 
     def compute(self, model):
         if isinstance(model, tf.keras.models.Model):
-            loss = model.evaluate(self.tf_dataset)
+            loss = model.evaluate(self.tf_dataset.batch(self.batch_size))
         else:
             loss = self.trainer.test(model)
             loss = loss[0]['train_loss']
@@ -72,9 +74,15 @@ class Objective(BaseObjective):
             classifier_activation='softmax',
             input_shape=(self.width, self.width, 3),
         )
-        tf_dataset = self.tf_dataset.map(
+        tf_dataset = self.tf_dataset.batch(
+            self.batch_size,
+            num_parallel_calls=tf.data.experimental.AUTOTUNE,
+        ).map(
             lambda x, y: (tf.keras.applications.vgg16.preprocess_input(x), y),
-        ).batch(self.batch_size).repeat()
+            num_parallel_calls=tf.data.experimental.AUTOTUNE,
+        ).prefetch(
+            buffer_size=tf.data.experimental.AUTOTUNE,
+        )
         return dict(
             pl_module=pl_module,
             trainer=self.trainer,
