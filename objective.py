@@ -1,4 +1,3 @@
-from operator import xor
 from benchopt import BaseObjective, safe_import_context
 
 with safe_import_context() as import_ctx:
@@ -38,7 +37,10 @@ class Objective(BaseObjective):
         try:
             X = self.torch_dataset.data
         except AttributeError:
-            _loader = DataLoader(self.torch_dataset, batch_size=len(self.torch_dataset))
+            _loader = DataLoader(
+                self.torch_dataset,
+                batch_size=len(self.torch_dataset),
+            )
             _sample = next(iter(_loader))
             X = _sample[0]
             y = _sample[1]
