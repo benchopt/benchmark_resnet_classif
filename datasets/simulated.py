@@ -13,7 +13,7 @@ class Dataset(BaseDataset):
     # the cross product for each key in the dictionary.
     parameters = {
         'n_samples, img_size': [
-            (128, 5),
+            (128, 32),
         ]
     }
 
