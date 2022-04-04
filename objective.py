@@ -83,6 +83,10 @@ class Objective(BaseObjective):
 
     def to_dict(self):
         pl_module = self.get_one_beta()
+        # XXX: for the tf model we might consider other options like
+        # https://github.com/keras-team/keras-contrib
+        # But it looks dead, and not moved to tf-addons
+        # Same for https://github.com/qubvel/classification_models
         tf_model = tf.keras.applications.vgg16.VGG16(
             weights=None,
             classes=self.n_classes,
