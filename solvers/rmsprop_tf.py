@@ -2,7 +2,7 @@ from benchopt import safe_import_context
 
 
 with safe_import_context() as import_ctx:
-    from tensorflow.keras.optimizers import RMSProp
+    from tensorflow.keras.optimizers import RMSprop
 
 TFSolver = import_ctx.import_from('tf_solver', 'TFSolver')
 
@@ -19,7 +19,7 @@ class Solver(TFSolver):
     }
 
     def set_objective(self, pl_module, trainer, tf_model, tf_dataset):
-        self.optimizer = RMSProp(
+        self.optimizer = RMSprop(
             learning_rate=self.lr,
             momentum=self.momentum,
             rho=self.rho,
