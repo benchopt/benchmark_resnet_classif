@@ -5,7 +5,6 @@ with safe_import_context() as import_ctx:
 
     from torch.utils.data import DataLoader
     import torchvision.models as models
-
     BenchPLModule = import_ctx.import_from("torch_helper", "BenchPLModule")
 
 
