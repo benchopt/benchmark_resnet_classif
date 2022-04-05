@@ -5,22 +5,22 @@ with safe_import_context() as import_ctx:
 
     from torch.utils.data import DataLoader
     import torchvision.models as models
-    BenchPLModule = import_ctx.import_from('torch_helper', 'BenchPLModule')
+
+    BenchPLModule = import_ctx.import_from("torch_helper", "BenchPLModule")
 
 
 class Objective(BaseObjective):
     """Classification objective"""
+
     name = "ResNet classification fitting"
     is_convex = False
 
-    install_cmd = 'conda'
-    requirements = [
-        'pytorch', 'torchvision', 'pytorch-lightning '
-    ]
+    install_cmd = "conda"
+    requirements = ["pytorch", "torchvision", "pytorch-lightning "]
 
     # XXX: this might be a good spot to specify the size of the ResNet
     parameters = {
-        'batch_size': [64],
+        "batch_size": [64],
     }
 
     def __init__(self, batch_size=64):
@@ -30,15 +30,21 @@ class Objective(BaseObjective):
         self.trainer = Trainer()
         self.batch_size = batch_size
 
-    def set_data(self, dataset):
+    def set_data(self, dataset, test_dataset):
         self.dataset = dataset
+        self.test_dataset = test_dataset
 
     def compute(self, pl_module):
-        loss = self.trainer.test(pl_module)
-        # XXX: allow to return accuracy as well
-        # this will allow to have a more encompassing benchmark that also
-        # captures speed on accuracy
-        return loss[0]['train_loss']
+        results = dict()
+        for dataset_name, dataset in zip(
+            ["train", "test"], [self.dataset, self.test_dataset]
+        ):
+            dataloader = DataLoader(dataset, batch_size=self.batch_size)
+            metrics = self.trainer.test(pl_module, dataloaders=dataloader)
+            results[dataset_name + "_loss"] = metrics[0]["loss"]
+            results[dataset_name + "_acc"] = metrics[0]["acc"]
+        results["value"] = results["train_acc"]
+        return results
 
     def get_one_beta(self):
         model = models.resnet18()
