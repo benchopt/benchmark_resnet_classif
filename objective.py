@@ -90,21 +90,28 @@ class Objective(BaseObjective):
         # https://github.com/keras-team/keras-contrib
         # But it looks dead, and not moved to tf-addons
         # Same for https://github.com/qubvel/classification_models
-        tf_model = tf.keras.applications.vgg16.VGG16(
-            weights=None,
-            classes=self.n_classes,
-            classifier_activation='softmax',
-            input_shape=(self.width, self.width, 3),
-        )
-        tf_dataset = self.tf_dataset.batch(
-            self.batch_size,
-            num_parallel_calls=tf.data.experimental.AUTOTUNE,
-        ).map(
-            lambda x, y: (tf.keras.applications.vgg16.preprocess_input(x), y),
-            num_parallel_calls=tf.data.experimental.AUTOTUNE,
-        ).prefetch(
-            buffer_size=tf.data.experimental.AUTOTUNE,
-        )
+        if self.width < 32:
+            # Because vgg16 doesn't support small images
+            # we might need to handle this some other way
+            # when we specify the model size and type in the objective param
+            # by skipping the MNIST dataset for the vgg models
+            tf_model = tf_dataset = None
+        else:
+            tf_model = tf.keras.applications.vgg16.VGG16(
+                weights=None,
+                classes=self.n_classes,
+                classifier_activation='softmax',
+                input_shape=(self.width, self.width, 3),
+            )
+            tf_dataset = self.tf_dataset.batch(
+                self.batch_size,
+                num_parallel_calls=tf.data.experimental.AUTOTUNE,
+            ).map(
+                lambda x, y: (tf.keras.applications.vgg16.preprocess_input(x), y),
+                num_parallel_calls=tf.data.experimental.AUTOTUNE,
+            ).prefetch(
+                buffer_size=tf.data.experimental.AUTOTUNE,
+            )
         return dict(
             pl_module=pl_module,
             trainer=self.trainer,
