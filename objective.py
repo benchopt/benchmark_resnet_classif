@@ -45,7 +45,10 @@ class Objective(BaseObjective):
             X = _sample[0]
             y = _sample[1]
         else:
-            y = self.torch_dataset.targets
+            try:
+                y = self.torch_dataset.targets
+            except AttributeError:
+                y = self.torch_dataset.labels
         try:
             X = X.numpy()
         except AttributeError:
