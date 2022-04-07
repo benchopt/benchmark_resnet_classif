@@ -23,6 +23,12 @@ class Objective(BaseObjective):
     # XXX: this might be a good spot to specify the size of the ResNet
     parameters = {
         'batch_size': [64],
+        'model_type, model_size': [
+            ('resnet', '18'),
+            ('resnet', '34'),
+            ('resnet', '50'),
+            ('vgg', '16'),
+        ]
     }
 
     def __init__(self, batch_size=64):
