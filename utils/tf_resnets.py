@@ -13,6 +13,9 @@ with safe_import_context() as import_ctx:
 # XXX: make sure to remove this once this PR is merged:
 # https://github.com/keras-team/keras/pull/16363
 
+# Another option would be to use tensorflow/models once this PR is merged:
+# https://github.com/tensorflow/models/pull/10584
+
 def basic_block(x, filters, stride=1, use_bias=True, conv_shortcut=True,
                 name=None):
     """A basic residual block for ResNet18 and 34.
