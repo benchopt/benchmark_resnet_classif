@@ -106,12 +106,6 @@ class Objective(BaseObjective):
             tf_dataset = self.tf_dataset.batch(
                 self.batch_size,
                 num_parallel_calls=tf.data.experimental.AUTOTUNE,
-            ).map(
-                lambda x, y: (
-                    tf.keras.applications.vgg16.preprocess_input(x),
-                    y,
-                ),
-                num_parallel_calls=tf.data.experimental.AUTOTUNE,
             ).prefetch(
                 buffer_size=tf.data.experimental.AUTOTUNE,
             )
