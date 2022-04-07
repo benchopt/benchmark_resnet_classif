@@ -1,6 +1,5 @@
 from benchopt import BaseObjective, safe_import_context
 
-from utils.tf_resnets import ResNet18
 
 with safe_import_context() as import_ctx:
     import numpy as np
