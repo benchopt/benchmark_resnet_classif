@@ -12,6 +12,12 @@ class Dataset(BaseDataset):
     def get_data(self):
         transform = transforms.Compose([
             transforms.ToTensor(),
+            # from
+            # https://deepobs.readthedocs.io/en/v1.2.0-beta0_a/_modules/deepobs/pytorch/datasets/svhn.html
+            transforms.Normalize(
+                (0.4376821, 0.4437697, 0.47280442),
+                (0.19803012, 0.20101562, 0.19703614),
+            ),
         ])
         svhn_trainset = datasets.SVHN(
             root='./data',
