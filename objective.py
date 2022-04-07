@@ -35,6 +35,7 @@ TORCH_MODEL_MAP = {
     }
 }
 
+
 class Objective(BaseObjective):
     """Classification objective"""
     name = "ResNet classification fitting"
