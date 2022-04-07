@@ -5,6 +5,11 @@ with safe_import_context() as import_ctx:
     from keras import layers
 
 
+# XXX: we might consider other options like
+# https://github.com/keras-team/keras-contrib
+# But it looks dead, and not moved to tf-addons
+# Same for https://github.com/qubvel/classification_models
+
 def basic_block(x, filters, stride=1, use_bias=True, conv_shortcut=True,
                 name=None):
     """A basic residual block for ResNet18 and 34.
