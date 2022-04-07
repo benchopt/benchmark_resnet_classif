@@ -141,6 +141,7 @@ def stack_block(
     n_blocks,
     block_fn,
     stride1=2,
+    first_shortcut=True,
     name=None,
     use_bias=False,
 ):
@@ -161,6 +162,7 @@ def stack_block(
         x,
         filters,
         stride=stride1,
+        conv_shortcut=first_shortcut,
         use_bias=use_bias,
         name=name + '_block1',
     )
@@ -192,6 +194,7 @@ def ResNet18(include_top=True,
             2,
             basic_block,
             use_bias=use_bias,
+            first_shortcut=False,
             stride1=1,
             name='conv2',
         )
@@ -252,6 +255,7 @@ def ResNet34(include_top=True,
             3,
             basic_block,
             use_bias=use_bias,
+            first_shortcut=False,
             stride1=1,
             name='conv2',
         )
