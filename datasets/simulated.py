@@ -25,6 +25,10 @@ class Dataset(MultiFrameworkDataset):
         'framework': ['pytorch', 'tensorflow'],
     }
 
+    ds_description = dict(
+        n_classes=2,
+    )
+
     def __init__(
         self,
         n_samples=10,
@@ -43,6 +47,9 @@ class Dataset(MultiFrameworkDataset):
 
     def _get_data(self):
         n_train = int(self.n_samples * self.train_frac)
+        self.ds_description['n_samples_train'] = n_train
+        self.ds_description['n_samples_test'] = self.n_samples - n_train
+        self.ds_description['image_width'] = self.img_size
         # inputs are channel first
         inps = self.rng.normal(
             size=(self.n_samples, 3, self.img_size, self.img_size,),
@@ -63,7 +70,11 @@ class Dataset(MultiFrameworkDataset):
             torch.Tensor(tgts_test),
         )
 
-        data = dict(dataset=dataset, test_dataset=test_dataset)
+        data = dict(
+            dataset=dataset,
+            test_dataset=test_dataset,
+            **self.ds_description,
+        )
 
         return 'object', data
 
@@ -74,6 +85,10 @@ class Dataset(MultiFrameworkDataset):
             (inps_test, tgts_test),
         )
 
-        data = dict(dataset=dataset, test_dataset=test_dataset)
+        data = dict(
+            dataset=dataset,
+            test_dataset=test_dataset,
+            **self.ds_description,
+        )
 
         return 'object', data
