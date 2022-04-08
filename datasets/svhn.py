@@ -30,6 +30,7 @@ class Dataset(MultiFrameworkDataset):
     }
 
     torch_ds_klass = datasets.SVHN
+    torch_split_kwarg = 'split'
 
     tf_ds_name = 'svhn_cropped'
     # XXX: problem with the tfds, it downloads the full svhn dataset
