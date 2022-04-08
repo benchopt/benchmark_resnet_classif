@@ -29,6 +29,6 @@ class Dataset(MultiFrameworkDataset):
         'framework': ['pytorch', 'tensorflow'],
     }
 
-    torch_ds_klass = datasets.CIFAR
+    torch_ds_klass = datasets.CIFAR10
 
     tf_ds_name = 'cifar10'
