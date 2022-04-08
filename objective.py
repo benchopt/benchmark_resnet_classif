@@ -39,7 +39,6 @@ class Objective(BaseObjective):
     def set_data(self, dataset, test_dataset):
         self.torch_dataset = dataset
         self.torch_test_dataset = test_dataset
-        # TODO: have the test dataset in TF as well
         (
             self.tf_dataset,
             self.width,
