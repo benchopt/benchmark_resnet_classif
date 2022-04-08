@@ -39,7 +39,7 @@ with safe_import_context() as import_ctx:
 
 class Objective(BaseObjective):
     """Classification objective"""
-    
+
     name = "ConvNet classification fitting"
     is_convex = False
 
