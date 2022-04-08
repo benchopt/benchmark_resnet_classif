@@ -1,6 +1,7 @@
 from benchopt import safe_import_context
 
 with safe_import_context() as import_ctx:
+    import numpy as np
     import tensorflow as tf
     from torchvision import transforms
     import torchvision.datasets as datasets
@@ -53,6 +54,10 @@ class Dataset(MultiFrameworkDataset):
             ),
             transforms.Lambda(grayscale_to_rbg_torch),
         ])
+        keras_normalization = tf.keras.layers.Normalization(
+            mean=self.normalization_mean,
+            variance=np.square(self.normalization_std),
+        )
         self.image_preprocessing = (
-            lambda x: grayscale_to_rbg_tf(self.image_preprocessing(x))
+            lambda x: grayscale_to_rbg_tf(keras_normalization(x))
         )
