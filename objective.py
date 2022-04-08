@@ -1,9 +1,6 @@
 from benchopt import BaseObjective, safe_import_context
 
-from utils.tf_helper import torch_image_dataset_to_tf_dataset
-
 with safe_import_context() as import_ctx:
-    import numpy as np
     from pytorch_lightning import Trainer
     import tensorflow as tf
     from torch.utils.data import DataLoader
