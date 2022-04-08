@@ -1,10 +1,11 @@
 from benchopt import safe_import_context
 
 with safe_import_context() as import_ctx:
-
+    import torch
     from torch.nn import functional as F
     from torch.utils.data import Dataset
 
+    from torchmetrics import Accuracy
     from pytorch_lightning import LightningModule
     from pytorch_lightning.callbacks import Callback
 
@@ -29,21 +30,28 @@ class BenchPLModule(LightningModule):
         super().__init__()
         self.model = model
         self.loader = loader
+        self.accuracy = Accuracy()
 
     def forward(self, x):
         x = self.model(x)
         return F.log_softmax(x, dim=1)
 
-    def test_step(self, batch, batch_idx):
-        loss = self.training_step(batch, batch_idx)
-        self.log("train_loss", loss, prog_bar=True)
-        return loss
-
-    def training_step(self, batch, batch_idx):
+    def loss_logits_y(self, batch):
         x, y = batch
         logits = self(x)
         loss = F.nll_loss(logits, y)
+        return loss, logits, y
+
+    def test_step(self, batch, batch_idx):
+        loss, logits, y = self.loss_logits_y(batch)
+        preds = torch.argmax(logits, dim=1)
+        self.accuracy(preds, y)
+        self.log("loss", loss, prog_bar=True)
+        self.log("acc", self.accuracy)
         return loss
+
+    def training_step(self, batch, batch_idx):
+        return self.loss_logits_y(batch)[0]
 
     def train_dataloader(self):
         return self.loader

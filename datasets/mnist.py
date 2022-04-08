@@ -50,12 +50,20 @@ class Dataset(MultiFrameworkDataset):
             download=True,
             transform=transform,
         )
+        mnist_testset = datasets.MNIST(
+            root='./data',
+            train=False,
+            download=True,
+            transform=transform,
+        )
         if self.debug:
             mnist_trainset = Subset(mnist_trainset, range(1000))
 
-        return 'object', dict(dataset=mnist_trainset)
+        return 'object', dict(dataset=mnist_trainset,
+                              test_dataset=mnist_testset)
 
     def get_tf_data(self):
+        # TODO: load test set
         ds = tfds.load('mnist', split='train',  as_supervised=True)
         normalization_layer = tf.keras.layers.Normalization(
             mean=self.normalization_mean,

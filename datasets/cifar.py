@@ -40,12 +40,19 @@ class Dataset(MultiFrameworkDataset):
             download=True,
             transform=transform,
         )
+        cifar_testset = datasets.CIFAR10(
+            root='./data',
+            train=False,
+            download=True,
+            transform=transform,
+        )
 
-        data = dict(dataset=cifar_trainset)
+        data = dict(dataset=cifar_trainset, test_dataset=cifar_testset)
 
         return 'object', data
 
     def get_tf_data(self):
+        # TODO: load test set
         ds = tfds.load('cifar', split='train',  as_supervised=True)
         normalization_layer = tf.keras.layers.Normalization(
             mean=self.normalization_mean,

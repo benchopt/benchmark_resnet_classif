@@ -40,10 +40,17 @@ class Dataset(MultiFrameworkDataset):
             download=True,
             transform=transform,
         )
+        svhn_testset = datasets.SVHN(
+            root='./data',
+            split='train',
+            download=True,
+            transform=transform,
+        )
 
-        return 'object', dict(dataset=svhn_trainset)
+        return 'object', dict(dataset=svhn_trainset, test_dataset=svhn_testset)
 
     def get_tf_data(self):
+        # TODO: load test set
         ds = tfds.load('svhn_cropped', split='train',  as_supervised=True)
         normalization_layer = tf.keras.layers.Normalization(
             mean=self.normalization_mean,

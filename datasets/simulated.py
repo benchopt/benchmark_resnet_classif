@@ -28,29 +28,35 @@ class Dataset(MultiFrameworkDataset):
         self,
         n_samples=10,
         img_size=50,
+        train_frac=0.8,
         framework='pytorch',
         random_state=27,
     ):
         # Store the parameters of the dataset
         self.n_samples = n_samples
         self.img_size = img_size
+        self.train_frac = train_frac
         self.framework = framework
         self.random_state = random_state
         self.rng = np.random.default_rng(self.random_state)
 
     def _get_data(self):
+        n_train = int(self.n_samples * self.train_frac)
         # inputs are channel first
         inps = self.rng.normal(
             size=(self.n_samples, 3, self.img_size, self.img_size,),
         )
         tgts = self.rng.randint(0, 2, (self.n_samples,))
-        return inps, tgts
+        inps_train, inps_test = inps[:n_train], inps[n_train:]
+        tgts_train, tgts_test = tgts[:n_train], tgts[n_train:]
+        return inps_train, inps_test, tgts_train, tgts_test
 
     def get_torch_data(self):
-        inps, tgts = self._get_data()
-        dataset = TensorDataset(inps, tgts)
+        inps_train, inps_test, tgts_train, tgts_test = self._get_data()
+        dataset = TensorDataset(inps_train, tgts_train)
+        test_dataset = TensorDataset(inps_test, tgts_test)
 
-        data = dict(dataset=dataset)
+        data = dict(dataset=dataset, test_dataset=test_dataset)
 
         return 'object', data
 
