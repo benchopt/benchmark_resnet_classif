@@ -63,8 +63,8 @@ class Dataset(MultiFrameworkDataset):
                               test_dataset=mnist_testset)
 
     def get_tf_data(self):
-        # TODO: load test set
         ds = tfds.load('mnist', split='train',  as_supervised=True)
+        test_ds = tfds.load('mnist', split='test',  as_supervised=True)
         normalization_layer = tf.keras.layers.Normalization(
             mean=self.normalization_mean,
             variance=np.square(self.normalization_std),
@@ -73,7 +73,11 @@ class Dataset(MultiFrameworkDataset):
             lambda x, y: (grayscale_to_rbg_tf(normalization_layer(x)), y),
             num_parallel_calls=tf.data.experimental.AUTOTUNE,
         )
+        test_ds = test_ds.map(
+            lambda x, y: (grayscale_to_rbg_tf(normalization_layer(x)), y),
+            num_parallel_calls=tf.data.experimental.AUTOTUNE,
+        )
         if self.debug:
             ds = ds.take(1000)
 
-        return 'dataset', dict(dataset=ds)
+        return 'dataset', dict(dataset=ds, test_dataset=test_ds)
