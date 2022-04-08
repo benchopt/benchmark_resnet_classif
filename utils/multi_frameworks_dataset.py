@@ -22,10 +22,11 @@ class MultiFrameworkDataset(BaseDataset, ABC):
                 self.normalization_std,
             ),
         ])
-        self.image_preprocessing = tf.keras.layers.Normalization(
+        keras_normalization = tf.keras.layers.Normalization(
             mean=self.normalization_mean,
             variance=np.square(self.normalization_std),
         )
+        self.image_preprocessing = lambda x: keras_normalization(x/255)
 
     def get_torch_data(self):
         data_dict = dict(framework=self.framework, **self.ds_description)
