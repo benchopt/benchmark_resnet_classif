@@ -36,7 +36,7 @@ def assert_tf_images_equal_torch_images(tf_images, torch_images):
 
 
 def order_images_labels(images, labels):
-    images_mean = np.mean(images, axis=(1, 2, 3))
+    images_mean = np.mean(images, axis=(1, 2, 3), dtype=np.float64)
     images_ordering = np.argsort(images_mean)
     images_ordered = images[images_ordering]
     labels_ordered = labels[images_ordering]
