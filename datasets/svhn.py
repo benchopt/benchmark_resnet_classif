@@ -1,11 +1,7 @@
 from benchopt import safe_import_context
 
 with safe_import_context() as import_ctx:
-    import tensorflow as tf
-    import tensorflow_datasets as tfds
-    from torchvision import transforms
     import torchvision.datasets as datasets
-    import numpy as np
 
     MultiFrameworkDataset = import_ctx.import_from(
         'multi_frameworks_dataset',
@@ -22,46 +18,17 @@ class Dataset(MultiFrameworkDataset):
     normalization_mean = (0.4376821, 0.4437697, 0.47280442)
     normalization_std = (0.19803012, 0.20101562, 0.19703614)
 
+    ds_description = dict(
+        n_samples_train=73_257,
+        n_samples_test=26_032,
+        image_width=32,
+        n_classes=10,
+    )
+
     parameters = {
         'framework': ['pytorch', 'tensorflow'],
     }
 
-    def get_torch_data(self):
-        transform = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize(
-                self.normalization_mean,
-                self.normalization_std,
-            ),
-        ])
-        svhn_trainset = datasets.SVHN(
-            root='./data',
-            split='train',
-            download=True,
-            transform=transform,
-        )
-        svhn_testset = datasets.SVHN(
-            root='./data',
-            split='train',
-            download=True,
-            transform=transform,
-        )
+    torch_ds_klass = datasets.SVHN
 
-        return 'object', dict(dataset=svhn_trainset, test_dataset=svhn_testset)
-
-    def get_tf_data(self):
-        ds = tfds.load('svhn_cropped', split='train',  as_supervised=True)
-        test_ds = tfds.load('svhn_cropped', split='test',  as_supervised=True)
-        normalization_layer = tf.keras.layers.Normalization(
-            mean=self.normalization_mean,
-            variance=np.square(self.normalization_std),
-        )
-        ds = ds.map(
-            lambda x, y: (normalization_layer(x), y),
-            num_parallel_calls=tf.data.experimental.AUTOTUNE,
-        )
-        test_ds = test_ds.map(
-            lambda x, y: (normalization_layer(x), y),
-            num_parallel_calls=tf.data.experimental.AUTOTUNE,
-        )
-        return 'dataset', dict(dataset=ds, test_dataset=test_ds)
+    tf_ds_name = 'svhn_cropped'
