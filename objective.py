@@ -73,7 +73,7 @@ class Objective(BaseObjective):
                 metrics = self.trainer.test(model, dataloaders=dataloader)
                 results[dataset_name + "_loss"] = metrics[0]["loss"]
                 results[dataset_name + "_acc"] = metrics[0]["acc"]
-        results["value"] = results["train_acc"]
+        results["value"] = results["train_loss"]
         return results
 
     def get_one_beta(self):
