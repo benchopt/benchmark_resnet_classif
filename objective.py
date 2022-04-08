@@ -11,28 +11,27 @@ with safe_import_context() as import_ctx:
     TFResNet34 = import_ctx.import_from('tf_resnets', 'ResNet34')
     TFResNet50 = import_ctx.import_from('tf_resnets', 'ResNet50')
 
-
-TF_MODEL_MAP = {
-    'resnet': {
-        '18': TFResNet18,
-        '34': TFResNet34,
-        '50': TFResNet50,
-    },
-    'vgg': {
-        '16': tf.keras.applications.vgg16.VGG16,
+    TF_MODEL_MAP = {
+        'resnet': {
+            '18': TFResNet18,
+            '34': TFResNet34,
+            '50': TFResNet50,
+        },
+        'vgg': {
+            '16': tf.keras.applications.vgg16.VGG16,
+        }
     }
-}
 
-TORCH_MODEL_MAP = {
-    'resnet': {
-        '18': models.resnet18,
-        '34': models.resnet34,
-        '50': models.resnet50,
-    },
-    'vgg': {
-        '16': models.vgg16,
+    TORCH_MODEL_MAP = {
+        'resnet': {
+            '18': models.resnet18,
+            '34': models.resnet34,
+            '50': models.resnet50,
+        },
+        'vgg': {
+            '16': models.vgg16,
+        }
     }
-}
 
 
 class Objective(BaseObjective):
