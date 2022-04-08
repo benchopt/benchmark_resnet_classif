@@ -1,5 +1,7 @@
 from benchopt import BaseObjective, safe_import_context
 
+from utils.tf_helper import torch_image_dataset_to_tf_dataset
+
 with safe_import_context() as import_ctx:
     import numpy as np
     from pytorch_lightning import Trainer
@@ -7,6 +9,10 @@ with safe_import_context() as import_ctx:
     from torch.utils.data import DataLoader
     import torchvision.models as models
     BenchPLModule = import_ctx.import_from("torch_helper", "BenchPLModule")
+    torch_image_dataset_to_tf_dataset = import_ctx.import_from(
+        "tf_helper",
+        "torch_image_dataset_to_tf_dataset",
+    )
 
 
 class Objective(BaseObjective):
@@ -37,35 +43,14 @@ class Objective(BaseObjective):
         self.torch_dataset = dataset
         self.torch_test_dataset = test_dataset
         # TODO: have the test dataset in TF as well
-        try:
-            X = self.torch_dataset.data
-        except AttributeError:
-            _loader = DataLoader(
-                self.torch_dataset,
-                batch_size=len(self.torch_dataset),
-            )
-            _sample = next(iter(_loader))
-            X = _sample[0]
-            y = _sample[1]
-        else:
-            try:
-                y = self.torch_dataset.targets
-            except AttributeError:
-                y = self.torch_dataset.labels
-        try:
-            X = X.numpy()
-        except AttributeError:
-            pass
-        else:
-            y = y.numpy()
-        if X.shape[1] in [1, 3]:
-            # reshape X from NCHW to NHWC
-            X = np.transpose(X, (0, 2, 3, 1))
-        self.width = X.shape[1]
-        self.n_classes = len(np.unique(y))
-        if not isinstance(y[0], np.ndarray) or not len(y) > 1:
-            y = tf.one_hot(y, self.n_classes)
-        self.tf_dataset = tf.data.Dataset.from_tensor_slices((X, y))
+        (
+            self.tf_dataset,
+            self.width,
+            self.n_classes,
+        ) = torch_image_dataset_to_tf_dataset(self.torch_dataset)
+        self.tf_test_dataset, _, _ = torch_image_dataset_to_tf_dataset(
+            self.torch_test_dataset,
+        )
 
     def compute(self, model):
         if isinstance(model, tf.keras.models.Model):
