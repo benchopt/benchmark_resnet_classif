@@ -124,4 +124,4 @@ jobs:
 
     - name: Test
       run: |
-        pytest datasets/test_dataset_consistency.py
+        pytest
