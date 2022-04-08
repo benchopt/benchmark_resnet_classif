@@ -9,7 +9,7 @@ class MultiFrameworkDataset(BaseDataset, ABC):
         self.framework = framework
 
     @abstractmethod
-    def get_data_torch(self):
+    def get_torch_data(self):
         ...
 
     @abstractmethod
@@ -18,6 +18,6 @@ class MultiFrameworkDataset(BaseDataset, ABC):
 
     def get_data(self):
         if self.framework == 'pytorch':
-            return self.get_data_torch()
+            return self.get_torch_data()
         elif self.framework == 'tensorflow':
             return self.get_tf_data()

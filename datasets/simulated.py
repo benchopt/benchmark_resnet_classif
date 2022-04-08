@@ -46,7 +46,7 @@ class Dataset(MultiFrameworkDataset):
         tgts = self.rng.randint(0, 2, (self.n_samples,))
         return inps, tgts
 
-    def get_data_torch(self):
+    def get_torch_data(self):
         inps, tgts = self._get_data()
         dataset = TensorDataset(inps, tgts)
 
