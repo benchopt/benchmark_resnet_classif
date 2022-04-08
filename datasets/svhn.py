@@ -50,8 +50,8 @@ class Dataset(MultiFrameworkDataset):
         return 'object', dict(dataset=svhn_trainset, test_dataset=svhn_testset)
 
     def get_tf_data(self):
-        # TODO: load test set
         ds = tfds.load('svhn_cropped', split='train',  as_supervised=True)
+        test_ds = tfds.load('svhn_cropped', split='test',  as_supervised=True)
         normalization_layer = tf.keras.layers.Normalization(
             mean=self.normalization_mean,
             variance=np.square(self.normalization_std),
@@ -60,4 +60,8 @@ class Dataset(MultiFrameworkDataset):
             lambda x, y: (normalization_layer(x), y),
             num_parallel_calls=tf.data.experimental.AUTOTUNE,
         )
-        return 'dataset', dict(dataset=ds)
+        test_ds = test_ds.map(
+            lambda x, y: (normalization_layer(x), y),
+            num_parallel_calls=tf.data.experimental.AUTOTUNE,
+        )
+        return 'dataset', dict(dataset=ds, test_dataset=test_ds)
