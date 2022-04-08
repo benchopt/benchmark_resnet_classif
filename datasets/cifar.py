@@ -1,11 +1,7 @@
 from benchopt import safe_import_context
 
 with safe_import_context() as import_ctx:
-    import tensorflow as tf
-    import tensorflow_datasets as tfds
-    from torchvision import transforms
     import torchvision.datasets as datasets
-    import numpy as np
 
     MultiFrameworkDataset = import_ctx.import_from(
         'multi_frameworks_dataset',
@@ -22,48 +18,17 @@ class Dataset(MultiFrameworkDataset):
     normalization_mean = (0.4914, 0.4822, 0.4465)
     normalization_std = (0.2023, 0.1994, 0.2010)
 
+    ds_description = dict(
+        n_samples_train=50_000,
+        n_samples_test=10_000,
+        image_width=32,
+        n_classes=10,
+    )
+
     parameters = {
         'framework': ['pytorch', 'tensorflow'],
     }
 
-    def get_torch_data(self):
-        transform = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize(
-                self.normalization_mean,
-                self.normalization_std,
-            ),
-        ])
-        cifar_trainset = datasets.CIFAR10(
-            root='./data',
-            train=True,
-            download=True,
-            transform=transform,
-        )
-        cifar_testset = datasets.CIFAR10(
-            root='./data',
-            train=False,
-            download=True,
-            transform=transform,
-        )
+    torch_ds_klass = datasets.CIFAR
 
-        data = dict(dataset=cifar_trainset, test_dataset=cifar_testset)
-
-        return 'object', data
-
-    def get_tf_data(self):
-        ds = tfds.load('cifar10', split='train',  as_supervised=True)
-        test_ds = tfds.load('cifar10', split='test',  as_supervised=True)
-        normalization_layer = tf.keras.layers.Normalization(
-            mean=self.normalization_mean,
-            variance=np.square(self.normalization_std),
-        )
-        ds = ds.map(
-            lambda x, y: (normalization_layer(x), y),
-            num_parallel_calls=tf.data.experimental.AUTOTUNE,
-        )
-        test_ds = test_ds.map(
-            lambda x, y: (normalization_layer(x), y),
-            num_parallel_calls=tf.data.experimental.AUTOTUNE,
-        )
-        return 'dataset', dict(dataset=ds, test_dataset=test_ds)
+    tf_ds_name = 'cifar10'
