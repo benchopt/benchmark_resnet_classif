@@ -52,7 +52,6 @@ class Dataset(MultiFrameworkDataset):
         return 'object', data
 
     def get_tf_data(self):
-        # TODO: load test set
         ds = tfds.load('cifar10', split='train',  as_supervised=True)
         test_ds = tfds.load('cifar10', split='test',  as_supervised=True)
         normalization_layer = tf.keras.layers.Normalization(
