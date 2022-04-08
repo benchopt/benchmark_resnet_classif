@@ -20,6 +20,12 @@ def torch_dataset_to_np_array(torch_dataset, n_samples):
     _sample = next(iter(_loader))
     X = _sample[0]
     y = _sample[1]
+    try:
+        X = X.numpy()
+    except AttributeError:
+        pass
+    else:
+        y = y.numpy()
     return X, y
 
 
@@ -29,13 +35,22 @@ def assert_tf_images_equal_torch_images(tf_images, torch_images):
     np.testing.assert_array_equal(tf_images, torch_images)
 
 
+def order_images_labels(images, labels):
+    images_mean = np.mean(images, axis=(1, 2, 3))
+    images_ordering = np.argsort(images_mean)
+    images_ordered = images[images_ordering]
+    labels_ordered = labels[images_ordering]
+    return images_ordered, labels_ordered
+
+
 @pytest.mark.parametrize('dataset_module_name', [
     'cifar',
     'mnist',
     'simulated',
     'svhn',
 ])
-def test_datasets_consistency(dataset_module_name):
+@pytest.mark.parametrize('dataset_type', ['dataset', 'test_dataset'])
+def test_datasets_consistency(dataset_module_name, dataset_type):
     from datasets import (  # noqa: F401
         cifar,
         mnist,
@@ -47,16 +62,16 @@ def test_datasets_consistency(dataset_module_name):
     d_torch = dataset.Dataset.get_instance(framework='pytorch')
     _, tf_data = d_tf.get_data()
     _, torch_data = d_torch.get_data()
-    for dataset_type, n_samples_key in zip(
-        ['dataset', 'test_dataset'],
-        ['n_samples_train', 'n_samples_test'],
-    ):
-        n_samples = tf_data[n_samples_key]
-        assert n_samples == torch_data[n_samples_key], \
-            'Number of samples is different'
-        tf_dataset = tf_data[dataset_type]
-        torch_dataset = torch_data[dataset_type]
-        tf_np_array = tf_dataset_to_np_array(tf_dataset, n_samples)
-        torch_np_array = torch_dataset_to_np_array(torch_dataset, n_samples)
-        assert_tf_images_equal_torch_images(tf_np_array[0], torch_np_array[0])
-        np.testing.assert_array_equal(tf_np_array[1], torch_np_array[1])
+    n_samples_key = 'n_samples_train' if dataset_type == 'dataset' \
+        else 'n_samples_test'
+    n_samples = tf_data[n_samples_key]
+    assert n_samples == torch_data[n_samples_key], \
+        'Number of samples is different'
+    tf_dataset = tf_data[dataset_type]
+    torch_dataset = torch_data[dataset_type]
+    tf_np_array = tf_dataset_to_np_array(tf_dataset, n_samples)
+    X_tf, y_tf = order_images_labels(*tf_np_array)
+    torch_np_array = torch_dataset_to_np_array(torch_dataset, n_samples)
+    X_torch, y_torch = order_images_labels(*torch_np_array)
+    assert_tf_images_equal_torch_images(X_tf, X_torch)
+    np.testing.assert_array_equal(y_tf, y_torch)
