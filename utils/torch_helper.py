@@ -3,6 +3,7 @@ from benchopt import safe_import_context
 with safe_import_context() as import_ctx:
 
     from torch.nn import functional as F
+    from torch.utils.data import Dataset
 
     from pytorch_lightning import LightningModule
     from pytorch_lightning.callbacks import Callback
@@ -49,3 +50,19 @@ class BenchPLModule(LightningModule):
 
     def test_dataloader(self):
         return self.loader
+
+
+class AugmentedDataset(Dataset):
+    def __init__(self, dataset, transform):
+        super().__init__()
+        self.dataset = dataset
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, idx):
+        x, y = self.dataset[idx]
+        if self.transform:
+            x = self.transform(x)
+        return x, y
