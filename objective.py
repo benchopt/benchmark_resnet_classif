@@ -49,22 +49,32 @@ class Objective(BaseObjective):
         )
 
     def compute(self, model):
+        results = dict()
+        # XXX: this might be factorized but I think at the cost
+        # of readability. Since the only additional framework
+        # we might add is Jax atm I think it's ok to have this
+        # code not DRY.
         if isinstance(model, tf.keras.models.Model):
-            loss = model.evaluate(self.tf_dataset.batch(self.batch_size))
-        else:
-            results = dict()
             for dataset_name, dataset in zip(
-                ["train", "test"], [self.dataset, self.test_dataset]
+                ["train", "test"], [self.tf_dataset, self.tf_test_dataset]
+            ):
+                metrics = model.evaluate(
+                    self.tf_dataset.batch(self.batch_size),
+                    return_dict=True,
+                )
+                results[dataset_name + "_loss"] = metrics["loss"]
+                results[dataset_name + "_acc"] = metrics["accuracy"]
+        else:
+            for dataset_name, dataset in zip(
+                ["train", "test"],
+                [self.torch_dataset, self.torch_test_dataset],
             ):
                 dataloader = DataLoader(dataset, batch_size=self.batch_size)
                 metrics = self.trainer.test(model, dataloaders=dataloader)
                 results[dataset_name + "_loss"] = metrics[0]["loss"]
                 results[dataset_name + "_acc"] = metrics[0]["acc"]
-            results["value"] = results["train_acc"]
-        # XXX: allow to return accuracy as well
-        # this will allow to have a more encompassing benchmark that also
-        # captures speed on accuracy
-        return loss
+        results["value"] = results["train_acc"]
+        return results
 
     def get_one_beta(self):
         # XXX: should we have both tf and pl here?
