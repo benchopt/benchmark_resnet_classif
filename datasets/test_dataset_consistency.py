@@ -23,9 +23,9 @@ def torch_dataset_to_np_array(torch_dataset, n_samples):
 
 
 def test_simulated_consistency():
-    from datasets.simulated import Dataset
-    d_tf = Dataset.get_instance(framework='tensorflow')
-    d_torch = Dataset.get_instance(framework='pytorch')
+    from datasets import simulated
+    d_tf = simulated.Dataset.get_instance(framework='tensorflow')
+    d_torch = simulated.Dataset.get_instance(framework='pytorch')
     _, tf_data = d_tf.get_data()
     tf_dataset = tf_data['dataset']
     _, torch_data = d_torch.get_data()
