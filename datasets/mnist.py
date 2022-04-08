@@ -21,6 +21,9 @@ class Dataset(BaseDataset):
     def get_data(self):
         transform = transforms.Compose([
             transforms.ToTensor(),
+            # from
+            # https://stackoverflow.com/a/67233938/4332585
+            transforms.Normalize((0.1307,), (0.3081,)),
             transforms.Lambda(grayscale_to_rbg),
         ])
         mnist_trainset = datasets.MNIST(

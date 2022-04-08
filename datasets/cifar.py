@@ -12,6 +12,12 @@ class Dataset(BaseDataset):
     def get_data(self):
         transform = transforms.Compose([
             transforms.ToTensor(),
+            # from
+            # https://github.com/kuangliu/pytorch-cifar/blob/master/main.py#L34
+            transforms.Normalize(
+                (0.4914, 0.4822, 0.4465),
+                (0.2023, 0.1994, 0.2010),
+            ),
         ])
         cifar_trainset = datasets.CIFAR10(
             root='./data',

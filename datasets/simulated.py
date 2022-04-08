@@ -13,7 +13,7 @@ class Dataset(BaseDataset):
     # the cross product for each key in the dictionary.
     parameters = {
         'n_samples, img_size': [
-            (128, 5),
+            (128, 32),
         ]
     }
 
@@ -29,7 +29,7 @@ class Dataset(BaseDataset):
         n_train = int(self.n_samples * self.train_frac)
         inps = torch.randn(self.n_samples, 3, self.img_size, self.img_size,
                            dtype=torch.float32)
-        tgts = torch.randint(0, 10, (self.n_samples,))
+        tgts = torch.randint(0, 2, (self.n_samples,))
         dataset = TensorDataset(inps[:n_train], tgts[:n_train])
         test_dataset = TensorDataset(inps[n_train:], tgts[n_train:])
 

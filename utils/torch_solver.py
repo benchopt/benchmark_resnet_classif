@@ -13,7 +13,7 @@ class TorchSolver(BaseSolver):
 
     stopping_strategy = 'callback'
 
-    def set_objective(self, pl_module, trainer):
+    def set_objective(self, pl_module, trainer, tf_model, tf_dataset):
         self.pl_module = pl_module
         self.main_trainer = trainer  # we use this in order
         # to access some elements from the trainer when
