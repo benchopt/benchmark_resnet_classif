@@ -35,5 +35,5 @@ def test_simulated_consistency():
         torch_dataset,
         d_torch.n_samples,
     )
-    np.testing.assert_array_almost_equal(tf_np_array[0], torch_np_array[0])
-    np.testing.assert_array_almost_equal(tf_np_array[1], torch_np_array[1])
+    np.testing.assert_array_equal(tf_np_array[0], torch_np_array[0])
+    np.testing.assert_array_equal(tf_np_array[1], torch_np_array[1])

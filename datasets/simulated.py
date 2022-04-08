@@ -46,8 +46,8 @@ class Dataset(MultiFrameworkDataset):
         # inputs are channel first
         inps = self.rng.normal(
             size=(self.n_samples, 3, self.img_size, self.img_size,),
-        )
-        tgts = self.rng.integers(0, 2, (self.n_samples,))
+        ).astype(np.float32)
+        tgts = self.rng.integers(0, 2, (self.n_samples,)).astype(np.int32)
         inps_train, inps_test = inps[:n_train], inps[n_train:]
         tgts_train, tgts_test = tgts[:n_train], tgts[n_train:]
         return inps_train, inps_test, tgts_train, tgts_test
