@@ -10,6 +10,8 @@ with safe_import_context() as import_ctx:
 
 
 class MultiFrameworkDataset(BaseDataset, ABC):
+    torch_split_kwarg = 'train'
+
     def __init__(self, framework='pytorch'):
         # Store the parameters of the dataset
         self.framework = framework
@@ -27,12 +29,17 @@ class MultiFrameworkDataset(BaseDataset, ABC):
 
     def get_torch_data(self):
         data_dict = dict(framework=self.framework, **self.ds_description)
-        for key, train in zip(['dataset', 'test_dataset'], [True, False]):
+        if self.torch_split_kwarg == 'train':
+            splits = [True, False]
+        elif self.torch_split_kwarg == 'split':
+            splits = ['train', 'test']
+        for key, split in zip(['dataset', 'test_dataset'], splits):
+            split_kwarg = {self.torch_split_kwarg: split}
             data_dict[key] = self.torch_ds_klass(
                 root='./data',
-                train=train,
                 download=True,
                 transform=self.transform,
+                **split_kwarg,
             )
         return 'object', data_dict
 
