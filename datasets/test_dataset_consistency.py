@@ -23,26 +23,20 @@ def torch_dataset_to_np_array(torch_dataset, n_samples):
     return X, y
 
 
-@pytest.mark.parametrize('dataset_name', [
+@pytest.mark.parametrize('dataset_module_name', [
     'cifar',
     'mnist',
     'simulated',
     'svhn',
 ])
-def test_datasets_consistency(dataset_name):
-    from datasets import (
+def test_datasets_consistency(dataset_module_name):
+    from datasets import (  # noqa: F401
         cifar,
         mnist,
         simulated,
         svhn,
     )
-    dataset_mapping = {
-        'cifar': cifar,
-        'mnist': mnist,
-        'simulated': simulated,
-        'svhn': svhn,
-    }
-    dataset = dataset_mapping[dataset_name]
+    dataset = eval(dataset_module_name)
     d_tf = dataset.Dataset.get_instance(framework='tensorflow')
     d_torch = dataset.Dataset.get_instance(framework='pytorch')
     _, tf_data = d_tf.get_data()
