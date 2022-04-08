@@ -64,6 +64,6 @@ class Dataset(MultiFrameworkDataset):
         inps, tgts = self._get_data()
         dataset = tf.data.Dataset.from_tensor_slices((inps, tgts))
 
-        data = dict(dataset=dataset)
+        data = dict(dataset=dataset, test_dataset=test_dataset)
 
         return 'object', data
