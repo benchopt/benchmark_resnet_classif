@@ -32,3 +32,8 @@ class Dataset(MultiFrameworkDataset):
     torch_ds_klass = datasets.SVHN
 
     tf_ds_name = 'svhn_cropped'
+    # XXX: problem with the tfds, it downloads the full svhn dataset
+    # including the extra bit which is super heavy
+    # we might be able to limit the download with
+    # https://www.tensorflow.org/datasets/api_docs/python/tfds/download/DownloadConfig
+    # `max_examples_per_split`
