@@ -35,10 +35,14 @@ class BenchPLModule(LightningModule):
         x = self.model(x)
         return F.log_softmax(x, dim=1)
 
-    def test_step(self, batch, batch_idx):
+    def loss_logits_y(self, batch):
         x, y = batch
         logits = self(x)
         loss = F.nll_loss(logits, y)
+        return loss, logits, y
+
+    def test_step(self, batch, batch_idx):
+        loss, logits, y = self.loss_logits_y(batch)
         preds = torch.argmax(logits, dim=1)
         self.accuracy(preds, y)
         self.log("loss", loss, prog_bar=True)
@@ -46,10 +50,7 @@ class BenchPLModule(LightningModule):
         return loss
 
     def training_step(self, batch, batch_idx):
-        x, y = batch
-        logits = self(x)
-        loss = F.nll_loss(logits, y)
-        return loss
+        return self.loss_logits_y(batch)[0]
 
     def train_dataloader(self):
         return self.loader
