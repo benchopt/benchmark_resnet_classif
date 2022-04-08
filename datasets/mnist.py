@@ -59,5 +59,5 @@ class Dataset(MultiFrameworkDataset):
             variance=np.square(self.normalization_std),
         )
         self.image_preprocessing = (
-            lambda x: grayscale_to_rbg_tf(keras_normalization(x))
+            lambda x: grayscale_to_rbg_tf(keras_normalization(x/255))
         )
