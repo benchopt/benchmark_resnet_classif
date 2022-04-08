@@ -3,6 +3,7 @@ from benchopt import safe_import_context
 with safe_import_context() as import_ctx:
     import numpy as np
     import tensorflow as tf
+    import torch
     from torch.utils.data import TensorDataset
 
     MultiFrameworkDataset = import_ctx.import_from(
@@ -46,23 +47,32 @@ class Dataset(MultiFrameworkDataset):
         inps = self.rng.normal(
             size=(self.n_samples, 3, self.img_size, self.img_size,),
         )
-        tgts = self.rng.randint(0, 2, (self.n_samples,))
+        tgts = self.rng.integers(0, 2, (self.n_samples,))
         inps_train, inps_test = inps[:n_train], inps[n_train:]
         tgts_train, tgts_test = tgts[:n_train], tgts[n_train:]
         return inps_train, inps_test, tgts_train, tgts_test
 
     def get_torch_data(self):
         inps_train, inps_test, tgts_train, tgts_test = self._get_data()
-        dataset = TensorDataset(inps_train, tgts_train)
-        test_dataset = TensorDataset(inps_test, tgts_test)
+        dataset = TensorDataset(
+            torch.Tensor(inps_train),
+            torch.Tensor(tgts_train),
+        )
+        test_dataset = TensorDataset(
+            torch.Tensor(inps_test),
+            torch.Tensor(tgts_test),
+        )
 
         data = dict(dataset=dataset, test_dataset=test_dataset)
 
         return 'object', data
 
     def get_tf_data(self):
-        inps, tgts = self._get_data()
-        dataset = tf.data.Dataset.from_tensor_slices((inps, tgts))
+        inps_train, inps_test, tgts_train, tgts_test = self._get_data()
+        dataset = tf.data.Dataset.from_tensor_slices((inps_train, tgts_train))
+        test_dataset = tf.data.Dataset.from_tensor_slices(
+            (inps_test, tgts_test),
+        )
 
         data = dict(dataset=dataset, test_dataset=test_dataset)
 

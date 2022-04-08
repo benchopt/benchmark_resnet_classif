@@ -16,7 +16,7 @@ def torch_dataset_to_np_array(torch_dataset, n_samples):
         torch_dataset,
         batch_size=n_samples,
     )
-    _sample = next(_loader)
+    _sample = next(iter(_loader))
     X = _sample[0]
     y = _sample[1]
     return X, y
@@ -35,5 +35,5 @@ def test_simulated_consistency():
         torch_dataset,
         d_torch.n_samples,
     )
-    np.testing.assert_array_equal(tf_np_array[0], torch_np_array[0])
-    np.testing.assert_array_equal(tf_np_array[1], torch_np_array[1])
+    np.testing.assert_array_almost_equal(tf_np_array[0], torch_np_array[0])
+    np.testing.assert_array_almost_equal(tf_np_array[1], torch_np_array[1])
