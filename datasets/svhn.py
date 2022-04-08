@@ -25,5 +25,11 @@ class Dataset(BaseDataset):
             download=True,
             transform=transform,
         )
+        svhn_testset = datasets.SVHN(
+            root='./data',
+            split='train',
+            download=True,
+            transform=transform,
+        )
 
-        return 'object', dict(dataset=svhn_trainset)
+        return 'object', dict(dataset=svhn_trainset, test_dataset=svhn_testset)

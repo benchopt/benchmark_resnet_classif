@@ -1,12 +1,15 @@
 from benchopt import BaseObjective, safe_import_context
 
 with safe_import_context() as import_ctx:
-    import numpy as np
     from pytorch_lightning import Trainer
     import tensorflow as tf
     from torch.utils.data import DataLoader
     import torchvision.models as models
-    BenchPLModule = import_ctx.import_from('torch_helper', 'BenchPLModule')
+    BenchPLModule = import_ctx.import_from("torch_helper", "BenchPLModule")
+    torch_image_dataset_to_tf_dataset = import_ctx.import_from(
+        "tf_helper",
+        "torch_image_dataset_to_tf_dataset",
+    )
     TFResNet18 = import_ctx.import_from('tf_resnets', 'ResNet18')
     TFResNet34 = import_ctx.import_from('tf_resnets', 'ResNet34')
     TFResNet50 = import_ctx.import_from('tf_resnets', 'ResNet50')
@@ -36,6 +39,7 @@ with safe_import_context() as import_ctx:
 
 class Objective(BaseObjective):
     """Classification objective"""
+
     name = "ConvNet classification fitting"
     is_convex = False
 
@@ -84,48 +88,45 @@ class Objective(BaseObjective):
         model = model_klass(num_classes=self.n_classes)
         return model
 
-    def set_data(self, dataset):
+    def set_data(self, dataset, test_dataset):
         self.torch_dataset = dataset
-        try:
-            X = self.torch_dataset.data
-        except AttributeError:
-            _loader = DataLoader(
-                self.torch_dataset,
-                batch_size=len(self.torch_dataset),
-            )
-            _sample = next(iter(_loader))
-            X = _sample[0]
-            y = _sample[1]
-        else:
-            try:
-                y = self.torch_dataset.targets
-            except AttributeError:
-                y = self.torch_dataset.labels
-        try:
-            X = X.numpy()
-        except AttributeError:
-            pass
-        else:
-            y = y.numpy()
-        if X.shape[1] in [1, 3]:
-            # reshape X from NCHW to NHWC
-            X = np.transpose(X, (0, 2, 3, 1))
-        self.width = X.shape[1]
-        self.n_classes = len(np.unique(y))
-        if not isinstance(y[0], np.ndarray) or not len(y) > 1:
-            y = tf.one_hot(y, self.n_classes)
-        self.tf_dataset = tf.data.Dataset.from_tensor_slices((X, y))
+        self.torch_test_dataset = test_dataset
+        (
+            self.tf_dataset,
+            self.width,
+            self.n_classes,
+        ) = torch_image_dataset_to_tf_dataset(self.torch_dataset)
+        self.tf_test_dataset, _, _ = torch_image_dataset_to_tf_dataset(
+            self.torch_test_dataset,
+        )
 
     def compute(self, model):
+        results = dict()
+        # XXX: this might be factorized but I think at the cost
+        # of readability. Since the only additional framework
+        # we might add is Jax atm I think it's ok to have this
+        # code not DRY.
         if isinstance(model, tf.keras.models.Model):
-            loss = model.evaluate(self.tf_dataset.batch(self.batch_size))
+            for dataset_name, dataset in zip(
+                ["train", "test"], [self.tf_dataset, self.tf_test_dataset]
+            ):
+                metrics = model.evaluate(
+                    self.tf_dataset.batch(self.batch_size),
+                    return_dict=True,
+                )
+                results[dataset_name + "_loss"] = metrics["loss"]
+                results[dataset_name + "_acc"] = metrics["accuracy"]
         else:
-            loss = self.trainer.test(model)
-            loss = loss[0]['train_loss']
-        # XXX: allow to return accuracy as well
-        # this will allow to have a more encompassing benchmark that also
-        # captures speed on accuracy
-        return loss
+            for dataset_name, dataset in zip(
+                ["train", "test"],
+                [self.torch_dataset, self.torch_test_dataset],
+            ):
+                dataloader = DataLoader(dataset, batch_size=self.batch_size)
+                metrics = self.trainer.test(model, dataloaders=dataloader)
+                results[dataset_name + "_loss"] = metrics[0]["loss"]
+                results[dataset_name + "_acc"] = metrics[0]["acc"]
+        results["value"] = results["train_loss"]
+        return results
 
     def get_one_beta(self):
         # XXX: should we have both tf and pl here?

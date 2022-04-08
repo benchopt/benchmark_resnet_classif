@@ -25,7 +25,13 @@ class Dataset(BaseDataset):
             download=True,
             transform=transform,
         )
+        cifar_testset = datasets.CIFAR10(
+            root='./data',
+            train=False,
+            download=True,
+            transform=transform,
+        )
 
-        data = dict(dataset=cifar_trainset)
+        data = dict(dataset=cifar_trainset, test_dataset=cifar_testset)
 
         return 'object', data
