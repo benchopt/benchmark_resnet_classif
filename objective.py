@@ -37,7 +37,7 @@ TORCH_MODEL_MAP = {
 
 class Objective(BaseObjective):
     """Classification objective"""
-    name = "ResNet classification fitting"
+    name = "ConvNet classification fitting"
     is_convex = False
 
     install_cmd = 'conda'
