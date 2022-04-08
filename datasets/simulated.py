@@ -1,12 +1,17 @@
-from benchopt import BaseDataset, safe_import_context
+from benchopt import safe_import_context
 
 with safe_import_context() as import_ctx:
     import numpy as np
     import tensorflow as tf
     from torch.utils.data import TensorDataset
 
+    MultiFrameworkDataset = import_ctx.import_from(
+        'multi_frameworks_dataset',
+        'MultiFrameworkDataset',
+    )
 
-class Dataset(BaseDataset):
+
+class Dataset(MultiFrameworkDataset):
 
     name = "Simulated"
 
@@ -56,9 +61,3 @@ class Dataset(BaseDataset):
         data = dict(dataset=dataset)
 
         return 'object', data
-
-    def get_data(self):
-        if self.framework == 'pytorch':
-            return self.get_data_torch()
-        elif self.framework == 'tensorflow':
-            return self.get_tf_data()
