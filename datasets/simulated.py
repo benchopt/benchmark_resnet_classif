@@ -12,6 +12,10 @@ with safe_import_context() as import_ctx:
     )
 
 
+def make_channels_last(images):
+    return np.transpose(images, (0, 2, 3, 1))
+
+
 class Dataset(MultiFrameworkDataset):
 
     name = "Simulated"
@@ -80,9 +84,11 @@ class Dataset(MultiFrameworkDataset):
 
     def get_tf_data(self):
         inps_train, inps_test, tgts_train, tgts_test = self._get_data()
-        dataset = tf.data.Dataset.from_tensor_slices((inps_train, tgts_train))
+        dataset = tf.data.Dataset.from_tensor_slices(
+            (make_channels_last(inps_train), tgts_train),
+        )
         test_dataset = tf.data.Dataset.from_tensor_slices(
-            (inps_test, tgts_test),
+            (make_channels_last(inps_test), tgts_test),
         )
 
         data = dict(
