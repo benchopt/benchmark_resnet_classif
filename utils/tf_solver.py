@@ -14,6 +14,16 @@ class TFSolver(BaseSolver):
 
     stopping_strategy = 'callback'
 
+    # XXX: this should be removed once
+    # https://github.com/benchopt/benchmark_resnet_classif/pull/6
+    # and
+    # https://github.com/benchopt/benchopt/pull/323
+    # are merged
+    def skip(self, pl_module, trainer, tf_model, tf_dataset):
+        if tf_model is None or tf_dataset is None:
+            return True, 'Dataset not fit for TF use'
+        return False, None
+
     def set_objective(self, pl_module, trainer, tf_model, tf_dataset):
         self.tf_model = tf_model
         self.tf_model.compile(
