@@ -49,7 +49,7 @@ class Dataset(MultiFrameworkDataset):
         self.random_state = random_state
         self.rng = np.random.default_rng(self.random_state)
 
-    def _get_data(self):
+    def get_np_data(self):
         n_train = int(self.n_samples * self.train_frac)
         self.ds_description['n_samples_train'] = n_train
         self.ds_description['n_samples_test'] = self.n_samples - n_train
@@ -64,7 +64,7 @@ class Dataset(MultiFrameworkDataset):
         return inps_train, inps_test, tgts_train, tgts_test
 
     def get_torch_data(self):
-        inps_train, inps_test, tgts_train, tgts_test = self._get_data()
+        inps_train, inps_test, tgts_train, tgts_test = self.get_np_data()
         dataset = TensorDataset(
             torch.Tensor(inps_train),
             torch.Tensor(tgts_train),
@@ -77,13 +77,14 @@ class Dataset(MultiFrameworkDataset):
         data = dict(
             dataset=dataset,
             test_dataset=test_dataset,
+            framework='pytorch',
             **self.ds_description,
         )
 
         return 'object', data
 
     def get_tf_data(self):
-        inps_train, inps_test, tgts_train, tgts_test = self._get_data()
+        inps_train, inps_test, tgts_train, tgts_test = self.get_np_data()
         dataset = tf.data.Dataset.from_tensor_slices(
             (make_channels_last(inps_train), tgts_train),
         )
@@ -94,6 +95,7 @@ class Dataset(MultiFrameworkDataset):
         data = dict(
             dataset=dataset,
             test_dataset=test_dataset,
+            framework='tensorflow',
             **self.ds_description,
         )
 
