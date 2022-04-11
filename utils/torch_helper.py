@@ -1,20 +1,21 @@
+import logging
 from benchopt import safe_import_context
 
 with safe_import_context() as import_ctx:
+
     import torch
     from torch.nn import functional as F
 
     from torchmetrics import Accuracy
     from pytorch_lightning import LightningModule
     from pytorch_lightning.callbacks import Callback
-    from pytorch_lightning.strategies import (
-        DDPStrategy,
-        DistributedDataParallel,
-        log,
-        rank_zero_info,
-        _TORCH_GREATER_EQUAL_1_11,
-        TrainerFn,
-    )
+    from pytorch_lightning.strategies import DDPStrategy
+    from torch.nn.parallel.distributed import DistributedDataParallel
+    from pytorch_lightning.utilities.imports import _TORCH_GREATER_EQUAL_1_11
+    from pytorch_lightning.utilities.rank_zero import rank_zero_info
+    from pytorch_lightning.trainer.states import TrainerFn
+
+log = logging.getLogger(__name__)
 
 
 # Convert benchopt benchmark into a lightning callback, used to monitor the
