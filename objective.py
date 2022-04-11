@@ -88,17 +88,23 @@ class Objective(BaseObjective):
         model = model_klass(num_classes=self.n_classes)
         return model
 
-    def set_data(self, dataset, test_dataset):
-        self.torch_dataset = dataset
-        self.torch_test_dataset = test_dataset
-        (
-            self.tf_dataset,
-            self.width,
-            self.n_classes,
-        ) = torch_image_dataset_to_tf_dataset(self.torch_dataset)
-        self.tf_test_dataset, _, _ = torch_image_dataset_to_tf_dataset(
-            self.torch_test_dataset,
-        )
+    def set_data(
+        self,
+        dataset,
+        test_dataset,
+        n_samples_train,
+        n_samples_test,
+        image_width,
+        n_classes,
+        framework,
+    ):
+        self.dataset = dataset
+        self.test_dataset = test_dataset
+        self.n_samples_train = n_samples_train
+        self.n_samples_test = n_samples_test
+        self.width = image_width
+        self.n_classes = n_classes
+        self.framework = framework
 
     def compute(self, model):
         results = dict()
@@ -106,7 +112,7 @@ class Objective(BaseObjective):
         # of readability. Since the only additional framework
         # we might add is Jax atm I think it's ok to have this
         # code not DRY.
-        if isinstance(model, tf.keras.models.Model):
+        if self.framework == 'tensorflow':
             for dataset_name, dataset in zip(
                 ["train", "test"], [self.tf_dataset, self.tf_test_dataset]
             ):
@@ -116,7 +122,7 @@ class Objective(BaseObjective):
                 )
                 results[dataset_name + "_loss"] = metrics["loss"]
                 results[dataset_name + "_acc"] = metrics["accuracy"]
-        else:
+        elif self.framework == 'pytorch':
             for dataset_name, dataset in zip(
                 ["train", "test"],
                 [self.torch_dataset, self.torch_test_dataset],
@@ -130,26 +136,16 @@ class Objective(BaseObjective):
 
     def get_one_beta(self):
         # XXX: should we have both tf and pl here?
-        model = self.get_torch_model()
-        data_loader = DataLoader(
-            self.torch_dataset,
-            batch_size=self.batch_size,
-        )
-        return BenchPLModule(model, data_loader)
+        if self.framework == 'tensorflow':
+            model = self.get_tf_model()
+        elif self.framework == 'pytorch':
+            model = self.get_torch_model()
+        return model
 
     def to_dict(self):
         # XXX: make sure to skip the small datasets when using vgg
-        pl_module = self.get_one_beta()
-        tf_model = self.get_tf_model()
-        tf_dataset = self.tf_dataset.batch(
-            self.batch_size,
-            num_parallel_calls=tf.data.experimental.AUTOTUNE,
-        ).prefetch(
-            buffer_size=tf.data.experimental.AUTOTUNE,
-        )
+        model = self.get_one_beta()
         return dict(
-            pl_module=pl_module,
-            trainer=self.trainer,
-            tf_model=tf_model,
-            tf_dataset=tf_dataset,
+            model=model,
+            dataset=self.dataset,
         )
