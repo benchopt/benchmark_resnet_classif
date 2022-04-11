@@ -16,6 +16,7 @@ class Solver(TFSolver):
         'lr': [1e-3],
         'momentum': [0, 0.9],
         'rho': [0.99, 0.9],
+        **TFSolver.parameters,
     }
 
     def set_objective(self, model, dataset):
