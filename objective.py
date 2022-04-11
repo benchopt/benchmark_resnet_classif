@@ -7,6 +7,10 @@ with safe_import_context() as import_ctx:
     from torch.utils.data import DataLoader
     import torchvision.models as models
     BenchPLModule = import_ctx.import_from("torch_helper", "BenchPLModule")
+    DDPStrategyNoTeardown = import_ctx.import_from(
+        "torch_helper",
+        "DDPStrategyNoTeardown",
+    )
     torch_image_dataset_to_tf_dataset = import_ctx.import_from(
         "tf_helper",
         "torch_image_dataset_to_tf_dataset",
@@ -64,8 +68,8 @@ class Objective(BaseObjective):
         # XXX: seed everything correctly
         # https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#reproducibility
         # XXX: modify this with the correct amount of CPUs/GPUs
-        accelerator = 'gpu' if torch.cuda.is_available() else None
-        self.trainer = Trainer(accelerator=accelerator)
+        strategy = DDPStrategyNoTeardown(accelerator="auto")
+        self.trainer = Trainer(strategy=strategy)
         self.batch_size = batch_size
         self.model_type = model_type
         self.model_size = model_size
