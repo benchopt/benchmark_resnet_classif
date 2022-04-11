@@ -57,7 +57,7 @@ def get_matched_unmatched_indices_arrays(
     matched_indices_2 = matched_indices_1 + stride
     unmatched_indices_1 = list(np.where(~close)[0])
     unmatched_indices_2 = list(np.where(~close)[0] + stride)
-    unmatched_indices_1.append(range(
+    unmatched_indices_1 = unmatched_indices_1 + list(range(
         len(array_1) - 1,
         len(array_1) - stride - 1,
         -1,
