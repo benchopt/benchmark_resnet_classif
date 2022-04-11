@@ -65,7 +65,7 @@ class Objective(BaseObjective):
         self.model_size = model_size
 
     def skip(self):
-        if self.framework == 'tensorflow' and self.image_width < 32:
+        if self.framework == 'tensorflow' and self.width < 32:
             return True, 'images too small for TF networks'
         return False, None
 
