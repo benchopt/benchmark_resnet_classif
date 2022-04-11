@@ -6,10 +6,6 @@ with safe_import_context() as import_ctx:
     from torch.utils.data import DataLoader
     import torchvision.models as models
     BenchPLModule = import_ctx.import_from("torch_helper", "BenchPLModule")
-    torch_image_dataset_to_tf_dataset = import_ctx.import_from(
-        "tf_helper",
-        "torch_image_dataset_to_tf_dataset",
-    )
     TFResNet18 = import_ctx.import_from('tf_resnets', 'ResNet18')
     TFResNet34 = import_ctx.import_from('tf_resnets', 'ResNet34')
     TFResNet50 = import_ctx.import_from('tf_resnets', 'ResNet50')
