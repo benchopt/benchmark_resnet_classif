@@ -44,6 +44,32 @@ def order_images_labels(images, labels):
     return images_ordered, labels_ordered
 
 
+def get_matched_unmatched_indices_arrays(
+    array_1,
+    array_2,
+    stride=0,
+    epsilon=1.5e-6,
+):
+    diff = array_1[:-stride] - array_2[stride:]
+    close = np.abs(diff) <= epsilon
+    close = np.all(close, axis=(1, 2, 3))
+    matched_indices_1 = np.where(close)[0]
+    matched_indices_2 = matched_indices_1 + stride
+    unmatched_indices_1 = list(np.where(~close)[0])
+    unmatched_indices_2 = list(np.where(~close)[0] + stride)
+    unmatched_indices_1.append(range(
+        len(array_1) - 1,
+        len(array_1) - stride - 1,
+        -1,
+    ))
+    unmatched_indices_2 = list(range(stride)) + unmatched_indices_2
+    return (
+        matched_indices_1,
+        matched_indices_2,
+        unmatched_indices_1,
+        unmatched_indices_2,
+    )
+
 @pytest.mark.parametrize('dataset_module_name', [
     'cifar',
     'mnist',
