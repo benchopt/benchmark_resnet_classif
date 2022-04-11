@@ -85,7 +85,7 @@ def test_datasets_consistency(dataset_module_name, dataset_type):
         svhn,
     )
     dataset = eval(dataset_module_name)
-    d_tf = dataset.Dataset.get_instance(framework='tensorflow')
+    d_tf = dataset.Dataset.get_instance(framework='tensorflow', one_hot=False)
     d_torch = dataset.Dataset.get_instance(framework='pytorch')
     _, tf_data = d_tf.get_data()
     _, torch_data = d_torch.get_data()
