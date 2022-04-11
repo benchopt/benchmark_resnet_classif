@@ -1,7 +1,7 @@
 from benchopt import BaseSolver, safe_import_context
 
 with safe_import_context() as import_ctx:
-
+    import tensorflow as tf
     BenchoptCallback = import_ctx.import_from(
         'tf_helper', 'BenchoptCallback'
     )
@@ -19,13 +19,13 @@ class TFSolver(BaseSolver):
     # and
     # https://github.com/benchopt/benchopt/pull/323
     # are merged
-    def skip(self, pl_module, trainer, tf_model, tf_dataset):
-        if tf_model is None or tf_dataset is None:
-            return True, 'Dataset not fit for TF use'
+    def skip(self, model, dataset):
+        if not isinstance(model, tf.keras.Model):
+            return True, 'Not a TF dataset'
         return False, None
 
-    def set_objective(self, pl_module, trainer, tf_model, tf_dataset):
-        self.tf_model = tf_model
+    def set_objective(self, model, dataset):
+        self.tf_model = model
         self.tf_model.compile(
             optimizer=self.optimizer,
             loss='categorical_crossentropy',
@@ -36,7 +36,7 @@ class TFSolver(BaseSolver):
             # each batch.
             metrics='accuracy',
         )
-        self.tf_dataset = tf_dataset
+        self.tf_dataset = dataset
 
     @staticmethod
     def get_next(stop_val):
