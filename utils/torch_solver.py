@@ -4,12 +4,16 @@ from benchopt import BaseSolver, safe_import_context
 with safe_import_context() as import_ctx:
 
     import torch
+    from torchvision import transforms
     from pytorch_lightning import Trainer
     BenchoptCallback = import_ctx.import_from(
         'torch_helper', 'BenchoptCallback'
     )
     BenchPLModule = import_ctx.import_from(
         'torch_helper', 'BenchPLModule'
+    )
+    AugmentedDataset = import_ctx.import_from(
+        'torch_helper', 'AugmentedDataset'
     )
 
 
@@ -20,6 +24,7 @@ class TorchSolver(BaseSolver):
 
     parameters = {
         'batch_size': [64],
+        'data_aug': [False, True],
     }
 
     def skip(self, model, dataset):
@@ -27,11 +32,22 @@ class TorchSolver(BaseSolver):
             return True, 'Not a PT dataset'
         return False, None
 
+    def __init__(self, **parameters):
+        self.data_aug_transform = transforms.Compose([
+            transforms.RandomCrop(32, padding=4),
+            transforms.RandomHorizontalFlip(),
+        ])
+
     def set_objective(self, model, dataset):
         self.model = model
         self.dataset = dataset  # we use this in order
         # to access some elements from the trainer when
         # initializing it below
+        if self.data_aug:
+            self.dataset = AugmentedDataset(
+                self.dataset,
+                self.data_aug_transform,
+            )
         self.dataloader = torch.utils.data.DataLoader(
             self.dataset, batch_size=self.batch_size
         )
