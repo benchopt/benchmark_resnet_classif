@@ -112,6 +112,7 @@ class Objective(BaseObjective):
                 ["train", "test"], [self.dataset, self.test_dataset]
             ):
                 metrics = model.evaluate(
+                    # TODO: optimize this with prefetching
                     dataset.batch(self.batch_size),
                     return_dict=True,
                 )
