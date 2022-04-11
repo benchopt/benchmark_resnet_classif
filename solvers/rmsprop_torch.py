@@ -16,6 +16,7 @@ class Solver(TorchSolver):
         'alpha': [0.99, 0.9],
         'lr': [1e-3],
         'momentum': [0, 0.9],
+        **TorchSolver.parameters
     }
 
     def set_objective(self, model, dataset):
