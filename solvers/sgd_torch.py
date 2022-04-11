@@ -16,11 +16,11 @@ class Solver(TorchSolver):
         'lr': [1e-3],
     }
 
-    def set_objective(self, pl_module, trainer, tf_model, tf_dataset):
-        super().set_objective(pl_module, trainer, tf_model, tf_dataset)
+    def set_objective(self, model, dataset):
+        super().set_objective(model, dataset)
 
-        self.pl_module.configure_optimizers = lambda: SGD(
-            self.pl_module.parameters(),
+        self.model.configure_optimizers = lambda: SGD(
+            self.model.parameters(),
             lr=self.lr,
             momentum=self.momentum,
             nesterov=self.nesterov,

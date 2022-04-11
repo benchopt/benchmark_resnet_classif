@@ -18,10 +18,10 @@ class Solver(TorchSolver):
         'momentum': [0, 0.9],
     }
 
-    def set_objective(self, pl_module, trainer, tf_model, tf_dataset):
-        super().set_objective(pl_module, trainer, tf_model, tf_dataset)
-        self.pl_module.configure_optimizers = lambda: RMSprop(
-            self.pl_module.parameters(),
+    def set_objective(self, model, dataset):
+        super().set_objective(model, dataset)
+        self.model.configure_optimizers = lambda: RMSprop(
+            self.model.parameters(),
             lr=self.lr,
             momentum=self.momentum,
             alpha=self.alpha,

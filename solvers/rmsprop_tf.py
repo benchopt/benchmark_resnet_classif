@@ -18,10 +18,10 @@ class Solver(TFSolver):
         'rho': [0.99, 0.9],
     }
 
-    def set_objective(self, pl_module, trainer, tf_model, tf_dataset):
+    def set_objective(self, model, dataset):
         self.optimizer = RMSprop(
             learning_rate=self.lr,
             momentum=self.momentum,
             rho=self.rho,
         )
-        super().set_objective(pl_module, trainer, tf_model, tf_dataset)
+        super().set_objective(model, dataset)

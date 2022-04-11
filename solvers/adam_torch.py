@@ -16,9 +16,9 @@ class Solver(TorchSolver):
         'lr': [1e-3],
     }
 
-    def set_objective(self, pl_module, trainer, tf_model, tf_dataset):
-        super().set_objective(pl_module, trainer, tf_model, tf_dataset)
-        self.pl_module.configure_optimizers = lambda: Adam(
-            self.pl_module.parameters(),
+    def set_objective(self, model, dataset):
+        super().set_objective(model, dataset)
+        self.model.configure_optimizers = lambda: Adam(
+            self.model.parameters(),
             lr=self.lr,
         )
