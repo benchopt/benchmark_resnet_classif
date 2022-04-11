@@ -34,7 +34,7 @@ class TorchSolver(BaseSolver):
         # Setup the trainer
         trainer = Trainer(
             max_epochs=-1, callbacks=[BenchoptCallback(callback)],
-            accelerator="gpu" if torch.cuda.is_available() else None
+            accelerator="auto",
         )
         trainer.fit(model=self.pl_module, train_dataloaders=self.dataloader)
 
