@@ -45,9 +45,9 @@ def order_images_labels(images, labels):
 
 
 @pytest.mark.parametrize('dataset_module_name', [
-    # 'cifar',
-    # 'mnist',
-    # 'simulated',
+    'cifar',
+    'mnist',
+    'simulated',
     'svhn',
 ])
 @pytest.mark.parametrize('dataset_type', ['dataset', 'test_dataset'])
