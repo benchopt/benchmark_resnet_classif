@@ -53,7 +53,10 @@ class MultiFrameworkDataset(BaseDataset, ABC):
                 as_supervised=True,
             )
             ds = ds.map(
-                lambda x, y: (self.image_preprocessing(x), y),
+                lambda x, y: (
+                    self.image_preprocessing(x),
+                    tf.one_hot(y, self.ds_description['n_classes']),
+                ),
                 num_parallel_calls=tf.data.experimental.AUTOTUNE,
             )
             data_dict[key] = ds
