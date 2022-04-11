@@ -70,6 +70,7 @@ def get_matched_unmatched_indices_arrays(
         unmatched_indices_2,
     )
 
+
 @pytest.mark.parametrize('dataset_module_name', [
     'cifar',
     'mnist',
