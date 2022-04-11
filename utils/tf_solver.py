@@ -16,13 +16,16 @@ class TFSolver(BaseSolver):
 
     parameters = {
         'batch_size': [64],
+        'data_aug': [False, True],
     }
 
-    # XXX: this should be removed once
-    # https://github.com/benchopt/benchmark_resnet_classif/pull/6
-    # and
-    # https://github.com/benchopt/benchopt/pull/323
-    # are merged
+    def __init__(self, **parameters):
+        self.data_aug_layer = tf.keras.models.Sequential([
+            tf.keras.layers.ZeroPadding2D(padding=4),
+            tf.keras.layers.RandomCrop(height=32, width=32),
+            tf.keras.layers.RandomFlip('horizontal'),
+        ])
+
     def skip(self, model, dataset):
         if not isinstance(model, tf.keras.Model):
             return True, 'Not a TF dataset'
@@ -40,7 +43,17 @@ class TFSolver(BaseSolver):
             # each batch.
             metrics='accuracy',
         )
-        self.tf_dataset = dataset.batch(
+        self.tf_dataset = dataset
+        if self.data_aug:
+            # XXX: unfortunately we need to do this before
+            # batching since the random crop layer does not
+            # crop at different locations in the same batch
+            # https://github.com/keras-team/keras/issues/16399
+            self.tf_dataset = self.tf_dataset.map(
+                lambda x, y: (self.data_aug_layer(x, training=True), y),
+                num_parallel_calls=tf.data.experimental.AUTOTUNE,
+            )
+        self.tf_dataset = self.tf_dataset.batch(
             self.batch_size,
             num_parallel_calls=tf.data.experimental.AUTOTUNE,
         ).prefetch(
