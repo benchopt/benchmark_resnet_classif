@@ -14,6 +14,10 @@ class TFSolver(BaseSolver):
 
     stopping_strategy = 'callback'
 
+    parameters = {
+        'batch_size': [64],
+    }
+
     # XXX: this should be removed once
     # https://github.com/benchopt/benchmark_resnet_classif/pull/6
     # and
@@ -36,7 +40,12 @@ class TFSolver(BaseSolver):
             # each batch.
             metrics='accuracy',
         )
-        self.tf_dataset = dataset
+        self.tf_dataset = dataset.batch(
+            self.batch_size,
+            num_parallel_calls=tf.data.experimental.AUTOTUNE,
+        ).prefetch(
+            buffer_size=tf.data.experimental.AUTOTUNE,
+        )
 
     @staticmethod
     def get_next(stop_val):
