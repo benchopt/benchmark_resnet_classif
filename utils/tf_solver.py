@@ -50,7 +50,10 @@ class TFSolver(BaseSolver):
             # crop at different locations in the same batch
             # https://github.com/keras-team/keras/issues/16399
             self.tf_dataset = self.tf_dataset.map(
-                lambda x, y: (self.data_aug_layer(x, training=True), y),
+                lambda x, y: (
+                    self.data_aug_layer(x[None], training=True)[0],
+                    y,
+                ),
                 num_parallel_calls=tf.data.experimental.AUTOTUNE,
             )
         self.tf_dataset = self.tf_dataset.batch(
