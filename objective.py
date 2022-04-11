@@ -64,6 +64,11 @@ class Objective(BaseObjective):
         self.model_type = model_type
         self.model_size = model_size
 
+    def skip(self):
+        if self.framework == 'tensorflow' and self.image_width < 32:
+            return True, 'images too small for TF networks'
+        return False, None
+
     def get_tf_model(self):
         model_klass = TF_MODEL_MAP[self.model_type][self.model_size]
         add_kwargs = {}
