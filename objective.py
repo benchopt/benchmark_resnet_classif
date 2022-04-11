@@ -109,10 +109,10 @@ class Objective(BaseObjective):
         # code not DRY.
         if self.framework == 'tensorflow':
             for dataset_name, dataset in zip(
-                ["train", "test"], [self.tf_dataset, self.tf_test_dataset]
+                ["train", "test"], [self.dataset, self.test_dataset]
             ):
                 metrics = model.evaluate(
-                    self.tf_dataset.batch(self.batch_size),
+                    dataset.batch(self.batch_size),
                     return_dict=True,
                 )
                 results[dataset_name + "_loss"] = metrics["loss"]
@@ -120,7 +120,7 @@ class Objective(BaseObjective):
         elif self.framework == 'pytorch':
             for dataset_name, dataset in zip(
                 ["train", "test"],
-                [self.torch_dataset, self.torch_test_dataset],
+                [self.dataset, self.test_dataset],
             ):
                 dataloader = DataLoader(dataset, batch_size=self.batch_size)
                 metrics = self.trainer.test(model, dataloaders=dataloader)
