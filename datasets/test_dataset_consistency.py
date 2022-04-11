@@ -46,9 +46,9 @@ def order_images_labels(images, labels):
 
 @pytest.mark.parametrize('dataset_module_name', [
     # 'cifar',
-    'mnist',
+    # 'mnist',
     # 'simulated',
-    # 'svhn',
+    'svhn',
 ])
 @pytest.mark.parametrize('dataset_type', ['dataset', 'test_dataset'])
 def test_datasets_consistency(dataset_module_name, dataset_type):
@@ -84,6 +84,7 @@ def test_datasets_consistency(dataset_module_name, dataset_type):
         close = np.abs(diff) <= 1.5e-6
         close = np.all(close, axis=(1, 2, 3))
         matched_indices = np.where(close)[0]
+        # TODO: handle the SVHN double image case
         np.testing.assert_array_equal(y_tf[matched_indices], y_torch[matched_indices])
         unmatched_tf_indices = np.where(~close)[0]
         unmatched_torch_indices = list(np.copy(unmatched_tf_indices))
