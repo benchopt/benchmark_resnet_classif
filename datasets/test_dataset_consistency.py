@@ -77,6 +77,7 @@ def test_datasets_consistency(dataset_module_name, dataset_type):
     try:
         assert_tf_images_equal_torch_images(X_tf, X_torch)
     except AssertionError:
+        # TODO: refactor all this BS
         # easy cases where there is a correct ordering
         X_torch_channel_last = np.transpose(X_torch, (0, 2, 3, 1))
         diff = X_tf - X_torch_channel_last
