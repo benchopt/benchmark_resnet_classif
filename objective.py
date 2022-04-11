@@ -2,6 +2,7 @@ from benchopt import BaseObjective, safe_import_context
 
 with safe_import_context() as import_ctx:
     from pytorch_lightning import Trainer
+    from pytorch_lightning.utilities.seed import seed_everything
     import tensorflow as tf
     from torch.utils.data import DataLoader
     import torchvision.models as models
@@ -63,6 +64,9 @@ class Objective(BaseObjective):
         self.batch_size = batch_size
         self.model_type = model_type
         self.model_size = model_size
+        # seeding
+        tf.random.set_seed(0)
+        seed_everything(0, workers=True)
 
     def skip(self):
         if self.framework == 'tensorflow' and self.width < 32:
