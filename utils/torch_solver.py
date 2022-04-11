@@ -1,11 +1,15 @@
 from benchopt import BaseSolver, safe_import_context
 
+
 with safe_import_context() as import_ctx:
 
     import torch
     from pytorch_lightning import Trainer
     BenchoptCallback = import_ctx.import_from(
         'torch_helper', 'BenchoptCallback'
+    )
+    BenchPLModule = import_ctx.import_from(
+        'torch_helper', 'BenchPLModule'
     )
 
 
@@ -17,6 +21,11 @@ class TorchSolver(BaseSolver):
     parameters = {
         'batch_size': [64],
     }
+
+    def skip(self, model, dataset):
+        if not isinstance(model, BenchPLModule):
+            return True, 'Not a PT dataset'
+        return False, None
 
     def set_objective(self, model, dataset):
         self.model = model
