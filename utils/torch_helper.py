@@ -25,11 +25,10 @@ class BenchPLModule(LightningModule):
     """Lightning module for benchopt inspired by
     https://colab.research.google.com/github/PyTorchLightning/lightning-tutorials/blob/publication/.notebooks/lightning_examples/mnist-hello-world.ipynb#scrollTo=bd97d928
     """
-    def __init__(self, model, loader):
+    def __init__(self, model):
 
         super().__init__()
         self.model = model
-        self.loader = loader
         self.accuracy = Accuracy()
 
     def forward(self, x):
@@ -52,12 +51,6 @@ class BenchPLModule(LightningModule):
 
     def training_step(self, batch, batch_idx):
         return self.loss_logits_y(batch)[0]
-
-    def train_dataloader(self):
-        return self.loader
-
-    def test_dataloader(self):
-        return self.loader
 
 
 class AugmentedDataset(Dataset):
