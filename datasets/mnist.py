@@ -44,7 +44,8 @@ class Dataset(MultiFrameworkDataset):
 
     tf_ds_name = 'mnist'
 
-    def __init__(self, framework='pytorch'):
+    def __init__(self, framework='pytorch', debug=True):
+        # TODO: implement subsampling for mnist debug
         super().__init__(framework=framework)
         self.transform = transforms.Compose([
             transforms.ToTensor(),
