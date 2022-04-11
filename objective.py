@@ -140,6 +140,7 @@ class Objective(BaseObjective):
             model = self.get_tf_model()
         elif self.framework == 'pytorch':
             model = self.get_torch_model()
+            model = BenchPLModule(model)
         return model
 
     def to_dict(self):
