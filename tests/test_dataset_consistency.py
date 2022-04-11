@@ -104,65 +104,42 @@ def test_datasets_consistency(dataset_module_name, dataset_type):
         assert_tf_images_equal_torch_images(X_tf, X_torch)
     except AssertionError:
         # TODO: refactor all this BS
-        # easy cases where there is a correct ordering
+        # easy cases where there is a correct ordering, or pairs
         X_torch_channel_last = np.transpose(X_torch, (0, 2, 3, 1))
-        diff = X_tf - X_torch_channel_last
-        close = np.abs(diff) <= 1.5e-6
-        close = np.all(close, axis=(1, 2, 3))
-        matched_indices = np.where(close)[0]
-        # TODO: handle the SVHN double image case
-        np.testing.assert_array_equal(y_tf[matched_indices], y_torch[matched_indices])
-        unmatched_tf_indices = np.where(~close)[0]
-        unmatched_torch_indices = list(np.copy(unmatched_tf_indices))
-        y_tf = y_tf[unmatched_tf_indices]
-        y_torch = y_torch[unmatched_torch_indices]
-        print('Total N', len(X_tf))
-        print('N unmatched', len(unmatched_torch_indices))
+        unmatched_tf_indices = []
+        unmatched_torch_indices = []
+        for i, stride in enumerate([0, 1, 0]):
+            X_tf = X_tf[unmatched_tf_indices]
+            X_torch_channel_last = X_torch_channel_last[
+                unmatched_torch_indices,
+            ]
+            (
+                matched_tf_indices,
+                matched_torch_indices,
+                unmatched_tf_indices,
+                unmatched_torch_indices,
+            ) = get_matched_unmatched_indices_arrays(
+                X_tf,
+                X_torch_channel_last,
+            )
+            np.testing.assert_array_equal(
+                y_tf[matched_tf_indices],
+                y_torch[matched_torch_indices],
+            )
+            y_tf = y_tf[unmatched_tf_indices]
+            if i < 2:
+                y_torch = y_torch[unmatched_torch_indices]
 
-        # same as above but with a stride of 1
-        X_tf = X_tf[unmatched_tf_indices]
-        X_torch_channel_last = X_torch_channel_last[unmatched_torch_indices]
-        diff_strided = X_tf[:-1] - X_torch_channel_last[1:]
-        close = np.abs(diff_strided) <= 1.5e-6
-        close = np.all(close, axis=(1, 2, 3))
-        matched_indices_tf = np.where(close)[0]
-        matched_indices_torch = matched_indices_tf + 1
-        np.testing.assert_array_equal(
-            y_tf[matched_indices_tf],
-            y_torch[matched_indices_torch],
-        )
-        unmatched_tf_indices = list(np.where(~close)[0])
-        unmatched_torch_indices = list(np.copy(unmatched_tf_indices) + 1)
-        unmatched_tf_indices.append(len(X_tf) - 1)
-        unmatched_torch_indices = [0] + unmatched_torch_indices
-        y_tf = y_tf[unmatched_tf_indices]
-        y_torch = y_torch[unmatched_torch_indices]
-        print('N unmatched', len(unmatched_torch_indices))
-
-        # redo no difference
-        X_tf = X_tf[unmatched_tf_indices]
-        X_torch_channel_last = X_torch_channel_last[unmatched_torch_indices]
-        diff = X_tf - X_torch_channel_last
-        close = np.abs(diff) <= 1.5e-6
-        close = np.all(close, axis=(1, 2, 3))
-        matched_indices = np.where(close)[0]
-        np.testing.assert_array_equal(
-            y_tf[matched_indices],
-            y_torch[matched_indices],
-        )
-        unmatched_tf_indices = np.where(~close)[0]
-        unmatched_torch_indices = list(np.copy(unmatched_tf_indices))
-        y_tf = y_tf[unmatched_tf_indices]
-        print('N unmatched', len(unmatched_torch_indices))
-
-
+        # harder cases where the match can be up to 10 away
         for i, tf_image in tqdm(enumerate(X_tf[unmatched_tf_indices])):
-            diff = np.abs(X_torch_channel_last[unmatched_torch_indices[:10]] - tf_image)
+            next_X_torch = X_torch_channel_last[unmatched_torch_indices[:10]]
+            next_y_torch = y_torch[unmatched_torch_indices]
+            diff = np.abs(next_X_torch - tf_image)
             total_diff = np.sum(diff, axis=(1, 2, 3))
             candidate_indices = np.where(total_diff < 1)[0]
             is_matched = [
                 np.allclose(
-                    X_torch_channel_last[unmatched_torch_indices][candidate_index],
+                    next_X_torch[candidate_index],
                     tf_image,
                     rtol=0,
                     atol=1.5e-6,
@@ -172,7 +149,7 @@ def test_datasets_consistency(dataset_module_name, dataset_type):
             one_close = np.any(is_matched)
             assert one_close, 'Image is not close'
             matched_torch_index = candidate_indices[is_matched.index(True)]
-            assert y_tf[i] == y_torch[unmatched_torch_indices][matched_torch_index]
+            assert y_tf[i] == next_y_torch[matched_torch_index]
             unmatched_torch_indices.pop(matched_torch_index)
     else:
         np.testing.assert_array_equal(y_tf, y_torch)
