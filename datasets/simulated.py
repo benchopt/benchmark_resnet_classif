@@ -85,11 +85,13 @@ class Dataset(MultiFrameworkDataset):
 
     def get_tf_data(self):
         inps_train, inps_test, tgts_train, tgts_test = self.get_np_data()
+        y_train = tf.one_hot(tgts_train, 2)
+        y_test = tf.one_hot(tgts_test, 2)
         dataset = tf.data.Dataset.from_tensor_slices(
-            (make_channels_last(inps_train), tgts_train),
+            (make_channels_last(inps_train), y_train),
         )
         test_dataset = tf.data.Dataset.from_tensor_slices(
-            (make_channels_last(inps_test), tgts_test),
+            (make_channels_last(inps_test), y_test),
         )
 
         data = dict(
