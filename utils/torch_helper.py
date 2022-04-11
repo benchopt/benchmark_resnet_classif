@@ -65,7 +65,7 @@ class DDPStrategyNoTeardown(DDPStrategy):
     # https://pytorch-lightning.readthedocs.io/en/1.6.0/_modules/pytorch_lightning/strategies/ddp.html#DDPStrategy.teardown
     def teardown(self):
         log.detail(f"{self.__class__.__name__}: tearing down strategy")
-        super().teardown()
+        super(DDPStrategy, self).teardown()
 
         if isinstance(self.model, DistributedDataParallel):
             if (
