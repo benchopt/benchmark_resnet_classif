@@ -67,11 +67,11 @@ class Dataset(MultiFrameworkDataset):
         inps_train, inps_test, tgts_train, tgts_test = self.get_np_data()
         dataset = TensorDataset(
             torch.Tensor(inps_train),
-            torch.Tensor(tgts_train),
+            torch.Tensor(tgts_train).type(torch.LongTensor),
         )
         test_dataset = TensorDataset(
             torch.Tensor(inps_test),
-            torch.Tensor(tgts_test),
+            torch.Tensor(tgts_test).type(torch.LongTensor),
         )
 
         data = dict(
