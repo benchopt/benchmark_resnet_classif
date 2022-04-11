@@ -71,11 +71,15 @@ class DDPStrategyNoTeardown(DDPStrategy):
             if (
                 _TORCH_GREATER_EQUAL_1_11
                 and not self.model.static_graph
-                and self.model._get_ddp_logging_data().get("can_set_static_graph")
+                and self.model._get_ddp_logging_data().get(
+                    "can_set_static_graph",
+                )
             ):
                 rank_zero_info(
-                    "Your model can run with static graph optimizations. For future training runs, we suggest you"
-                    f" pass `Trainer(..., strategy={self.__class__.__name__}(static_graph=True))` to enable them."
+                    "Your model can run with static graph optimizations."
+                    "For future training runs, we suggest you"
+                    f" pass `Trainer(..., strategy={self.__class__.__name__}"
+                    "(static_graph=True))` to enable them."
                 )
             # unwrap model
             self.model = self.lightning_module
@@ -85,7 +89,8 @@ class DDPStrategyNoTeardown(DDPStrategy):
             and self.lightning_module.trainer.state.fn == TrainerFn.FITTING
             and self._layer_sync
         ):
-            # `self.lightning_module.trainer` can be None if teardown gets called on an exception before
+            # `self.lightning_module.trainer` can be None if teardown gets
+            # called on an exception before
             # the trainer gets set on the LightningModule
             self.model = self._layer_sync.revert(self.model)
 
