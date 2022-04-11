@@ -16,6 +16,6 @@ class Solver(TFSolver):
         'lr': [1e-3],
     }
 
-    def set_objective(self, pl_module, trainer, tf_model, tf_dataset):
+    def set_objective(self, **kwargs):
         self.optimizer = Adam(learning_rate=self.lr)
-        super().set_objective(pl_module, trainer, tf_model, tf_dataset)
+        super().set_objective(**kwargs)

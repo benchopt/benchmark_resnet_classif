@@ -1,7 +1,7 @@
 from benchopt import BaseSolver, safe_import_context
 
 with safe_import_context() as import_ctx:
-
+    import torch
     from pytorch_lightning import Trainer
     BenchoptCallback = import_ctx.import_from(
         'torch_helper', 'BenchoptCallback'
@@ -13,11 +13,15 @@ class TorchSolver(BaseSolver):
 
     stopping_strategy = 'callback'
 
-    def set_objective(self, pl_module, trainer, tf_model, tf_dataset):
+    parameters = {
+        'batch_size': [64],
+    }
+
+    def set_objective(self, pl_module, torch_dataset, tf_model, tf_dataset):
         self.pl_module = pl_module
-        self.main_trainer = trainer  # we use this in order
-        # to access some elements from the trainer when
-        # initializing it below
+        self.dataloader = torch.utils.data.DataLoader(
+            torch_dataset, batch_size=self.batch_size
+        )
 
     @staticmethod
     def get_next(stop_val):
@@ -29,9 +33,10 @@ class TorchSolver(BaseSolver):
 
         # Setup the trainer
         trainer = Trainer(
-            max_epochs=-1, callbacks=[BenchoptCallback(callback)]
+            max_epochs=-1, callbacks=[BenchoptCallback(callback)],
+            accelerator="gpu" if torch.cuda.is_available() else None
         )
-        trainer.fit(self.pl_module)
+        trainer.fit(model=self.pl_module, train_dataloaders=self.dataloader)
 
     def get_result(self):
         return self.pl_module

@@ -1,8 +1,9 @@
 from benchopt import BaseObjective, safe_import_context
 
 with safe_import_context() as import_ctx:
-    from pytorch_lightning import Trainer
+    import torch
     import tensorflow as tf
+    from pytorch_lightning import Trainer
     from torch.utils.data import DataLoader
     import torchvision.models as models
     BenchPLModule = import_ctx.import_from("torch_helper", "BenchPLModule")
@@ -51,7 +52,6 @@ class Objective(BaseObjective):
 
     # XXX: this might be a good spot to specify the size of the ResNet
     parameters = {
-        'batch_size': [64],
         'model_type, model_size': [
             ('resnet', '18'),
             ('resnet', '34'),
@@ -64,7 +64,8 @@ class Objective(BaseObjective):
         # XXX: seed everything correctly
         # https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#reproducibility
         # XXX: modify this with the correct amount of CPUs/GPUs
-        self.trainer = Trainer()
+        accelerator = 'gpu' if torch.cuda.is_available() else None
+        self.trainer = Trainer(accelerator=accelerator)
         self.batch_size = batch_size
         self.model_type = model_type
         self.model_size = model_size
@@ -131,11 +132,7 @@ class Objective(BaseObjective):
     def get_one_beta(self):
         # XXX: should we have both tf and pl here?
         model = self.get_torch_model()
-        data_loader = DataLoader(
-            self.torch_dataset,
-            batch_size=self.batch_size,
-        )
-        return BenchPLModule(model, data_loader)
+        return BenchPLModule(model)
 
     def to_dict(self):
         # XXX: make sure to skip the small datasets when using vgg
@@ -149,7 +146,7 @@ class Objective(BaseObjective):
         )
         return dict(
             pl_module=pl_module,
-            trainer=self.trainer,
+            torch_dataset=self.torch_dataset,
             tf_model=tf_model,
             tf_dataset=tf_dataset,
         )

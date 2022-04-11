@@ -14,10 +14,11 @@ class Solver(TorchSolver):
     parameters = {
         'nesterov, momentum': [(False, 0), (True, 0.9)],
         'lr': [1e-3],
+        **TorchSolver.parameters
     }
 
-    def set_objective(self, pl_module, trainer, tf_model, tf_dataset):
-        super().set_objective(pl_module, trainer, tf_model, tf_dataset)
+    def set_objective(self, **kwargs):
+        super().set_objective(**kwargs)
 
         self.pl_module.configure_optimizers = lambda: SGD(
             self.pl_module.parameters(),
