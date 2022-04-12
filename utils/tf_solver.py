@@ -17,6 +17,7 @@ class TFSolver(BaseSolver):
     parameters = {
         'batch_size': [64],
         'data_aug': [False, True],
+        'shuffle': [True],
     }
 
     def __init__(self, **parameters):
@@ -55,6 +56,13 @@ class TFSolver(BaseSolver):
                     y,
                 ),
                 num_parallel_calls=tf.data.experimental.AUTOTUNE,
+            )
+        if self.shuffle:
+            # see
+            # https://stackoverflow.com/a/50453698/4332585
+            self.tf_dataset = self.tf_dataset.shuffle(
+                buffer_size=self.batch_size * 20,
+                reshuffle_each_iteration=True,
             )
         self.tf_dataset = self.tf_dataset.batch(
             self.batch_size,

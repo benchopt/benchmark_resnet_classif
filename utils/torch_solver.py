@@ -25,6 +25,7 @@ class TorchSolver(BaseSolver):
     parameters = {
         'batch_size': [64],
         'data_aug': [False, True],
+        'shuffle': [True],
     }
 
     def skip(self, model, dataset):
@@ -49,7 +50,9 @@ class TorchSolver(BaseSolver):
                 self.data_aug_transform,
             )
         self.dataloader = torch.utils.data.DataLoader(
-            self.dataset, batch_size=self.batch_size
+            self.dataset,
+            batch_size=self.batch_size,
+            shuffle=self.shuffle,
         )
 
     @staticmethod
