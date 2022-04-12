@@ -120,7 +120,7 @@ jobs:
 
     - name: install test dependencies
       run: |
-        pip install pytest pytorch torchvision tensorflow tensorflow-datasets
+        pip install pytest torch torchvision tensorflow tensorflow-datasets
 
     - name: Test
       run: |
