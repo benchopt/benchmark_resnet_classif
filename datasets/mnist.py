@@ -71,5 +71,5 @@ class Dataset(MultiFrameworkDataset):
 
     def get_torch_data(self):
         o_str, data_dict = super().get_torch_data()
-        data_dict['dataset'] = Subset(data_dict['dataset'], range(1000)
+        data_dict['dataset'] = Subset(data_dict['dataset'], range(1000))
         return o_str, data_dict
