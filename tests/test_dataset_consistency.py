@@ -4,7 +4,6 @@ from benchopt.utils.safe_import import set_benchmark
 import numpy as np
 import pytest
 from torch.utils.data import DataLoader
-from tqdm import tqdm
 
 # this means this test has to be run from the root
 set_benchmark('./')
@@ -141,7 +140,7 @@ def test_datasets_consistency(dataset_module_name, dataset_type):
                 y_torch = y_torch[unmatched_torch_indices]
 
         # harder cases where the match can be up to 10 away
-        for i, tf_image in tqdm(enumerate(X_tf[unmatched_tf_indices])):
+        for i, tf_image in enumerate(X_tf[unmatched_tf_indices]):
             next_X_torch = X_torch_channel_last[unmatched_torch_indices[:10]]
             next_y_torch = y_torch[unmatched_torch_indices]
             diff = np.abs(next_X_torch - tf_image)
