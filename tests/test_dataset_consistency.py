@@ -72,10 +72,10 @@ def get_matched_unmatched_indices_arrays(
 
 
 @pytest.mark.parametrize('dataset_module_name', [
-    # 'cifar',
+    'cifar',
     'mnist',
-    # 'simulated',
-    # 'svhn',
+    'simulated',
+    'svhn',
 ])
 @pytest.mark.parametrize('dataset_type', ['dataset', 'test_dataset'])
 def test_datasets_consistency(dataset_module_name, dataset_type):
