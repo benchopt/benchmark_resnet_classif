@@ -31,7 +31,7 @@ class TFSolver(BaseSolver):
             self.lr = tf.keras.optimizers.schedules.ExponentialDecay(
                 self.lr,
                 decay_rate=0.1,
-                decay_steps=50_000,
+                decay_steps=30,
                 staircase=True,
             )
         elif self.lr_schedule == 'cosine':
