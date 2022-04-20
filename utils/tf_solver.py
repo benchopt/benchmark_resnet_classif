@@ -28,17 +28,22 @@ class TFSolver(BaseSolver):
             tf.keras.layers.RandomFlip('horizontal'),
         ])
         if self.lr_schedule == 'step':
-            self.lr = tf.keras.optimizers.schedules.ExponentialDecay(
+            self.lr_scheduler = tf.keras.optimizers.schedules.ExponentialDecay(
                 self.lr,
                 decay_rate=0.1,
                 decay_steps=30,
                 staircase=True,
             )
         elif self.lr_schedule == 'cosine':
-            self.lr = tf.keras.optimizers.schedules.CosineDecay(
+            self.lr_scheduler = tf.keras.optimizers.schedules.CosineDecay(
                 self.lr,
                 200,  # the equivalent of T_max
             )
+        else:
+            self.lr_scheduler = lambda epoch: self.lr
+        self.lr_cback = tf.keras.callbacks.LearningRateScheduler(
+            self.lr_scheduler,
+        )
 
     def skip(self, model, dataset):
         if not isinstance(model, tf.keras.Model):
@@ -88,7 +93,7 @@ class TFSolver(BaseSolver):
         # Launch training
         self.tf_model.fit(
             self.tf_dataset,
-            callbacks=[BenchoptCallback(callback)],
+            callbacks=[BenchoptCallback(callback), self.lr_cback],
             epochs=MAX_EPOCHS,
         )
 
