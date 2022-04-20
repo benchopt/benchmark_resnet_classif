@@ -2,6 +2,7 @@ from benchopt import BaseSolver, safe_import_context
 
 with safe_import_context() as import_ctx:
     import tensorflow as tf
+    from tensorflow_addons.optimizers import extend_with_decoupled_weight_decay
     BenchoptCallback = import_ctx.import_from(
         'tf_helper', 'BenchoptCallback'
     )
@@ -19,6 +20,7 @@ class TFSolver(BaseSolver):
         'batch_size': [64],
         'data_aug': [False, True],
         'lr_schedule': [None, 'step', 'cosine'],
+        'weight_decay': [0.0, 1e-4, 0.02],
     }
 
     def __init__(self, **parameters):
@@ -41,6 +43,8 @@ class TFSolver(BaseSolver):
             )
         else:
             self.lr_scheduler = lambda epoch: self.lr
+        # XXX: I will potentially need my own cback to solve
+        # https://github.com/benchopt/benchmark_resnet_classif/issues/11#issuecomment-1104155256
         self.lr_cback = tf.keras.callbacks.LearningRateScheduler(
             self.lr_scheduler,
         )
@@ -51,6 +55,13 @@ class TFSolver(BaseSolver):
         return False, None
 
     def set_objective(self, model, dataset):
+        self.optimizer_klass = extend_with_decoupled_weight_decay(
+            self.optimizer_klass,
+        )
+        self.optimizer = self.optimizer_klass(
+            weight_decay=self.weight_decay,
+            **self.optimizer_kwargs,
+        )
         self.tf_model = model
         self.tf_model.compile(
             optimizer=self.optimizer,
