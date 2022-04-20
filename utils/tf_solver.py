@@ -15,8 +15,10 @@ class TFSolver(BaseSolver):
     stopping_strategy = 'callback'
 
     parameters = {
+        'lr': [1e-3],
         'batch_size': [64],
         'data_aug': [False, True],
+        'lr_schedule': [None, 'step', 'cosine'],
     }
 
     def __init__(self, **parameters):
@@ -25,6 +27,18 @@ class TFSolver(BaseSolver):
             tf.keras.layers.RandomCrop(height=32, width=32),
             tf.keras.layers.RandomFlip('horizontal'),
         ])
+        if self.lr_schedule == 'step':
+            self.lr = tf.keras.optimizers.schedules.ExponentialDecay(
+                self.lr,
+                decay_rate=0.1,
+                decay_steps=50_000,
+                staircase=True,
+            )
+        elif self.lr_schedule == 'cosine':
+            self.lr = tf.keras.optimizers.schedules.CosineDecay(
+                self.lr,
+                200,  # the equivalent of T_max
+            )
 
     def skip(self, model, dataset):
         if not isinstance(model, tf.keras.Model):
