@@ -14,16 +14,16 @@ class Solver(TorchSolver):
     # any parameter defined here is accessible as a class attribute
     parameters = {
         'alpha': [0.99, 0.9],
-        'lr': [1e-3],
         'momentum': [0, 0.9],
         **TorchSolver.parameters
     }
 
     def set_objective(self, model, dataset):
         super().set_objective(model, dataset)
-        self.model.configure_optimizers = lambda: RMSprop(
+        optimizer = RMSprop(
             self.model.parameters(),
             lr=self.lr,
             momentum=self.momentum,
             alpha=self.alpha,
         )
+        self.set_lr_schedule_and_optimizer(optimizer)

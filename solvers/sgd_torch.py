@@ -13,16 +13,15 @@ class Solver(TorchSolver):
     # any parameter defined here is accessible as a class attribute
     parameters = {
         'nesterov, momentum': [(False, 0), (True, 0.9)],
-        'lr': [1e-3],
         **TorchSolver.parameters
     }
 
     def set_objective(self, model, dataset):
         super().set_objective(model, dataset)
-
-        self.model.configure_optimizers = lambda: SGD(
+        optimizer = SGD(
             self.model.parameters(),
             lr=self.lr,
             momentum=self.momentum,
             nesterov=self.nesterov,
         )
+        self.set_lr_schedule_and_optimizer(optimizer)

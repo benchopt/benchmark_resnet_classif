@@ -23,8 +23,10 @@ class TorchSolver(BaseSolver):
     stopping_strategy = 'callback'
 
     parameters = {
+        'lr': [1e-3],
         'batch_size': [64],
         'data_aug': [False, True],
+        'lr_schedule': [None, 'step', 'cosine'],
     }
 
     def skip(self, model, dataset):
@@ -50,6 +52,26 @@ class TorchSolver(BaseSolver):
             )
         self.dataloader = torch.utils.data.DataLoader(
             self.dataset, batch_size=self.batch_size
+        )
+
+    def set_lr_schedule_and_optimizer(self, optimizer):
+        if self.lr_schedule is None:
+            self.model.configure_optimizers = lambda: optimizer
+            return
+        if self.lr_schedule == 'step':
+            scheduler = torch.optim.lr_scheduler.StepLR(
+                optimizer,
+                step_size=30,
+                gamma=0.1,
+            )
+        elif self.lr_schedule == 'cosine':
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+                optimizer,
+                T_max=200,
+            )
+        self.model.configure_optimizers = lambda: (
+            optimizer,
+            scheduler,
         )
 
     @staticmethod

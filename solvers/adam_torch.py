@@ -13,13 +13,13 @@ class Solver(TorchSolver):
 
     # any parameter defined here is accessible as a class attribute
     parameters = {
-        'lr': [1e-3],
         **TorchSolver.parameters
     }
 
     def set_objective(self, model, dataset):
         super().set_objective(model, dataset)
-        self.model.configure_optimizers = lambda: Adam(
+        optimizer = Adam(
             self.model.parameters(),
             lr=self.lr,
         )
+        self.set_lr_schedule_and_optimizer(optimizer)
