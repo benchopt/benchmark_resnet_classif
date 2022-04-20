@@ -44,6 +44,7 @@ class Objective(BaseObjective):
     requirements = [
         'pytorch', 'torchvision', 'pytorch-lightning ',
         'tensorflow', 'tensorflow-datasets', 'tensorflow-addons',
+        # TODO: move tfa to tf solver
     ]
 
     # XXX: this might be a good spot to specify the size of the ResNet
