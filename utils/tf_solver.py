@@ -19,6 +19,7 @@ class TFSolver(BaseSolver):
         'batch_size': [64],
         'data_aug': [False, True],
         'rand_aug': [False, True],
+        'mix': [False, True],
     }
 
     install_cmd = 'conda'
@@ -52,6 +53,14 @@ class TFSolver(BaseSolver):
             # each batch.
             metrics='accuracy',
         )
+        if self.mix:
+            self.mix_fn = augment.MixupAndCutmix(
+                mixup_alpha=0.1,
+                cutmix_alpha=1.0,
+                # TODO: we need to communicate the number of classes
+                # to the solver
+                num_classes=10,
+            )
         self.tf_dataset = dataset
         if self.data_aug:
             # XXX: unfortunately we need to do this before
@@ -74,7 +83,13 @@ class TFSolver(BaseSolver):
         self.tf_dataset = self.tf_dataset.batch(
             self.batch_size,
             num_parallel_calls=tf.data.experimental.AUTOTUNE,
-        ).prefetch(
+        )
+        if self.mix:
+            self.tf_dataset = self.tf_dataset.map(
+                self.mix_fn,
+                num_parallel_calls=tf.data.experimental.AUTOTUNE,
+            )
+        self.tf_dataset = self.tf_dataset.prefetch(
             buffer_size=tf.data.experimental.AUTOTUNE,
         )
 
