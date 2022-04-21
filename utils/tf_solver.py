@@ -23,6 +23,9 @@ class TFSolver(BaseSolver):
         'weight_decay': [0.0, 1e-4, 0.02],
     }
 
+    install_cmd = 'conda'
+    requirements = ['tensorflow-addons']
+
     def __init__(self, **parameters):
         self.data_aug_layer = tf.keras.models.Sequential([
             tf.keras.layers.ZeroPadding2D(padding=4),
