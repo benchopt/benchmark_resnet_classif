@@ -6,6 +6,9 @@ with safe_import_context() as import_ctx:
     BenchoptCallback = import_ctx.import_from(
         'tf_helper', 'BenchoptCallback'
     )
+    LRWDSchedulerCallback = import_ctx.import_from(
+        'tf_helper', 'LRWDSchedulerCallback'
+    )
 
 MAX_EPOCHS = int(1e9)
 
@@ -20,7 +23,7 @@ class TFSolver(BaseSolver):
         'batch_size': [64],
         'data_aug': [False, True],
         'lr_schedule': [None, 'step', 'cosine'],
-        'weight_decay': [0.0, 1e-4, 0.02],
+        'decoupled_weight_decay': [0.0, 1e-4, 0.02],
     }
 
     install_cmd = 'conda'
@@ -32,24 +35,32 @@ class TFSolver(BaseSolver):
             tf.keras.layers.RandomCrop(height=32, width=32),
             tf.keras.layers.RandomFlip('horizontal'),
         ])
+        # NOTE: in the following, we need to multiply by the weight decay
+        # by the learning rate to have a comparable settign with PyTorch
         if self.lr_schedule == 'step':
-            self.lr_scheduler = tf.keras.optimizers.schedules.ExponentialDecay(
-                self.lr,
-                decay_rate=0.1,
-                decay_steps=30,
-                staircase=True,
-            )
+            self.lr_scheduler, self.wd_scheduler = [
+                tf.keras.optimizers.schedules.ExponentialDecay(
+                    value,
+                    decay_rate=0.1,
+                    decay_steps=30,
+                    staircase=True,
+                ) for value in [self.lr, self.decouple_weight_decay*self.lr]
+            ]
         elif self.lr_schedule == 'cosine':
-            self.lr_scheduler = tf.keras.optimizers.schedules.CosineDecay(
-                self.lr,
-                200,  # the equivalent of T_max
-            )
+            self.lr_scheduler, self.wd_scheduler = [
+                tf.keras.optimizers.schedules.CosineDecay(
+                    value,
+                    200,  # the equivalent of T_max
+                ) for value in [self.lr, self.decouple_weight_decay*self.lr]
+            ]
         else:
             self.lr_scheduler = lambda epoch: self.lr
+            self.wd_scheduler = lambda epoch: self.decoupled_weight_decay
         # XXX: I will potentially need my own cback to solve
         # https://github.com/benchopt/benchmark_resnet_classif/issues/11#issuecomment-1104155256
-        self.lr_cback = tf.keras.callbacks.LearningRateScheduler(
-            self.lr_scheduler,
+        self.lr_wd_cback = LRWDSchedulerCallback(
+            lr_schedule=self.lr_scheduler,
+            wd_schedule=self.wd_scheduler,
         )
 
     def skip(self, model, dataset):
@@ -62,7 +73,9 @@ class TFSolver(BaseSolver):
             self.optimizer_klass,
         )
         self.optimizer = self.optimizer_klass(
-            weight_decay=self.weight_decay,
+            weight_decay=self.decoupled_weight_decay*self.lr,  # in
+            # order to have a comparable setting with
+            # PyTorch, we need to multiply by the learning rate here
             **self.optimizer_kwargs,
         )
         self.tf_model = model
@@ -107,7 +120,7 @@ class TFSolver(BaseSolver):
         # Launch training
         self.tf_model.fit(
             self.tf_dataset,
-            callbacks=[BenchoptCallback(callback), self.lr_cback],
+            callbacks=[BenchoptCallback(callback), self.lr_wd_cback],
             epochs=MAX_EPOCHS,
         )
 
