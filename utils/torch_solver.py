@@ -25,18 +25,25 @@ class TorchSolver(BaseSolver):
     parameters = {
         'batch_size': [64],
         'data_aug': [False, True],
+        'rand_aug': [False, True],
     }
 
     def skip(self, model, dataset):
         if not isinstance(model, BenchPLModule):
             return True, 'Not a PT dataset'
+        if self.rand_aug and not self.data_aug:
+            return True, 'Data augmentation not activated for RA'
         return False, None
 
     def __init__(self, **parameters):
-        self.data_aug_transform = transforms.Compose([
+        aug_list = [
             transforms.RandomCrop(32, padding=4),
             transforms.RandomHorizontalFlip(),
-        ])
+        ]
+        if self.rand_aug:
+            # we put magnitude to 10, to copy TF models
+            aug_list.append(transforms.RandomAugment(magnitude=10))
+        self.data_aug_transform = transforms.Compose(aug_list)
 
     def set_objective(self, model, dataset):
         self.model = model
