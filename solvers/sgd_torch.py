@@ -18,11 +18,12 @@ class Solver(TorchSolver):
 
     def set_objective(self, model, dataset):
         super().set_objective(model, dataset)
+        wd = self.coupled_weight_decay or self.decoupled_weight_decay
         optimizer = SGD(
             self.model.parameters(),
             lr=self.lr,
             momentum=self.momentum,
             nesterov=self.nesterov,
-            weight_decay=self.coupled_weight_decay,
+            weight_decay=wd,
         )
         self.set_lr_schedule_and_optimizer(optimizer)

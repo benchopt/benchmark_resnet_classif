@@ -18,6 +18,11 @@ class Solver(TorchSolver):
         **TorchSolver.parameters
     }
 
+    def skip(self, model, dataset):
+        if self.decoupled_weight_decay:
+            return True, 'RMSProp does not support decoupled weight decay'
+        return super().skip(model, dataset)
+
     def set_objective(self, model, dataset):
         super().set_objective(model, dataset)
         optimizer = RMSprop(
