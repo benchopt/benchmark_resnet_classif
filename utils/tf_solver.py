@@ -5,6 +5,7 @@ with safe_import_context() as import_ctx:
     BenchoptCallback = import_ctx.import_from(
         'tf_helper', 'BenchoptCallback'
     )
+    from official.vision.beta.ops import augment
 
 MAX_EPOCHS = int(1e9)
 
@@ -17,7 +18,11 @@ class TFSolver(BaseSolver):
     parameters = {
         'batch_size': [64],
         'data_aug': [False, True],
+        'rand_aug': [False, True],
     }
+
+    install_cmd = 'conda'
+    requirements = ['tf-models-official']
 
     def __init__(self, **parameters):
         self.data_aug_layer = tf.keras.models.Sequential([
@@ -25,10 +30,14 @@ class TFSolver(BaseSolver):
             tf.keras.layers.RandomCrop(height=32, width=32),
             tf.keras.layers.RandomFlip('horizontal'),
         ])
+        if self.rand_aug:
+            self.ra = augment.RandomAugment()
 
     def skip(self, model, dataset):
         if not isinstance(model, tf.keras.Model):
             return True, 'Not a TF dataset'
+        if self.rand_aug and not self.data_aug:
+            return True, 'Data augmentation not activated for RA'
         return False, None
 
     def set_objective(self, model, dataset):
@@ -49,9 +58,15 @@ class TFSolver(BaseSolver):
             # batching since the random crop layer does not
             # crop at different locations in the same batch
             # https://github.com/keras-team/keras/issues/16399
+            def aug_function(x):
+                im_batch = x[None]
+                aug_x = self.data_aug_layer(im_batch, training=True)
+                if self.rand_aug:
+                    aug_x = self.ra(aug_x)
+                return aug_x[0]
             self.tf_dataset = self.tf_dataset.map(
                 lambda x, y: (
-                    self.data_aug_layer(x[None], training=True)[0],
+                    aug_function(x),
                     y,
                 ),
                 num_parallel_calls=tf.data.experimental.AUTOTUNE,
