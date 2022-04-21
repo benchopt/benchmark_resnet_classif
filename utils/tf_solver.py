@@ -66,6 +66,8 @@ class TFSolver(BaseSolver):
     def skip(self, model, dataset):
         if not isinstance(model, tf.keras.Model):
             return True, 'Not a TF dataset'
+        if self.coupled_weight_decay and self.decoupled_weight_decay:
+            return True, 'Cannot use both decoupled and coupled weight decay'
         return False, None
 
     def set_objective(self, model, dataset):

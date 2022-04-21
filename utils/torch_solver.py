@@ -33,6 +33,8 @@ class TorchSolver(BaseSolver):
     def skip(self, model, dataset):
         if not isinstance(model, BenchPLModule):
             return True, 'Not a PT dataset'
+        if self.coupled_weight_decay and self.decoupled_weight_decay:
+            return True, 'Cannot use both decoupled and coupled weight decay'
         return False, None
 
     def __init__(self, **parameters):
