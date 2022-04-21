@@ -3,6 +3,7 @@ from benchopt import BaseSolver, safe_import_context
 
 with safe_import_context() as import_ctx:
 
+    from timm.data.mixup import FastCollateMixup
     import torch
     from torchvision import transforms
     from pytorch_lightning import Trainer
@@ -26,7 +27,11 @@ class TorchSolver(BaseSolver):
         'batch_size': [64],
         'data_aug': [False, True],
         'rand_aug': [False, True],
+        'mix': [False, True],
     }
+
+    install_cmd = 'conda'
+    requirements = ['timm']
 
     def skip(self, model, dataset):
         if not isinstance(model, BenchPLModule):
@@ -50,13 +55,25 @@ class TorchSolver(BaseSolver):
         self.dataset = dataset  # we use this in order
         # to access some elements from the trainer when
         # initializing it below
+        if self.mix:
+            self.mixup_fn = FastCollateMixup(
+                mixup_alpha=0.1,
+                cutmix_alpha=1.0,
+                # TODO: we need to communicate the number of classes
+                # to the solver
+                num_classes=10,
+            )
         if self.data_aug:
+            # XXX: maybe consider AugMixDataset from
+            # https://github.com/rwightman/pytorch-image-models/blob/ef72ad417709b5ba6404d85d3adafd830d507b2a/timm/data/dataset.py
             self.dataset = AugmentedDataset(
                 self.dataset,
                 self.data_aug_transform,
             )
         self.dataloader = torch.utils.data.DataLoader(
-            self.dataset, batch_size=self.batch_size
+            self.dataset,
+            batch_size=self.batch_size,
+            collate_fn=self.mixup_fn if self.mix else None,
         )
 
     @staticmethod
