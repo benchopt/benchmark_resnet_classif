@@ -23,6 +23,6 @@ class Solver(TorchSolver):
             lr=self.lr,
             momentum=self.momentum,
             nesterov=self.nesterov,
-            weight_decay=self.weight_decay,
+            weight_decay=self.coupled_weight_decay,
         )
         self.set_lr_schedule_and_optimizer(optimizer)

@@ -21,6 +21,6 @@ class Solver(TorchSolver):
         optimizer = Adam(
             self.model.parameters(),
             lr=self.lr,
-            weight_decay=self.weight_decay,
+            weight_decay=self.coupled_weight_decay,
         )
         self.set_lr_schedule_and_optimizer(optimizer)
