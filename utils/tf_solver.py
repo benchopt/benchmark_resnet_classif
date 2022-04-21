@@ -24,6 +24,7 @@ class TFSolver(BaseSolver):
         'data_aug': [False, True],
         'lr_schedule': [None, 'step', 'cosine'],
         'decoupled_weight_decay': [0.0, 1e-4, 0.02],
+        'coupled_weight_decay': [0.0, 1e-4, 0.02],
     }
 
     install_cmd = 'conda'
@@ -56,8 +57,6 @@ class TFSolver(BaseSolver):
         else:
             self.lr_scheduler = lambda epoch: self.lr
             self.wd_scheduler = lambda epoch: self.decoupled_weight_decay
-        # XXX: I will potentially need my own cback to solve
-        # https://github.com/benchopt/benchmark_resnet_classif/issues/11#issuecomment-1104155256
         self.lr_wd_cback = LRWDSchedulerCallback(
             lr_schedule=self.lr_scheduler,
             wd_schedule=self.wd_scheduler,
@@ -81,6 +80,19 @@ class TFSolver(BaseSolver):
             **self.optimizer_kwargs,
         )
         self.tf_model = model
+        if self.coupled_weight_decay:
+            # this is equivalent to adding L2 regularization to all
+            # the weights and biases of the model (even if adding
+            # weight decay to the biases is not recommended), of a factor
+            # halved
+            l2_reg_factor = self.coupled_weight_decay / 2
+            # taken from
+            # https://sthalles.github.io/keras-regularizer/
+            regularizer = tf.keras.regularizers.l2(l2_reg_factor)
+            for layer in self.tf_model.layers:
+                for attr in ['kernel_regularizer', 'bias_regularizer']:
+                    if hasattr(layer, attr):
+                        setattr(layer, attr, regularizer)
         self.tf_model.compile(
             optimizer=self.optimizer,
             loss='categorical_crossentropy',
