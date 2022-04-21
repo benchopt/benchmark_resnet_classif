@@ -89,8 +89,14 @@ class TFSolver(BaseSolver):
             # taken from
             # https://sthalles.github.io/keras-regularizer/
             regularizer = tf.keras.regularizers.l2(l2_reg_factor)
+            target_regularizers = [
+                'kernel_regularizer',
+                'bias_regularizer',
+                'beta_regularizer',
+                'gamma_regularizer',
+            ]
             for layer in self.tf_model.layers:
-                for attr in ['kernel_regularizer', 'bias_regularizer']:
+                for attr in target_regularizers:
                     if hasattr(layer, attr):
                         setattr(layer, attr, regularizer)
         self.tf_model.compile(
