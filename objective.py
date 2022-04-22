@@ -6,10 +6,6 @@ with safe_import_context() as import_ctx:
     from torch.utils.data import DataLoader
     import torchvision.models as models
     BenchPLModule = import_ctx.import_from("torch_helper", "BenchPLModule")
-    DDPStrategyNoTeardown = import_ctx.import_from(
-        "torch_helper",
-        "DDPStrategyNoTeardown",
-    )
     torch_image_dataset_to_tf_dataset = import_ctx.import_from(
         "tf_helper",
         "torch_image_dataset_to_tf_dataset",
@@ -63,16 +59,6 @@ class Objective(BaseObjective):
         ]
     }
 
-    def __init__(self, batch_size=64, model_type='resnet', model_size='18'):
-        # XXX: seed everything correctly
-        # https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#reproducibility
-        # XXX: modify this with the correct amount of CPUs/GPUs
-        strategy = DDPStrategyNoTeardown(accelerator="auto")
-        self.trainer = Trainer(strategy=strategy)
-        self.batch_size = batch_size
-        self.model_type = model_type
-        self.model_size = model_size
-
     def get_tf_model(self):
         model_klass = TF_MODEL_MAP[self.model_type][self.model_size]
         add_kwargs = {}
@@ -104,6 +90,12 @@ class Objective(BaseObjective):
             self.torch_test_dataset,
         )
 
+        # https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#reproducibility
+        # XXX: modify this with the correct amount of CPUs/GPUs
+        self.trainer = Trainer(
+            accelerator="auto", strategy="noteardown"
+        )
+
     def compute(self, model):
         results = dict()
         # XXX: this might be factorized but I think at the cost
@@ -115,7 +107,7 @@ class Objective(BaseObjective):
                 ["train", "test"], [self.tf_dataset, self.tf_test_dataset]
             ):
                 metrics = model.evaluate(
-                    self.tf_dataset.batch(self.batch_size),
+                    dataset.batch(100),
                     return_dict=True,
                 )
                 results[dataset_name + "_loss"] = metrics["loss"]
@@ -125,7 +117,7 @@ class Objective(BaseObjective):
                 ["train", "test"],
                 [self.torch_dataset, self.torch_test_dataset],
             ):
-                dataloader = DataLoader(dataset, batch_size=self.batch_size)
+                dataloader = DataLoader(dataset, batch_size=100)
                 metrics = self.trainer.test(model, dataloaders=dataloader)
                 results[dataset_name + "_loss"] = metrics[0]["loss"]
                 results[dataset_name + "_acc"] = metrics[0]["acc"]
@@ -141,15 +133,9 @@ class Objective(BaseObjective):
         # XXX: make sure to skip the small datasets when using vgg
         pl_module = self.get_one_beta()
         tf_model = self.get_tf_model()
-        tf_dataset = self.tf_dataset.batch(
-            self.batch_size,
-            num_parallel_calls=tf.data.experimental.AUTOTUNE,
-        ).prefetch(
-            buffer_size=tf.data.experimental.AUTOTUNE,
-        )
         return dict(
             pl_module=pl_module,
             torch_dataset=self.torch_dataset,
             tf_model=tf_model,
-            tf_dataset=tf_dataset,
+            tf_dataset=self.tf_dataset,
         )

@@ -9,11 +9,8 @@ with safe_import_context() as import_ctx:
     from torchmetrics import Accuracy
     from pytorch_lightning import LightningModule
     from pytorch_lightning.callbacks import Callback
-    from pytorch_lightning.strategies import DDPStrategy
-    from torch.nn.parallel.distributed import DistributedDataParallel
-    from pytorch_lightning.utilities.imports import _TORCH_GREATER_EQUAL_1_11
-    from pytorch_lightning.utilities.rank_zero import rank_zero_info
-    from pytorch_lightning.trainer.states import TrainerFn
+    from pytorch_lightning.strategies import SingleDeviceStrategy
+    from pytorch_lightning.strategies import StrategyRegistry
 
 log = logging.getLogger(__name__)
 
@@ -60,42 +57,28 @@ class BenchPLModule(LightningModule):
         return self.loss_logits_y(batch)[0]
 
 
-class DDPStrategyNoTeardown(DDPStrategy):
-    # from
-    # https://pytorch-lightning.readthedocs.io/en/1.6.0/_modules/pytorch_lightning/strategies/ddp.html#DDPStrategy.teardown
+class SingleDeviceStrategyNoTeardown(SingleDeviceStrategy):
+    def __init__(self, device=None, accelerator=None, checkpoint_io=None,
+                 precision_plugin=None):
+        if device is None:
+            # XXX - this is a dirty hack for GPU, find a better way to do it
+            device = "cuda:0"
+        super().__init__(device, accelerator, checkpoint_io, precision_plugin)
+
     def teardown(self):
-        log.detail(f"{self.__class__.__name__}: tearing down strategy")
-        super(DDPStrategy, self).teardown()
-
-        if isinstance(self.model, DistributedDataParallel):
-            if (
-                _TORCH_GREATER_EQUAL_1_11
-                and not self.model.static_graph
-                and self.model._get_ddp_logging_data().get(
-                    "can_set_static_graph",
-                )
-            ):
-                rank_zero_info(
-                    "Your model can run with static graph optimizations."
-                    "For future training runs, we suggest you"
-                    f" pass `Trainer(..., strategy={self.__class__.__name__}"
-                    "(static_graph=True))` to enable them."
-                )
-            # unwrap model
-            self.model = self.lightning_module
-
-        if (
-            self.lightning_module.trainer is not None
-            and self.lightning_module.trainer.state.fn == TrainerFn.FITTING
-            and self._layer_sync
-        ):
-            # `self.lightning_module.trainer` can be None if teardown gets
-            # called on an exception before
-            # the trainer gets set on the LightningModule
-            self.model = self._layer_sync.revert(self.model)
+        # Call grand parent teardown
+        super(SingleDeviceStrategy, self).teardown()
 
         if self.root_device.type == "cuda":
-            # GPU teardown
+            # Do not move the model out
             log.detail(f"{self.__class__.__name__}: !not! moving model to CPU")
             # clean up memory
             torch.cuda.empty_cache()
+
+
+# Register the DDP Strategy with your custom CheckpointIO plugin
+StrategyRegistry.register(
+    "noteardown",
+    SingleDeviceStrategyNoTeardown,
+    description="Single device Strategy with no teardown for nested eval",
+)
