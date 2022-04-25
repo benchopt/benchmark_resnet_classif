@@ -36,31 +36,6 @@ class TFSolver(BaseSolver):
             tf.keras.layers.RandomCrop(height=32, width=32),
             tf.keras.layers.RandomFlip('horizontal'),
         ])
-        # NOTE: in the following, we need to multiply by the weight decay
-        # by the learning rate to have a comparable settign with PyTorch
-        if self.lr_schedule == 'step':
-            self.lr_scheduler, self.wd_scheduler = [
-                tf.keras.optimizers.schedules.ExponentialDecay(
-                    value,
-                    decay_rate=0.1,
-                    decay_steps=30,
-                    staircase=True,
-                ) for value in [self.lr, self.decouple_weight_decay*self.lr]
-            ]
-        elif self.lr_schedule == 'cosine':
-            self.lr_scheduler, self.wd_scheduler = [
-                tf.keras.optimizers.schedules.CosineDecay(
-                    value,
-                    200,  # the equivalent of T_max
-                ) for value in [self.lr, self.decouple_weight_decay*self.lr]
-            ]
-        else:
-            self.lr_scheduler = lambda epoch: self.lr
-            self.wd_scheduler = lambda epoch: self.decoupled_weight_decay
-        self.lr_wd_cback = LRWDSchedulerCallback(
-            lr_schedule=self.lr_scheduler,
-            wd_schedule=self.wd_scheduler,
-        )
 
     def skip(self, model, dataset):
         if not isinstance(model, tf.keras.Model):
@@ -70,13 +45,36 @@ class TFSolver(BaseSolver):
         return False, None
 
     def set_objective(self, model, dataset):
+        # NOTE: in the following, we need to multiply by the weight decay
+        # by the learning rate to have a comparable settign with PyTorch
+        if self.lr_schedule == 'step':
+            self.lr_scheduler, self.wd_scheduler = [
+                tf.keras.optimizers.schedules.ExponentialDecay(
+                    value,
+                    decay_rate=0.1,
+                    decay_steps=30,
+                    staircase=True,
+                ) for value in [self.lr, self.decoupled_weight_decay*self.lr]
+            ]
+        elif self.lr_schedule == 'cosine':
+            self.lr_scheduler, self.wd_scheduler = [
+                tf.keras.optimizers.schedules.CosineDecay(
+                    value,
+                    200,  # the equivalent of T_max
+                ) for value in [self.lr, self.decoupled_weight_decay*self.lr]
+            ]
+        else:
+            self.lr_scheduler = lambda epoch: self.lr
+            self.wd_scheduler = lambda epoch: self.decoupled_weight_decay
+        self.lr_wd_cback = LRWDSchedulerCallback(
+            lr_schedule=self.lr_scheduler,
+            wd_schedule=self.wd_scheduler,
+        )
         self.optimizer_klass = extend_with_decoupled_weight_decay(
             self.optimizer_klass,
         )
         self.optimizer = self.optimizer_klass(
-            weight_decay=self.decoupled_weight_decay*self.lr,  # in
-            # order to have a comparable setting with
-            # PyTorch, we need to multiply by the learning rate here
+            weight_decay=self.decoupled_weight_decay*self.lr,
             **self.optimizer_kwargs,
         )
         self.tf_model = model
