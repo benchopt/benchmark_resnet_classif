@@ -30,6 +30,7 @@ class BenchPLModule(LightningModule):
         super().__init__()
         self.model = model
         self.accuracy = Accuracy()
+        self.loss_type = 'nll'
 
     def forward(self, x):
         x = self.model(x)
@@ -38,11 +39,19 @@ class BenchPLModule(LightningModule):
     def loss_logits_y(self, batch):
         x, y = batch
         logits = self(x)
-        loss = F.nll_loss(logits, y)
+        if self.loss_type == 'nll':
+            loss = F.nll_loss(logits, y)
+        elif self.loss_type == 'bce':
+            loss = F.binary_cross_entropy_with_logits(logits, y)
+        else:
+            raise ValueError(f'Unknown loss type: {self.loss_type}')
         return loss, logits, y
 
     def test_step(self, batch, batch_idx):
+        old_loss_type = self.loss_type
+        self.loss_type = 'nll'
         loss, logits, y = self.loss_logits_y(batch)
+        self.loss_type = old_loss_type
         preds = torch.argmax(logits, dim=1)
         self.accuracy(preds, y)
         self.log("loss", loss, prog_bar=True)

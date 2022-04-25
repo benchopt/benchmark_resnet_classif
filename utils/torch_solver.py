@@ -3,8 +3,9 @@ from benchopt import BaseSolver, safe_import_context
 
 with safe_import_context() as import_ctx:
 
-    from timm.data.mixup import FastCollateMixup
+    from timm.data.mixup import Mixup
     import torch
+    from torch.utils.data._utils.collate import default_collate
     from torchvision import transforms
     from pytorch_lightning import Trainer
     BenchoptCallback = import_ctx.import_from(
@@ -46,13 +47,14 @@ class TorchSolver(BaseSolver):
         # to access some elements from the trainer when
         # initializing it below
         if self.mix:
-            self.mixup_fn = FastCollateMixup(
+            self.mixup_fn = lambda batch: Mixup(
                 mixup_alpha=0.1,
                 cutmix_alpha=1.0,
                 # TODO: we need to communicate the number of classes
                 # to the solver
                 num_classes=10,
-            )
+            )(*default_collate(batch))
+            self.model.loss_type = 'bce'
         if self.data_aug:
             aug_list = [
                 transforms.RandomCrop(32, padding=4),
