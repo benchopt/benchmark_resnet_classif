@@ -40,16 +40,6 @@ class TorchSolver(BaseSolver):
             return True, 'Data augmentation not activated for RA'
         return False, None
 
-    def __init__(self, **parameters):
-        aug_list = [
-            transforms.RandomCrop(32, padding=4),
-            transforms.RandomHorizontalFlip(),
-        ]
-        if self.rand_aug:
-            # we put magnitude to 10, to copy TF models
-            aug_list.append(transforms.RandomAugment(magnitude=10))
-        self.data_aug_transform = transforms.Compose(aug_list)
-
     def set_objective(self, model, dataset):
         self.model = model
         self.dataset = dataset  # we use this in order
@@ -64,6 +54,14 @@ class TorchSolver(BaseSolver):
                 num_classes=10,
             )
         if self.data_aug:
+            aug_list = [
+                transforms.RandomCrop(32, padding=4),
+                transforms.RandomHorizontalFlip(),
+            ]
+            if self.rand_aug:
+                # we put magnitude to 10, to copy TF models
+                aug_list.append(transforms.RandAugment(magnitude=10))
+            self.data_aug_transform = transforms.Compose(aug_list)
             # XXX: maybe consider AugMixDataset from
             # https://github.com/rwightman/pytorch-image-models/blob/ef72ad417709b5ba6404d85d3adafd830d507b2a/timm/data/dataset.py
             self.dataset = AugmentedDataset(
