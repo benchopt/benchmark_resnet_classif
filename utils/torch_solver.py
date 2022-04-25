@@ -74,8 +74,8 @@ class TorchSolver(BaseSolver):
                 T_max=200,
             )
         self.model.configure_optimizers = lambda: (
-            optimizer,
-            scheduler,
+            [optimizer],
+            [scheduler],
         )
 
     @staticmethod
