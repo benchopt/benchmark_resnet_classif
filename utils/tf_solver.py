@@ -31,8 +31,6 @@ class TFSolver(BaseSolver):
             tf.keras.layers.RandomCrop(height=32, width=32),
             tf.keras.layers.RandomFlip('horizontal'),
         ])
-        if self.rand_aug:
-            self.ra = augment.RandomAugment()
 
     def skip(self, model, dataset):
         if not isinstance(model, tf.keras.Model):
@@ -71,6 +69,7 @@ class TFSolver(BaseSolver):
                 im_batch = x[None]
                 aug_x = self.data_aug_layer(im_batch, training=True)
                 if self.rand_aug:
+                    self.ra = augment.RandomAugment()
                     aug_x = self.ra(aug_x)
                 return aug_x[0]
             self.tf_dataset = self.tf_dataset.map(
