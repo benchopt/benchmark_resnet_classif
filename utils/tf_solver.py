@@ -55,9 +55,7 @@ class TFSolver(BaseSolver):
             self.mix_fn = augment.MixupAndCutmix(
                 mixup_alpha=0.1,
                 cutmix_alpha=1.0,
-                # TODO: we need to communicate the number of classes
-                # to the solver
-                num_classes=10,
+                num_classes=dataset.n_classes,
             )
         self.tf_dataset = dataset.dataset
         self.image_preprocessing = dataset.image_preprocessing
@@ -68,10 +66,10 @@ class TFSolver(BaseSolver):
             # https://github.com/keras-team/keras/issues/16399
             def aug_function(x):
                 im_batch = x[None]
-                aug_x = self.data_aug_layer(im_batch, training=True)
                 if self.rand_aug:
                     self.ra = augment.RandAugment()
-                    aug_x = self.ra(aug_x)
+                    im_batch = self.ra(im_batch)
+                aug_x = self.data_aug_layer(im_batch, training=True)
                 return aug_x[0]
 
             def preproc_fn(x):

@@ -17,6 +17,7 @@ class BenchoptCallback(tf.keras.callbacks.Callback):
 
 
 class TFDatasetCapsule:
-    def __init__(self, dataset, image_preprocessing):
+    def __init__(self, dataset, image_preprocessing, n_classes=10):
         self.dataset = dataset
         self.image_preprocessing = image_preprocessing
+        self.n_classes = n_classes

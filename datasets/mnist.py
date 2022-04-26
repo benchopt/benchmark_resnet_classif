@@ -3,6 +3,7 @@ from benchopt import safe_import_context
 with safe_import_context() as import_ctx:
     import numpy as np
     import tensorflow as tf
+    import torch
     from torch.utils.data import Subset
     from torchvision import transforms
     import torchvision.datasets as datasets
@@ -48,8 +49,8 @@ class Dataset(MultiFrameworkDataset):
     def __init__(self, debug=True, **parameters):
         # TODO: implement subsampling for mnist debug
         super().__init__(**parameters)
-        self.transform = transforms.Compose([
-            transforms.ToTensor(),
+        self.normalization = transforms.Compose([
+            transforms.ConvertImageDtype(torch.float32),
             transforms.Normalize(
                 self.normalization_mean,
                 self.normalization_std,
@@ -71,5 +72,8 @@ class Dataset(MultiFrameworkDataset):
 
     def get_torch_data(self):
         o_str, data_dict = super().get_torch_data()
-        data_dict['dataset'] = Subset(data_dict['dataset'], range(1000))
+        data_dict['dataset'].dataset = Subset(
+            data_dict['dataset'].dataset,
+            range(1000),
+        )
         return o_str, data_dict

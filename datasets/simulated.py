@@ -5,7 +5,14 @@ with safe_import_context() as import_ctx:
     import tensorflow as tf
     import torch
     from torch.utils.data import TensorDataset
+    from torchvision import transforms
 
+    AugmentedDataset = import_ctx.import_from(
+        'torch_helper', 'AugmentedDataset'
+    )
+    TFDatasetCapsule = import_ctx.import_from(
+        'tf_helper', 'TFDatasetCapsule'
+    )
     MultiFrameworkDataset = import_ctx.import_from(
         'multi_frameworks_dataset',
         'MultiFrameworkDataset',
@@ -50,6 +57,8 @@ class Dataset(MultiFrameworkDataset):
         self.random_state = random_state
         self.rng = np.random.default_rng(self.random_state)
         self.one_hot = one_hot
+        self.normalization_mean = (0.5, 0.5, 0.5)
+        self.normalization_std = (1, 1, 1)
 
     def get_np_data(self):
         n_train = int(self.n_samples * self.train_frac)
@@ -57,9 +66,11 @@ class Dataset(MultiFrameworkDataset):
         self.ds_description['n_samples_test'] = self.n_samples - n_train
         self.ds_description['image_width'] = self.img_size
         # inputs are channel first
-        inps = self.rng.normal(
+        inps = np.minimum(np.maximum(self.rng.normal(
             size=(self.n_samples, 3, self.img_size, self.img_size,),
-        ).astype(np.float32)
+            scale=255,
+            loc=127,
+        ).astype(np.uint8), 0), 255)
         tgts = self.rng.integers(0, 2, (self.n_samples,)).astype(np.int32)
         inps_train, inps_test = inps[:n_train], inps[n_train:]
         tgts_train, tgts_test = tgts[:n_train], tgts[n_train:]
@@ -67,14 +78,21 @@ class Dataset(MultiFrameworkDataset):
 
     def get_torch_data(self):
         inps_train, inps_test, tgts_train, tgts_test = self.get_np_data()
-        dataset = TensorDataset(
-            torch.Tensor(inps_train),
-            torch.Tensor(tgts_train).type(torch.LongTensor),
-        )
-        test_dataset = TensorDataset(
-            torch.Tensor(inps_test),
-            torch.Tensor(tgts_test).type(torch.LongTensor),
-        )
+        normalization = transforms.Compose([
+            transforms.ConvertImageDtype(torch.float32),
+            transforms.Normalize(
+                self.normalization_mean,
+                self.normalization_std,
+            ),
+        ])
+        dataset = AugmentedDataset(TensorDataset(
+            torch.tensor(inps_train, dtype=torch.uint8).contiguous(),
+            torch.tensor(tgts_train).type(torch.LongTensor),
+        ), None, normalization, n_classes=2)
+        test_dataset = AugmentedDataset(TensorDataset(
+            torch.tensor(inps_test, dtype=torch.uint8).contiguous(),
+            torch.tensor(tgts_test).type(torch.LongTensor),
+        ), None, normalization)
 
         data = dict(
             dataset=dataset,
@@ -93,6 +111,11 @@ class Dataset(MultiFrameworkDataset):
         else:
             y_train = tgts_train
             y_test = tgts_test
+        keras_normalization = tf.keras.layers.Normalization(
+            mean=self.normalization_mean,
+            variance=np.square(self.normalization_std),
+        )
+
         dataset = tf.data.Dataset.from_tensor_slices(
             (make_channels_last(inps_train), y_train),
         )
@@ -101,7 +124,7 @@ class Dataset(MultiFrameworkDataset):
         )
 
         data = dict(
-            dataset=dataset,
+            dataset=TFDatasetCapsule(dataset, keras_normalization, 2),
             test_dataset=test_dataset,
             framework='tensorflow',
             **self.ds_description,

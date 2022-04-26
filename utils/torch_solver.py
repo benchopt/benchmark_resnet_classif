@@ -50,19 +50,19 @@ class TorchSolver(BaseSolver):
             self.mixup_fn = lambda batch: Mixup(
                 mixup_alpha=0.1,
                 cutmix_alpha=1.0,
-                # TODO: we need to communicate the number of classes
-                # to the solver
-                num_classes=10,
+                num_classes=dataset.n_classes,
             )(*default_collate(batch))
             self.model.loss_type = 'bce'
         if self.data_aug:
             aug_list = [
+                # TODO: we need to change the size
+                # to fit the dataset
                 transforms.RandomCrop(32, padding=4),
                 transforms.RandomHorizontalFlip(),
             ]
             if self.rand_aug:
                 # we put magnitude to 10, to copy TF models
-                aug_list.append(transforms.RandAugment(magnitude=10))
+                aug_list.insert(0, transforms.RandAugment(magnitude=10))
             self.dataset.transform = transforms.Compose(aug_list)
         self.dataloader = torch.utils.data.DataLoader(
             self.dataset,

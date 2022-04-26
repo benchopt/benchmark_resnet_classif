@@ -6,6 +6,7 @@ with safe_import_context() as import_ctx:
     import numpy as np
     import tensorflow as tf
     import tensorflow_datasets as tfds
+    import torch
     from torchvision import transforms
 
     AugmentedDataset = import_ctx.import_from(
@@ -23,8 +24,9 @@ class MultiFrameworkDataset(BaseDataset, ABC):
         # Store the parameters of the dataset
         self.framework = framework
         self.one_hot = one_hot
-        self.transform = transforms.ToTensor()
+        self.transform = transforms.PILToTensor()
         self.normalization = transforms.Compose([
+            transforms.ConvertImageDtype(torch.float32),
             transforms.Normalize(
                 self.normalization_mean,
                 self.normalization_std,
