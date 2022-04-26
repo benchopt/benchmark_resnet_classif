@@ -59,7 +59,8 @@ class TFSolver(BaseSolver):
                 # to the solver
                 num_classes=10,
             )
-        self.tf_dataset = dataset
+        self.tf_dataset = dataset.dataset
+        self.image_preprocessing = dataset.image_preprocessing
         if self.data_aug:
             # XXX: unfortunately we need to do this before
             # batching since the random crop layer does not
@@ -72,13 +73,18 @@ class TFSolver(BaseSolver):
                     self.ra = augment.RandomAugment()
                     aug_x = self.ra(aug_x)
                 return aug_x[0]
-            self.tf_dataset = self.tf_dataset.map(
-                lambda x, y: (
-                    aug_function(x),
-                    y,
-                ),
-                num_parallel_calls=tf.data.experimental.AUTOTUNE,
-            )
+
+            def preproc_fn(x):
+                return self.image_preprocessing(aug_function(x))
+        else:
+            preproc_fn = self.image_preprocessing
+        self.tf_dataset = self.tf_dataset.map(
+            lambda x, y: (
+                preproc_fn(x),
+                y,
+            ),
+            num_parallel_calls=tf.data.experimental.AUTOTUNE,
+        )
         self.tf_dataset = self.tf_dataset.batch(
             self.batch_size,
             num_parallel_calls=tf.data.experimental.AUTOTUNE,

@@ -66,7 +66,7 @@ class Dataset(MultiFrameworkDataset):
 
     def get_tf_data(self):
         o_str, data_dict = super().get_tf_data()
-        data_dict['dataset'] = data_dict['dataset'].take(1000)
+        data_dict['dataset'].dataset = data_dict['dataset'].dataset.take(1000)
         return o_str, data_dict
 
     def get_torch_data(self):

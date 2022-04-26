@@ -63,13 +63,7 @@ class TorchSolver(BaseSolver):
             if self.rand_aug:
                 # we put magnitude to 10, to copy TF models
                 aug_list.append(transforms.RandAugment(magnitude=10))
-            self.data_aug_transform = transforms.Compose(aug_list)
-            # XXX: maybe consider AugMixDataset from
-            # https://github.com/rwightman/pytorch-image-models/blob/ef72ad417709b5ba6404d85d3adafd830d507b2a/timm/data/dataset.py
-            self.dataset = AugmentedDataset(
-                self.dataset,
-                self.data_aug_transform,
-            )
+            self.dataset.transform = transforms.Compose(aug_list)
         self.dataloader = torch.utils.data.DataLoader(
             self.dataset,
             batch_size=self.batch_size,

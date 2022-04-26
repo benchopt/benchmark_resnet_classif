@@ -14,3 +14,9 @@ class BenchoptCallback(tf.keras.callbacks.Callback):
 
     def on_epoch_end(self, epoch, logs=None):
         self.model.stop_training = not self.cb_(self.model)
+
+
+class TFDatasetCapsule:
+    def __init__(self, dataset, image_preprocessing):
+        self.dataset = dataset
+        self.image_preprocessing = image_preprocessing

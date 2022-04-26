@@ -8,6 +8,13 @@ with safe_import_context() as import_ctx:
     import tensorflow_datasets as tfds
     from torchvision import transforms
 
+    AugmentedDataset = import_ctx.import_from(
+        'torch_helper', 'AugmentedDataset'
+    )
+    TFDatasetCapsule = import_ctx.import_from(
+        'tf_helper', 'TFDatasetCapsule'
+    )
+
 
 class MultiFrameworkDataset(BaseDataset, ABC):
     torch_split_kwarg = 'train'
@@ -16,8 +23,8 @@ class MultiFrameworkDataset(BaseDataset, ABC):
         # Store the parameters of the dataset
         self.framework = framework
         self.one_hot = one_hot
-        self.transform = transforms.Compose([
-            transforms.ToTensor(),
+        self.transform = transforms.ToTensor()
+        self.normalization = transforms.Compose([
             transforms.Normalize(
                 self.normalization_mean,
                 self.normalization_std,
@@ -37,11 +44,18 @@ class MultiFrameworkDataset(BaseDataset, ABC):
             splits = ['train', 'test']
         for key, split in zip(['dataset', 'test_dataset'], splits):
             split_kwarg = {self.torch_split_kwarg: split}
-            data_dict[key] = self.torch_ds_klass(
+            ds = self.torch_ds_klass(
                 root='./data',
                 download=True,
                 transform=self.transform,
                 **split_kwarg,
+            )
+            # XXX: maybe consider AugMixDataset from
+            # https://github.com/rwightman/pytorch-image-models/blob/ef72ad417709b5ba6404d85d3adafd830d507b2a/timm/data/dataset.py
+            data_dict[key] = AugmentedDataset(
+                ds,
+                None,
+                self.normalization,
             )
         return 'object', data_dict
 
@@ -55,13 +69,19 @@ class MultiFrameworkDataset(BaseDataset, ABC):
             )
             ds = ds.map(
                 lambda x, y: (
-                    self.image_preprocessing(x),
+                    self.image_preprocessing(x)
+                    if key == 'test_dataset' else x,
                     tf.one_hot(y, self.ds_description['n_classes'])
                     if self.one_hot else y,
                 ),
                 num_parallel_calls=tf.data.experimental.AUTOTUNE,
             )
             data_dict[key] = ds
+            if key == 'dataset':
+                data_dict[key] = TFDatasetCapsule(
+                    data_dict[key],
+                    self.image_preprocessing,
+                )
         return 'object', data_dict
 
     def get_data(self):

@@ -63,10 +63,11 @@ class BenchPLModule(LightningModule):
 
 
 class AugmentedDataset(Dataset):
-    def __init__(self, dataset, transform):
+    def __init__(self, dataset, transform, normalization):
         super().__init__()
         self.dataset = dataset
         self.transform = transform
+        self.normalization = normalization
 
     def __len__(self):
         return len(self.dataset)
@@ -75,4 +76,6 @@ class AugmentedDataset(Dataset):
         x, y = self.dataset[idx]
         if self.transform:
             x = self.transform(x)
+        if self.normalization:
+            x = self.normalization(x)
         return x, y
