@@ -116,6 +116,9 @@ class Dataset(MultiFrameworkDataset):
             variance=np.square(self.normalization_std),
         )
 
+        def image_preprocessing(x):
+            return keras_normalization(x/255)
+
         dataset = tf.data.Dataset.from_tensor_slices(
             (make_channels_last(inps_train), y_train),
         )
@@ -124,7 +127,7 @@ class Dataset(MultiFrameworkDataset):
         )
 
         data = dict(
-            dataset=TFDatasetCapsule(dataset, keras_normalization, 2),
+            dataset=TFDatasetCapsule(dataset, image_preprocessing, 2),
             test_dataset=test_dataset,
             framework='tensorflow',
             **self.ds_description,
