@@ -120,9 +120,16 @@ class Objective(BaseObjective):
             for dataset_name, dataset in zip(
                 ["train", "test"], [self.dataset, self.test_dataset]
             ):
+                if dataset_name == 'train':
+                    ds = dataset.dataset.batch(self.batch_size).map(
+                        lambda x, y: (dataset.image_preprocessing(x), y),
+                        num_parallel_calls=tf.data.experimental.AUTOTUNE,
+                    )
+                else:
+                    ds = dataset.batch(self.batch_size)
                 metrics = model.evaluate(
                     # TODO: optimize this with prefetching
-                    dataset.batch(self.batch_size),
+                    ds,
                     return_dict=True,
                 )
                 results[dataset_name + "_loss"] = metrics["loss"]
