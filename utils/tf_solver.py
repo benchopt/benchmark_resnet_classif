@@ -70,7 +70,7 @@ class TFSolver(BaseSolver):
                 im_batch = x[None]
                 aug_x = self.data_aug_layer(im_batch, training=True)
                 if self.rand_aug:
-                    self.ra = augment.RandomAugment()
+                    self.ra = augment.RandAugment()
                     aug_x = self.ra(aug_x)
                 return aug_x[0]
 
