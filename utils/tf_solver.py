@@ -33,16 +33,6 @@ class TFSolver(BaseSolver):
 
     def set_objective(self, model, dataset):
         self.tf_model = model
-        self.tf_model.compile(
-            optimizer=self.optimizer,
-            loss='categorical_crossentropy',
-            # XXX: there might a problem here if the race is tight
-            # because this will compute accuracy for each batch
-            # we might need to define a custom training step with an
-            # encompassing model that will not compute metrics for
-            # each batch.
-            metrics='accuracy',
-        )
         self.tf_dataset = dataset
         if self.data_aug:
             # XXX: unfortunately we need to do this before
@@ -68,6 +58,18 @@ class TFSolver(BaseSolver):
         return stop_val + 1
 
     def run(self, callback):
+        # this cloning is done to avoid weights sharing between runs
+        self.tf_model = tf.keras.models.clone_model(self.tf_model)
+        self.tf_model.compile(
+            optimizer=self.optimizer,
+            loss='categorical_crossentropy',
+            # XXX: there might a problem here if the race is tight
+            # because this will compute accuracy for each batch
+            # we might need to define a custom training step with an
+            # encompassing model that will not compute metrics for
+            # each batch.
+            metrics='accuracy',
+        )
         # Initial evaluation
         callback(self.tf_model)
 
