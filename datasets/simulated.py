@@ -29,6 +29,10 @@ class Dataset(MultiFrameworkDataset):
         'framework': ['pytorch', 'tensorflow'],
     }
 
+    test_parameters = {
+        'framework': ['pytorch', 'tensorflow'],
+    }
+
     ds_description = dict(
         n_classes=2,
     )

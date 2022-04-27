@@ -1,3 +1,4 @@
+import os
 import warnings
 
 from benchopt.utils.safe_import import set_benchmark
@@ -7,6 +8,8 @@ from torch.utils.data import DataLoader
 
 # this means this test has to be run from the root
 set_benchmark('./')
+
+CI = os.environ.get('CI', False)
 
 
 def tf_dataset_to_np_array(tf_dataset, n_samples):
@@ -80,6 +83,8 @@ def get_matched_unmatched_indices_arrays(
 ])
 @pytest.mark.parametrize('dataset_type', ['dataset', 'test_dataset'])
 def test_datasets_consistency(dataset_module_name, dataset_type):
+    if dataset_module_name == 'svhn' and dataset_type == 'dataset' and CI:
+        pytest.skip('SVHN dataset is too heavy for CI')
     from datasets import (  # noqa: F401
         cifar,
         mnist,
@@ -87,8 +92,16 @@ def test_datasets_consistency(dataset_module_name, dataset_type):
         svhn,
     )
     dataset = eval(dataset_module_name)
-    d_tf = dataset.Dataset.get_instance(framework='tensorflow', one_hot=False)
-    d_torch = dataset.Dataset.get_instance(framework='pytorch')
+    if dataset_module_name == 'mnist':
+        add_kwargs = {'debug': False}
+    else:
+        add_kwargs = {}
+    d_tf = dataset.Dataset.get_instance(
+        framework='tensorflow',
+        one_hot=False,
+        **add_kwargs,
+    )
+    d_torch = dataset.Dataset.get_instance(framework='pytorch', **add_kwargs)
     _, tf_data = d_tf.get_data()
     _, torch_data = d_torch.get_data()
     n_samples_key = 'n_samples_train' if dataset_type == 'dataset' \

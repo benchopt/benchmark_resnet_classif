@@ -63,13 +63,16 @@ class Dataset(MultiFrameworkDataset):
         self.image_preprocessing = (
             lambda x: grayscale_to_rbg_tf(keras_normalization(x/255))
         )
+        self.debug = debug
 
     def get_tf_data(self):
         o_str, data_dict = super().get_tf_data()
-        data_dict['dataset'] = data_dict['dataset'].take(1000)
+        if self.debug:
+            data_dict['dataset'] = data_dict['dataset'].take(1000)
         return o_str, data_dict
 
     def get_torch_data(self):
         o_str, data_dict = super().get_torch_data()
-        data_dict['dataset'] = Subset(data_dict['dataset'], range(1000))
+        if self.debug:
+            data_dict['dataset'] = Subset(data_dict['dataset'], range(1000))
         return o_str, data_dict
