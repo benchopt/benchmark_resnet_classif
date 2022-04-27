@@ -52,11 +52,16 @@ class TFSolver(BaseSolver):
             metrics='accuracy',
         )
         if self.mix:
-            self.mix_fn = augment.MixupAndCutmix(
+            orig_mix_fn = augment.MixupAndCutmix(
                 mixup_alpha=0.1,
                 cutmix_alpha=1.0,
                 num_classes=dataset.n_classes,
             )
+
+            def mix_fn(x, y):
+                y.set_shape([self.batch_size, dataset.n_classes])
+                x, y = orig_mix_fn(x, y)
+                return x, y
         self.tf_dataset = dataset.dataset
         self.image_preprocessing = dataset.image_preprocessing
         if self.data_aug:
@@ -89,7 +94,7 @@ class TFSolver(BaseSolver):
         )
         if self.mix:
             self.tf_dataset = self.tf_dataset.map(
-                self.mix_fn,
+                mix_fn,
                 num_parallel_calls=tf.data.experimental.AUTOTUNE,
             )
         self.tf_dataset = self.tf_dataset.prefetch(
