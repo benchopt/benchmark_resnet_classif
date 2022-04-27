@@ -42,8 +42,8 @@ class Objective(BaseObjective):
 
     install_cmd = 'conda'
     requirements = [
-        'pytorch', 'torchvision', 'pytorch-lightning ',
-        'tensorflow', 'tensorflow-datasets',
+        'pip:torch', 'pip:torchvision', 'pip:pytorch-lightning ',
+        'pip:tensorflow', 'pip:tensorflow-datasets',
     ]
 
     # XXX: this might be a good spot to specify the size of the ResNet
