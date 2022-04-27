@@ -57,6 +57,13 @@ class TorchSolver(BaseSolver):
         return stop_val + 1
 
     def run(self, callback):
+        # model weight initialization
+        self.model.initialize_model_weights()
+        # optimizer init
+        self.model.configure_optimizers = lambda: self.optimizer_klass(
+            self.model.parameters(),
+            **self.optimizer_kwargs,
+        )
         # Initial evaluation
         callback(self.model)
 

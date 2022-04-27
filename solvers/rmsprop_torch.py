@@ -21,8 +21,8 @@ class Solver(TorchSolver):
 
     def set_objective(self, model, dataset):
         super().set_objective(model, dataset)
-        self.model.configure_optimizers = lambda: RMSprop(
-            self.model.parameters(),
+        self.optimizer_klass = RMSprop
+        self.optimizer_kwargs = dict(
             lr=self.lr,
             momentum=self.momentum,
             alpha=self.alpha,
