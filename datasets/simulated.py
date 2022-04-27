@@ -40,7 +40,7 @@ class Dataset(MultiFrameworkDataset):
     def __init__(
         self,
         n_samples=10,
-        img_size=50,
+        img_size=32,
         train_frac=0.8,
         framework='pytorch',
         random_state=27,
