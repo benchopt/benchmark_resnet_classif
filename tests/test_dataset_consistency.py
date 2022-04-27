@@ -87,8 +87,16 @@ def test_datasets_consistency(dataset_module_name, dataset_type):
         svhn,
     )
     dataset = eval(dataset_module_name)
-    d_tf = dataset.Dataset.get_instance(framework='tensorflow', one_hot=False)
-    d_torch = dataset.Dataset.get_instance(framework='pytorch')
+    if dataset_module_name == 'mnist':
+        add_kwargs = {'debug': False}
+    else:
+        add_kwargs = {}
+    d_tf = dataset.Dataset.get_instance(
+        framework='tensorflow',
+        one_hot=False,
+        **add_kwargs,
+    )
+    d_torch = dataset.Dataset.get_instance(framework='pytorch', **add_kwargs)
     _, tf_data = d_tf.get_data()
     _, torch_data = d_torch.get_data()
     n_samples_key = 'n_samples_train' if dataset_type == 'dataset' \
