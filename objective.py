@@ -68,8 +68,17 @@ class Objective(BaseObjective):
         tf.random.set_seed(0)
         seed_everything(0, workers=True)
 
-    def skip(self):
-        if self.framework == 'tensorflow' and self.width < 32:
+    def skip(
+        self,
+        dataset,
+        test_dataset,
+        n_samples_train,
+        n_samples_test,
+        image_width,
+        n_classes,
+        framework,
+    ):
+        if framework == 'tensorflow' and image_width < 32:
             return True, 'images too small for TF networks'
         return False, None
 
