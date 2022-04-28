@@ -1,6 +1,8 @@
 from benchopt import BaseSolver, safe_import_context
+from benchopt.stopping_criterion import SufficientProgressCriterion
 
 with safe_import_context() as import_ctx:
+    import tensorflow as tf
 
     BenchoptCallback = import_ctx.import_from(
         'tf_helper', 'BenchoptCallback'
@@ -12,7 +14,13 @@ MAX_EPOCHS = int(1e9)
 class TFSolver(BaseSolver):
     """TF base solver"""
 
-    stopping_strategy = 'callback'
+    stopping_criterion = SufficientProgressCriterion(
+        patience=20, strategy='callback'
+    )
+
+    parameters = {
+        'batch_size': [64],
+    }
 
     # XXX: this should be removed once
     # https://github.com/benchopt/benchmark_resnet_classif/pull/6
@@ -36,7 +44,12 @@ class TFSolver(BaseSolver):
             # each batch.
             metrics='accuracy',
         )
-        self.tf_dataset = tf_dataset
+        self.tf_dataset = tf_dataset.batch(
+            self.batch_size,
+            num_parallel_calls=tf.data.experimental.AUTOTUNE,
+        ).prefetch(
+            buffer_size=tf.data.experimental.AUTOTUNE,
+        )
 
     @staticmethod
     def get_next(stop_val):

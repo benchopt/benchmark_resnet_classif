@@ -1,12 +1,15 @@
 from benchopt import safe_import_context
 
 with safe_import_context() as import_ctx:
+
     import torch
     from torch.nn import functional as F
 
     from torchmetrics import Accuracy
     from pytorch_lightning import LightningModule
     from pytorch_lightning.callbacks import Callback
+    from pytorch_lightning.strategies import SingleDeviceStrategy
+    from pytorch_lightning.strategies import StrategyRegistry
 
 
 # Convert benchopt benchmark into a lightning callback, used to monitor the
@@ -49,3 +52,28 @@ class BenchPLModule(LightningModule):
 
     def training_step(self, batch, batch_idx):
         return self.loss_logits_y(batch)[0]
+
+
+class SingleDeviceStrategyNoTeardown(SingleDeviceStrategy):
+    def __init__(self, device=None, accelerator=None, checkpoint_io=None,
+                 precision_plugin=None):
+        if device is None:
+            # XXX - this is a dirty hack for GPU, find a better way to do it
+            device = "cuda:0"
+        super().__init__(device, accelerator, checkpoint_io, precision_plugin)
+
+    def teardown(self):
+        # Call grand parent teardown
+        super(SingleDeviceStrategy, self).teardown()
+
+        if self.root_device.type == "cuda":
+            # clean up memory
+            torch.cuda.empty_cache()
+
+
+# Register the SingleDeviceStrategyNoTeardown Strategy
+StrategyRegistry.register(
+    "noteardown",
+    SingleDeviceStrategyNoTeardown,
+    description="Single device Strategy with no teardown for nested eval",
+)

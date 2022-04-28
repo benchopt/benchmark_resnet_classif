@@ -1,8 +1,10 @@
 from benchopt import BaseSolver, safe_import_context
+from benchopt.stopping_criterion import SufficientProgressCriterion
 
 with safe_import_context() as import_ctx:
     import torch
     from pytorch_lightning import Trainer
+
     BenchoptCallback = import_ctx.import_from(
         'torch_helper', 'BenchoptCallback'
     )
@@ -11,7 +13,9 @@ with safe_import_context() as import_ctx:
 class TorchSolver(BaseSolver):
     """Torch base solver"""
 
-    stopping_strategy = 'callback'
+    stopping_criterion = SufficientProgressCriterion(
+        patience=20, strategy='callback'
+    )
 
     parameters = {
         'batch_size': [64],
@@ -20,7 +24,8 @@ class TorchSolver(BaseSolver):
     def set_objective(self, pl_module, torch_dataset, tf_model, tf_dataset):
         self.pl_module = pl_module
         self.dataloader = torch.utils.data.DataLoader(
-            torch_dataset, batch_size=self.batch_size
+            torch_dataset, batch_size=self.batch_size,
+            num_workers=6
         )
 
     @staticmethod
@@ -34,7 +39,7 @@ class TorchSolver(BaseSolver):
         # Setup the trainer
         trainer = Trainer(
             max_epochs=-1, callbacks=[BenchoptCallback(callback)],
-            accelerator="gpu" if torch.cuda.is_available() else None
+            accelerator="auto", devices=1
         )
         trainer.fit(model=self.pl_module, train_dataloaders=self.dataloader)
 
