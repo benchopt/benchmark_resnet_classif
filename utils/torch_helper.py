@@ -1,4 +1,3 @@
-import logging
 from benchopt import safe_import_context
 
 with safe_import_context() as import_ctx:
@@ -11,8 +10,6 @@ with safe_import_context() as import_ctx:
     from pytorch_lightning.callbacks import Callback
     from pytorch_lightning.strategies import SingleDeviceStrategy
     from pytorch_lightning.strategies import StrategyRegistry
-
-log = logging.getLogger(__name__)
 
 
 # Convert benchopt benchmark into a lightning callback, used to monitor the
@@ -70,13 +67,11 @@ class SingleDeviceStrategyNoTeardown(SingleDeviceStrategy):
         super(SingleDeviceStrategy, self).teardown()
 
         if self.root_device.type == "cuda":
-            # Do not move the model out
-            log.detail(f"{self.__class__.__name__}: !not! moving model to CPU")
             # clean up memory
             torch.cuda.empty_cache()
 
 
-# Register the DDP Strategy with your custom CheckpointIO plugin
+# Register the SingleDeviceStrategyNoTeardown Strategy
 StrategyRegistry.register(
     "noteardown",
     SingleDeviceStrategyNoTeardown,
