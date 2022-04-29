@@ -82,24 +82,36 @@ class Objective(BaseObjective):
             return True, 'images too small for TF networks'
         return False, None
 
-    def get_tf_model(self):
+    def get_tf_model_init_fn(self):
         model_klass = TF_MODEL_MAP[self.model_type][self.model_size]
         add_kwargs = {}
         if self.model_type == 'resnet':
             add_kwargs['use_bias'] = False
-        model = model_klass(
-            weights=None,
-            classes=self.n_classes,
-            classifier_activation='softmax',
-            input_shape=(self.width, self.width, 3),
-            **add_kwargs,
-        )
-        return model
 
-    def get_torch_model(self):
+        def _model_init_fn():
+            model = model_klass(
+                weights=None,
+                classes=self.n_classes,
+                classifier_activation='softmax',
+                input_shape=(self.width, self.width, 3),
+                **add_kwargs,
+            )
+            return model
+        return _model_init_fn
+
+    def get_torch_model_init_fn(self):
         model_klass = TORCH_MODEL_MAP[self.model_type][self.model_size]
-        model = model_klass(num_classes=self.n_classes)
-        return model
+
+        def _model_init_fn():
+            model = model_klass(num_classes=self.n_classes)
+            return model
+        return _model_init_fn
+
+    def get_model_init_fn(self):
+        if self.framework == 'tensorflow':
+            return self.get_tf_model_init_fn()
+        elif self.framework == 'pytorch':
+            return self.get_torch_model_init_fn()
 
     def set_data(
         self,
@@ -149,18 +161,15 @@ class Objective(BaseObjective):
         return results
 
     def get_one_beta(self):
-        # XXX: should we have both tf and pl here?
-        if self.framework == 'tensorflow':
-            model = self.get_tf_model()
-        elif self.framework == 'pytorch':
-            model = self.get_torch_model()
+        model = self.get_model_init_fn()()
+        if self.framework == 'pytorch':
             model = BenchPLModule(model)
         return model
 
     def to_dict(self):
         # XXX: make sure to skip the small datasets when using vgg
-        model = self.get_one_beta()
+        model_init_fn = self.get_model_init_fn()
         return dict(
-            model=model,
+            model=model_init_fn,
             dataset=self.dataset,
         )
