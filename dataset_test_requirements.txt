@@ -1,0 +1,6 @@
+pytest
+torch
+torchvision
+tensorflow
+tensorflow-datasets
+scikit-learn
