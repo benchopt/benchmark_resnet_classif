@@ -14,9 +14,6 @@ with safe_import_context() as import_ctx:
     BenchoptCallback = import_ctx.import_from(
         'torch_helper', 'BenchoptCallback'
     )
-    BenchPLModule = import_ctx.import_from(
-        'torch_helper', 'BenchPLModule'
-    )
     AugmentedDataset = import_ctx.import_from(
         'torch_helper', 'AugmentedDataset'
     )
