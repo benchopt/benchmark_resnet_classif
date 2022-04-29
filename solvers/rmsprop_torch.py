@@ -13,23 +13,23 @@ class Solver(TorchSolver):
 
     # any parameter defined here is accessible as a class attribute
     parameters = {
-        'alpha': [0.99, 0.9],
+        'lr': [1e-3],
+        'rho': [0.99, 0.9],
         'momentum': [0, 0.9],
         **TorchSolver.parameters
     }
 
-    def skip(self, model, dataset):
+    def skip(self, model_init_fn, dataset):
         if self.decoupled_weight_decay:
             return True, 'RMSProp does not support decoupled weight decay'
-        return super().skip(model, dataset)
+        return super().skip(model_init_fn, dataset)
 
-    def set_objective(self, model, dataset):
-        super().set_objective(model, dataset)
-        optimizer = RMSprop(
-            self.model.parameters(),
+    def set_objective(self, **kwargs):
+        super().set_objective(**kwargs)
+        self.optimizer_klass = RMSprop
+        self.optimizer_kwargs = dict(
             lr=self.lr,
             momentum=self.momentum,
-            alpha=self.alpha,
+            alpha=self.rho,
             weight_decay=self.coupled_weight_decay,
         )
-        self.set_lr_schedule_and_optimizer(optimizer)

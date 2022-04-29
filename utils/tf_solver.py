@@ -1,4 +1,5 @@
 from benchopt import BaseSolver, safe_import_context
+from benchopt.stopping_criterion import SufficientProgressCriterion
 
 with safe_import_context() as import_ctx:
     import tensorflow as tf
@@ -16,7 +17,13 @@ MAX_EPOCHS = int(1e9)
 class TFSolver(BaseSolver):
     """TF base solver"""
 
-    stopping_strategy = 'callback'
+    stopping_criterion = SufficientProgressCriterion(
+        patience=20, strategy='callback'
+    )
+
+    parameters = {
+        'batch_size': [64],
+    }
 
     parameters = {
         'lr': [1e-3],
@@ -37,14 +44,14 @@ class TFSolver(BaseSolver):
             tf.keras.layers.RandomFlip('horizontal'),
         ])
 
-    def skip(self, model, dataset):
-        if not isinstance(model, tf.keras.Model):
+    def skip(self, model_init_fn, dataset):
+        if not isinstance(dataset, tf.data.Dataset):
             return True, 'Not a TF dataset'
         if self.coupled_weight_decay and self.decoupled_weight_decay:
             return True, 'Cannot use both decoupled and coupled weight decay'
         return False, None
 
-    def set_objective(self, model, dataset):
+    def set_objective(self, model_init_fn, dataset):
         # NOTE: in the following, we need to multiply by the weight decay
         # by the learning rate to have a comparable settign with PyTorch
         if self.lr_schedule == 'step':
@@ -73,40 +80,7 @@ class TFSolver(BaseSolver):
         self.optimizer_klass = extend_with_decoupled_weight_decay(
             self.optimizer_klass,
         )
-        self.optimizer = self.optimizer_klass(
-            weight_decay=self.decoupled_weight_decay*self.lr,
-            **self.optimizer_kwargs,
-        )
-        self.tf_model = model
-        if self.coupled_weight_decay:
-            # this is equivalent to adding L2 regularization to all
-            # the weights and biases of the model (even if adding
-            # weight decay to the biases is not recommended), of a factor
-            # halved
-            l2_reg_factor = self.coupled_weight_decay / 2
-            # taken from
-            # https://sthalles.github.io/keras-regularizer/
-            regularizer = tf.keras.regularizers.l2(l2_reg_factor)
-            target_regularizers = [
-                'kernel_regularizer',
-                'bias_regularizer',
-                'beta_regularizer',
-                'gamma_regularizer',
-            ]
-            for layer in self.tf_model.layers:
-                for attr in target_regularizers:
-                    if hasattr(layer, attr):
-                        setattr(layer, attr, regularizer)
-        self.tf_model.compile(
-            optimizer=self.optimizer,
-            loss='categorical_crossentropy',
-            # XXX: there might a problem here if the race is tight
-            # because this will compute accuracy for each batch
-            # we might need to define a custom training step with an
-            # encompassing model that will not compute metrics for
-            # each batch.
-            metrics='accuracy',
-        )
+        self.model_init_fn = model_init_fn
         self.tf_dataset = dataset
         if self.data_aug:
             # XXX: unfortunately we need to do this before
@@ -132,6 +106,41 @@ class TFSolver(BaseSolver):
         return stop_val + 1
 
     def run(self, callback):
+        self.tf_model = self.model_init_fn()
+        self.optimizer = self.optimizer_klass(
+            weight_decay=self.decoupled_weight_decay*self.lr,
+            **self.optimizer_kwargs,
+        )
+        if self.coupled_weight_decay:
+            # this is equivalent to adding L2 regularization to all
+            # the weights and biases of the model (even if adding
+            # weight decay to the biases is not recommended), of a factor
+            # halved
+            l2_reg_factor = self.coupled_weight_decay / 2
+            # taken from
+            # https://sthalles.github.io/keras-regularizer/
+            regularizer = tf.keras.regularizers.l2(l2_reg_factor)
+            target_regularizers = [
+                'kernel_regularizer',
+                'bias_regularizer',
+                'beta_regularizer',
+                'gamma_regularizer',
+            ]
+            for layer in self.tf_model.layers:
+                for attr in target_regularizers:
+                    if hasattr(layer, attr):
+                        setattr(layer, attr, regularizer)
+        self.tf_model.compile(
+            optimizer=self.optimizer,
+            loss='sparse_categorical_crossentropy',
+            # XXX: there might a problem here if the race is tight
+            # because this will compute accuracy for each batch
+            # we might need to define a custom training step with an
+            # encompassing model that will not compute metrics for
+            # each batch.
+            metrics='accuracy',
+        )
+
         # Initial evaluation
         callback(self.tf_model)
 

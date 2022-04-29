@@ -13,19 +13,18 @@ class Solver(TorchSolver):
 
     # any parameter defined here is accessible as a class attribute
     parameters = {
+        'lr': [1e-3],
         **TorchSolver.parameters
     }
 
-    def set_objective(self, model, dataset):
-        super().set_objective(model, dataset)
-        optimizer_klass = Adam
+    def set_objective(self, **kwargs):
+        super().set_objective(**kwargs)
+        self.optimizer_klass = Adam
         wd = self.coupled_weight_decay
         if self.decoupled_weight_decay > 0:
-            optimizer_klass = AdamW
+            self.optimizer_klass = AdamW
             wd = self.decoupled_weight_decay
-        optimizer = optimizer_klass(
-            self.model.parameters(),
+        self.optimizer_kwargs = dict(
             lr=self.lr,
             weight_decay=wd,
         )
-        self.set_lr_schedule_and_optimizer(optimizer)

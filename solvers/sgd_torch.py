@@ -13,17 +13,18 @@ class Solver(TorchSolver):
     # any parameter defined here is accessible as a class attribute
     parameters = {
         'nesterov, momentum': [(False, 0), (True, 0.9)],
+        'lr': [1e-1],
         **TorchSolver.parameters
     }
 
-    def set_objective(self, model, dataset):
-        super().set_objective(model, dataset)
+    def set_objective(self, **kwargs):
+        super().set_objective(**kwargs)
         wd = self.coupled_weight_decay or self.decoupled_weight_decay
-        optimizer = SGD(
+        self.optimizer_klass = SGD
+        self.optimizer_kwargs = dict(
             self.model.parameters(),
             lr=self.lr,
             momentum=self.momentum,
             nesterov=self.nesterov,
             weight_decay=wd,
         )
-        self.set_lr_schedule_and_optimizer(optimizer)

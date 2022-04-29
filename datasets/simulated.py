@@ -40,11 +40,10 @@ class Dataset(MultiFrameworkDataset):
     def __init__(
         self,
         n_samples=10,
-        img_size=50,
+        img_size=32,
         train_frac=0.8,
         framework='pytorch',
         random_state=27,
-        one_hot=True,
     ):
         # Store the parameters of the dataset
         self.n_samples = n_samples
@@ -53,7 +52,6 @@ class Dataset(MultiFrameworkDataset):
         self.framework = framework
         self.random_state = random_state
         self.rng = np.random.default_rng(self.random_state)
-        self.one_hot = one_hot
 
     def get_np_data(self):
         n_train = int(self.n_samples * self.train_frac)
@@ -91,12 +89,8 @@ class Dataset(MultiFrameworkDataset):
 
     def get_tf_data(self):
         inps_train, inps_test, tgts_train, tgts_test = self.get_np_data()
-        if self.one_hot:
-            y_train = tf.one_hot(tgts_train, 2)
-            y_test = tf.one_hot(tgts_test, 2)
-        else:
-            y_train = tgts_train
-            y_test = tgts_test
+        y_train = tgts_train
+        y_test = tgts_test
         dataset = tf.data.Dataset.from_tensor_slices(
             (make_channels_last(inps_train), y_train),
         )
