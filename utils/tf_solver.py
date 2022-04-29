@@ -36,7 +36,7 @@ class TFSolver(BaseSolver):
         self.tf_model = tf_model
         self.tf_model.compile(
             optimizer=self.optimizer,
-            loss='categorical_crossentropy',
+            loss='sparse_categorical_crossentropy',
             # XXX: there might a problem here if the race is tight
             # because this will compute accuracy for each batch
             # we might need to define a custom training step with an

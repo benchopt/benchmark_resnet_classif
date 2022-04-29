@@ -44,7 +44,5 @@ def torch_image_dataset_to_tf_dataset(torch_dataset):
         X = np.transpose(X, (0, 2, 3, 1))
     width = X.shape[1]
     n_classes = len(np.unique(y))
-    if not isinstance(y[0], np.ndarray) or not len(y) > 1:
-        y = tf.one_hot(y, n_classes)
     tf_dataset = tf.data.Dataset.from_tensor_slices((X, y))
     return tf_dataset, width, n_classes
