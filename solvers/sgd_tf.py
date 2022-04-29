@@ -18,10 +18,10 @@ class Solver(TFSolver):
         **TFSolver.parameters,
     }
 
-    def set_objective(self, model, dataset):
+    def set_objective(self, **kwargs):
         self.optimizer = SGD(
             learning_rate=self.lr,
             momentum=self.momentum,
             nesterov=self.nesterov,
         )
-        super().set_objective(model, dataset)
+        super().set_objective(**kwargs)

@@ -17,8 +17,8 @@ class Solver(TorchSolver):
         **TorchSolver.parameters
     }
 
-    def set_objective(self, model, dataset):
-        super().set_objective(model, dataset)
+    def set_objective(self, **kwargs):
+        super().set_objective(**kwargs)
         self.optimizer_klass = SGD
         self.optimizer_kwargs = dict(
             lr=self.lr,
