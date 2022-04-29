@@ -19,7 +19,8 @@ class Solver(TFSolver):
     }
 
     def set_objective(self, **kwargs):
-        self.optimizer = SGD(
+        self.optimizer_klass = SGD
+        self.optimizer_kwargs = dict(
             learning_rate=self.lr,
             momentum=self.momentum,
             nesterov=self.nesterov,

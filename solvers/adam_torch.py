@@ -19,7 +19,5 @@ class Solver(TorchSolver):
 
     def set_objective(self, **kwargs):
         super().set_objective(**kwargs)
-        self.pl_module.configure_optimizers = lambda: Adam(
-            self.pl_module.parameters(),
-            lr=self.lr,
-        )
+        self.optimizer_klass = Adam
+        self.optimizer_kwargs = dict(lr=self.lr)

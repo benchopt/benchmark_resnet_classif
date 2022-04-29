@@ -4,6 +4,7 @@ with safe_import_context() as import_ctx:
 
     import torch
     from torch.nn import functional as F
+    from torch.utils.data import Dataset
 
     from torchmetrics import Accuracy
     from pytorch_lightning import LightningModule
@@ -52,6 +53,22 @@ class BenchPLModule(LightningModule):
 
     def training_step(self, batch, batch_idx):
         return self.loss_logits_y(batch)[0]
+
+
+class AugmentedDataset(Dataset):
+    def __init__(self, dataset, transform):
+        super().__init__()
+        self.dataset = dataset
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, idx):
+        x, y = self.dataset[idx]
+        if self.transform:
+            x = self.transform(x)
+        return x, y
 
 
 class SingleDeviceStrategyNoTeardown(SingleDeviceStrategy):

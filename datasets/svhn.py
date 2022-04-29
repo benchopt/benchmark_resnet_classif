@@ -1,35 +1,36 @@
-from benchopt import BaseDataset, safe_import_context
+from benchopt import safe_import_context
 
 with safe_import_context() as import_ctx:
-    from torchvision import transforms
     import torchvision.datasets as datasets
 
+    MultiFrameworkDataset = import_ctx.import_from(
+        'multi_frameworks_dataset',
+        'MultiFrameworkDataset',
+    )
 
-class Dataset(BaseDataset):
+
+class Dataset(MultiFrameworkDataset):
 
     name = "SVHN"
 
-    def get_data(self):
-        transform = transforms.Compose([
-            transforms.ToTensor(),
-            # from
-            # https://deepobs.readthedocs.io/en/v1.2.0-beta0_a/_modules/deepobs/pytorch/datasets/svhn.html
-            transforms.Normalize(
-                (0.4376821, 0.4437697, 0.47280442),
-                (0.19803012, 0.20101562, 0.19703614),
-            ),
-        ])
-        svhn_trainset = datasets.SVHN(
-            root='./data',
-            split='train',
-            download=True,
-            transform=transform,
-        )
-        svhn_testset = datasets.SVHN(
-            root='./data',
-            split='train',
-            download=True,
-            transform=transform,
-        )
+    # from
+    # https://deepobs.readthedocs.io/en/v1.2.0-beta0_a/_modules/deepobs/pytorch/datasets/svhn.html
+    normalization_mean = (0.4376821, 0.4437697, 0.47280442)
+    normalization_std = (0.19803012, 0.20101562, 0.19703614)
 
-        return 'object', dict(dataset=svhn_trainset, test_dataset=svhn_testset)
+    ds_description = dict(
+        n_samples_train=73_257,
+        n_samples_test=26_032,
+        image_width=32,
+        n_classes=10,
+    )
+
+    torch_ds_klass = datasets.SVHN
+    torch_split_kwarg = 'split'
+
+    tf_ds_name = 'svhn_cropped'
+    # XXX: problem with the tfds, it downloads the full svhn dataset
+    # including the extra bit which is super heavy
+    # we might be able to limit the download with
+    # https://www.tensorflow.org/datasets/api_docs/python/tfds/download/DownloadConfig
+    # `max_examples_per_split`

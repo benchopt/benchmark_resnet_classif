@@ -19,9 +19,8 @@ class Solver(TorchSolver):
 
     def set_objective(self, **kwargs):
         super().set_objective(**kwargs)
-
-        self.pl_module.configure_optimizers = lambda: SGD(
-            self.pl_module.parameters(),
+        self.optimizer_klass = SGD
+        self.optimizer_kwargs = dict(
             lr=self.lr,
             momentum=self.momentum,
             nesterov=self.nesterov,
