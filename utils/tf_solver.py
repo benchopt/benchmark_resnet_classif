@@ -136,7 +136,6 @@ class TFSolver(BaseSolver):
             # each batch.
             metrics='accuracy',
         )
-
         # Initial evaluation
         callback(self.model)
 

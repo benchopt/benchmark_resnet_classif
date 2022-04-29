@@ -2,7 +2,6 @@ from benchopt import safe_import_context
 
 with safe_import_context() as import_ctx:
 
-    import numpy as np
     import tensorflow as tf
     from keras.utils import io_utils
     from tensorflow.keras import backend
