@@ -27,8 +27,8 @@ class TorchSolver(BaseSolver):
         'data_aug': [False, True],
     }
 
-    def skip(self, model, dataset):
-        if not isinstance(model, BenchPLModule):
+    def skip(self, model_init_fn, dataset):
+        if not isinstance(dataset, torch.utils.data.Dataset):
             return True, 'Not a PT dataset'
         return False, None
 
@@ -38,8 +38,8 @@ class TorchSolver(BaseSolver):
             transforms.RandomHorizontalFlip(),
         ])
 
-    def set_objective(self, model, dataset):
-        self.model = model
+    def set_objective(self, model_init_fn, dataset):
+        self.model_init_fn = model_init_fn
         self.dataset = dataset  # we use this in order
         # to access some elements from the trainer when
         # initializing it below
@@ -57,6 +57,13 @@ class TorchSolver(BaseSolver):
         return stop_val + 1
 
     def run(self, callback):
+        # model weight initialization
+        self.model = BenchPLModule(self.model_init_fn())
+        # optimizer init
+        self.model.configure_optimizers = lambda: self.optimizer_klass(
+            self.model.parameters(),
+            **self.optimizer_kwargs,
+        )
         # Initial evaluation
         callback(self.model)
 

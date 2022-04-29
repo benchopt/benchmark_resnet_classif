@@ -26,23 +26,13 @@ class TFSolver(BaseSolver):
             tf.keras.layers.RandomFlip('horizontal'),
         ])
 
-    def skip(self, model, dataset):
-        if not isinstance(model, tf.keras.Model):
+    def skip(self, model_init_fn, dataset):
+        if not isinstance(dataset, tf.data.Dataset):
             return True, 'Not a TF dataset'
         return False, None
 
-    def set_objective(self, model, dataset):
-        self.tf_model = model
-        self.tf_model.compile(
-            optimizer=self.optimizer,
-            loss='categorical_crossentropy',
-            # XXX: there might a problem here if the race is tight
-            # because this will compute accuracy for each batch
-            # we might need to define a custom training step with an
-            # encompassing model that will not compute metrics for
-            # each batch.
-            metrics='accuracy',
-        )
+    def set_objective(self, model_init_fn, dataset):
+        self.model_init_fn = model_init_fn
         self.tf_dataset = dataset
         if self.data_aug:
             # XXX: unfortunately we need to do this before
@@ -68,6 +58,17 @@ class TFSolver(BaseSolver):
         return stop_val + 1
 
     def run(self, callback):
+        self.tf_model = self.model_init_fn()
+        self.tf_model.compile(
+            optimizer=self.optimizer,
+            loss='categorical_crossentropy',
+            # XXX: there might a problem here if the race is tight
+            # because this will compute accuracy for each batch
+            # we might need to define a custom training step with an
+            # encompassing model that will not compute metrics for
+            # each batch.
+            metrics='accuracy',
+        )
         # Initial evaluation
         callback(self.tf_model)
 

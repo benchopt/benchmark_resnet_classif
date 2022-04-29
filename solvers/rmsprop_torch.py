@@ -19,10 +19,10 @@ class Solver(TorchSolver):
         **TorchSolver.parameters
     }
 
-    def set_objective(self, model, dataset):
-        super().set_objective(model, dataset)
-        self.model.configure_optimizers = lambda: RMSprop(
-            self.model.parameters(),
+    def set_objective(self, **kwargs):
+        super().set_objective(**kwargs)
+        self.optimizer_klass = RMSprop
+        self.optimizer_kwargs = dict(
             lr=self.lr,
             momentum=self.momentum,
             alpha=self.alpha,
