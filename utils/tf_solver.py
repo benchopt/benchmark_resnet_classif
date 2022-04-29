@@ -39,7 +39,7 @@ class TFSolver(BaseSolver):
 
     def set_objective(self, model_init_fn, dataset):
         # NOTE: in the following, we need to multiply by the weight decay
-        # by the learning rate to have a comparable settign with PyTorch
+        # by the learning rate to have a comparable setting with PyTorch
         if self.lr_schedule == 'step':
             self.lr_scheduler, self.wd_scheduler = [
                 tf.keras.optimizers.schedules.ExponentialDecay(
