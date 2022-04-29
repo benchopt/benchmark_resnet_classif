@@ -151,7 +151,8 @@ class Objective(BaseObjective):
                 )
                 metrics = self.trainer.test(model, dataloaders=dataloader)[0]
             results[dataset_name + "_loss"] = metrics["loss"]
-            results[dataset_name + "_acc"] = metrics["accuracy"]
+            acc_name = "accuracy" if self.framework == 'tensorflow' else "acc"
+            results[dataset_name + "_acc"] = metrics[acc_name]
 
         results["value"] = results["train_loss"]
         return results
