@@ -23,9 +23,11 @@ class TorchSolver(BaseSolver):
 
     def set_objective(self, pl_module, torch_dataset, tf_model, tf_dataset):
         self.pl_module = pl_module
+        # TODO: num_worker should not be hard coded. Finding a sensible way to
+        # set this value is necessary here.
         self.dataloader = torch.utils.data.DataLoader(
             torch_dataset, batch_size=self.batch_size,
-            num_workers=6
+            num_workers=6,
         )
 
     @staticmethod
@@ -37,6 +39,9 @@ class TorchSolver(BaseSolver):
         callback(self.pl_module)
 
         # Setup the trainer
+        # TODO: for now, we are limited to 1 device due to pytorch_lightning
+        # bad interaction with benchopt. Removing this limitation would be
+        # nice to allow multi-GPU training.
         trainer = Trainer(
             max_epochs=-1, callbacks=[BenchoptCallback(callback)],
             accelerator="auto", devices=1

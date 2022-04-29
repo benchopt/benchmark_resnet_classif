@@ -96,6 +96,9 @@ class Objective(BaseObjective):
             accelerator="auto", strategy="noteardown"
         )
 
+        # Set the batch size for the test dataloader
+        self._test_batch_size = 100
+
     def compute(self, model):
         results = dict()
         # XXX: this might be factorized but I think at the cost
@@ -107,7 +110,7 @@ class Objective(BaseObjective):
                 ["train", "test"], [self.tf_dataset, self.tf_test_dataset]
             ):
                 metrics = model.evaluate(
-                    dataset.batch(100),
+                    dataset.batch(self._test_batch_size),
                     return_dict=True,
                 )
                 results[dataset_name + "_loss"] = metrics["loss"]
@@ -117,7 +120,9 @@ class Objective(BaseObjective):
                 ["train", "test"],
                 [self.torch_dataset, self.torch_test_dataset],
             ):
-                dataloader = DataLoader(dataset, batch_size=100)
+                dataloader = DataLoader(
+                    dataset, batch_size=self._test_batch_size
+                )
                 metrics = self.trainer.test(model, dataloaders=dataloader)
                 results[dataset_name + "_loss"] = metrics[0]["loss"]
                 results[dataset_name + "_acc"] = metrics[0]["acc"]
