@@ -4,6 +4,7 @@ from benchopt.stopping_criterion import SufficientProgressCriterion
 
 with safe_import_context() as import_ctx:
 
+    import joblib
     import torch
     from torchvision import transforms
     from pytorch_lightning import Trainer
@@ -56,7 +57,7 @@ class TorchSolver(BaseSolver):
         # set this value is necessary here.
         self.dataloader = torch.utils.data.DataLoader(
             self.dataset, batch_size=self.batch_size,
-            num_workers=6,
+            num_workers=min(10, joblib.cpu_count()),
         )
 
     @staticmethod
