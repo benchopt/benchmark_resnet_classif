@@ -33,6 +33,9 @@ class Dataset(BaseDataset):
         dataset = TensorDataset(inps[:n_train], tgts[:n_train])
         test_dataset = TensorDataset(inps[n_train:], tgts[n_train:])
 
+        if len(set(tgts)) < 2:
+            tgts[0], tgts[1] = 0, 1
+
         data = dict(dataset=dataset, test_dataset=test_dataset)
 
         return 'object', data
