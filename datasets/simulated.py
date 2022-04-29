@@ -30,11 +30,11 @@ class Dataset(BaseDataset):
         inps = torch.randn(self.n_samples, 3, self.img_size, self.img_size,
                            dtype=torch.float32)
         tgts = torch.randint(0, 2, (self.n_samples,))
+        if len(set(tgts[:n_train])) < 2:
+            tgts[0], tgts[1] = 0, 1
+
         dataset = TensorDataset(inps[:n_train], tgts[:n_train])
         test_dataset = TensorDataset(inps[n_train:], tgts[n_train:])
-
-        if len(set(tgts)) < 2:
-            tgts[0], tgts[1] = 0, 1
 
         data = dict(dataset=dataset, test_dataset=test_dataset)
 
