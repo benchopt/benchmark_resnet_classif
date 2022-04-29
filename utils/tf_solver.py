@@ -67,6 +67,7 @@ class TFSolver(BaseSolver):
 
     def run(self, callback):
         self.tf_model = self.model_init_fn()
+        self.optimizer = self.optimizer_klass(**self.optimizer_kwargs)
         self.tf_model.compile(
             optimizer=self.optimizer,
             loss='sparse_categorical_crossentropy',

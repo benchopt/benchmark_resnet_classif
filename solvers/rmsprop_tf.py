@@ -20,7 +20,8 @@ class Solver(TFSolver):
     }
 
     def set_objective(self, **kwargs):
-        self.optimizer = RMSprop(
+        self.optimizer_klass = RMSprop
+        self.optimizer_kwargs = dict(
             learning_rate=self.lr,
             momentum=self.momentum,
             rho=self.rho,
