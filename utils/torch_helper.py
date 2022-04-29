@@ -69,6 +69,8 @@ class AugmentedDataset(Dataset):
         if self.transform:
             x = self.transform(x)
         return x, y
+
+
 class SingleDeviceStrategyNoTeardown(SingleDeviceStrategy):
     def __init__(self, device=None, accelerator=None, checkpoint_io=None,
                  precision_plugin=None):
