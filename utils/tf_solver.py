@@ -27,7 +27,7 @@ class TFSolver(BaseSolver):
         ])
 
     def skip(self, model, dataset):
-        if not isinstance(model, tf.keras.Model):
+        if not isinstance(dataset, tf.data.Dataset):
             return True, 'Not a TF dataset'
         return False, None
 

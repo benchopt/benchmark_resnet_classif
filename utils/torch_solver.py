@@ -28,7 +28,7 @@ class TorchSolver(BaseSolver):
     }
 
     def skip(self, model, dataset):
-        if not isinstance(model, BenchPLModule):
+        if not isinstance(dataset, torch.utils.data.Dataset):
             return True, 'Not a PT dataset'
         return False, None
 
