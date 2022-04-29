@@ -3,6 +3,7 @@ import warnings
 
 import numpy as np
 import pytest
+from sklearn.neighbors import NearestNeighbors
 from torch.utils.data import DataLoader
 
 from benchopt.utils.safe_import import set_benchmark
@@ -49,32 +50,6 @@ def order_images_labels(images, labels):
     return images_ordered, labels_ordered
 
 
-def get_matched_unmatched_indices_arrays(
-    array_1,
-    array_2,
-    stride=0,
-    epsilon=1.5e-6,
-):
-    n_samples = len(array_1)
-    diff = array_1[:n_samples-stride] - array_2[stride:]
-    close = np.abs(diff) <= epsilon
-    close = np.all(close, axis=(1, 2, 3))
-    matched_indices_1 = np.where(close)[0]
-    matched_indices_2 = matched_indices_1 + stride
-    unmatched_indices_1 = list(np.where(~close)[0])
-    unmatched_indices_2 = list(np.where(~close)[0] + stride)
-    unmatched_indices_1 = unmatched_indices_1 + list(range(
-        n_samples - stride, n_samples,
-    ))
-    unmatched_indices_2 = list(range(stride)) + unmatched_indices_2
-    return (
-        matched_indices_1,
-        matched_indices_2,
-        unmatched_indices_1,
-        unmatched_indices_2,
-    )
-
-
 @pytest.mark.parametrize('dataset_module_name', [
     'cifar',
     'mnist',
@@ -109,7 +84,7 @@ def test_datasets_consistency(dataset_module_name, dataset_type):
         "len of the 2 datsets do not match"
     )
 
-    # Conver to numpy arrays
+    # Convert to numpy arrays
     n_samples = len(torch_dataset)
     tf_np_array = tf_dataset_to_np_array(tf_dataset, n_samples)
     X_tf, y_tf = order_images_labels(*tf_np_array)
@@ -117,66 +92,24 @@ def test_datasets_consistency(dataset_module_name, dataset_type):
     X_torch, y_torch = order_images_labels(*torch_np_array)
 
     try:
-        # XXX - use 1-nearest neighbor from sklearn to find the closest image.
-        # this should be mostly efficient and require less custom yet beautiful
-        # code.
         assert_tf_images_equal_torch_images(X_tf, X_torch)
     except AssertionError:
-        # TODO: refactor all this BS
-        # easy cases where there is a correct ordering, or pairs
+        clf = NearestNeighbors(n_neighbors=1)
         X_torch_channel_last = np.transpose(X_torch, (0, 2, 3, 1))
-        unmatched_tf_indices = list(range(len(X_tf)))
-        unmatched_torch_indices = list(range(len(X_torch_channel_last)))
-        for i, stride in enumerate([0, 1, 0]):
-            X_tf = X_tf[unmatched_tf_indices]
-            X_torch_channel_last = X_torch_channel_last[
-                unmatched_torch_indices,
-            ]
-            (
-                matched_tf_indices,
-                matched_torch_indices,
-                unmatched_tf_indices,
-                unmatched_torch_indices,
-            ) = get_matched_unmatched_indices_arrays(
-                X_tf,
-                X_torch_channel_last,
-                stride
+        clf.fit(X_tf.reshape(X_tf.shape[0], -1))
+        indices = clf.kneighbors(
+            X_torch_channel_last.reshape(X_torch_channel_last.shape[0], -1),
+            return_distance=False,
+        )
+        ordered_X_torch = X_torch[indices]
+        assert_tf_images_equal_torch_images(X_tf, ordered_X_torch)
+        y_torch = y_torch[indices]
+    finally:
+        if dataset_module_name != 'svhn' or dataset_type == 'test_dataset':
+            np.testing.assert_array_equal(y_tf, y_torch)
+        else:
+            warnings.warn(
+                'Label equality test not carried for SVHN '
+                'because of a weird duplicate with 2 different '
+                'labels',
             )
-            if dataset_module_name != 'svhn' or dataset_type == 'test_dataset':
-                np.testing.assert_array_equal(
-                    y_tf[matched_tf_indices],
-                    y_torch[matched_torch_indices],
-                )
-            else:
-                warnings.warn(
-                    'Label equality test not carried for SVHN '
-                    'because of a weird duplicate with 2 different '
-                    'labels',
-                )
-            y_tf = y_tf[unmatched_tf_indices]
-            if i < 2:
-                y_torch = y_torch[unmatched_torch_indices]
-
-        # harder cases where the match can be up to 10 away
-        for i, tf_image in enumerate(X_tf[unmatched_tf_indices]):
-            next_X_torch = X_torch_channel_last[unmatched_torch_indices[:10]]
-            next_y_torch = y_torch[unmatched_torch_indices]
-            diff = np.abs(next_X_torch - tf_image)
-            total_diff = np.sum(diff, axis=(1, 2, 3))
-            candidate_indices = np.where(total_diff < 1)[0]
-            is_matched = [
-                np.allclose(
-                    next_X_torch[candidate_index],
-                    tf_image,
-                    rtol=0,
-                    atol=1.5e-6,
-                )
-                for candidate_index in candidate_indices
-            ]
-            one_close = np.any(is_matched)
-            assert one_close, 'Image is not close'
-            matched_torch_index = candidate_indices[is_matched.index(True)]
-            assert y_tf[i] == next_y_torch[matched_torch_index]
-            unmatched_torch_indices.pop(matched_torch_index)
-    else:
-        np.testing.assert_array_equal(y_tf, y_torch)
