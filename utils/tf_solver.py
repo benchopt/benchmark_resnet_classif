@@ -59,6 +59,10 @@ class TFSolver(BaseSolver):
         else:
             self.lr_scheduler = lambda epoch: self.lr
             self.wd_scheduler = lambda epoch: self.decoupled_weight_decay
+
+        # we set the decoupled weight decay always, and when it's 0
+        # the WD cback and the decoupled weight decay extension are
+        # essentially no-ops
         self.lr_wd_cback = LRWDSchedulerCallback(
             lr_schedule=self.lr_scheduler,
             wd_schedule=self.wd_scheduler,
@@ -98,6 +102,8 @@ class TFSolver(BaseSolver):
     def run(self, callback):
         self.model = self.model_init_fn()
         self.optimizer = self.optimizer_klass(
+            # this scaling is needed as in TF the weight decay is
+            # not multiplied by the learning rate
             weight_decay=self.decoupled_weight_decay*self.lr,
             **self.optimizer_kwargs,
         )
