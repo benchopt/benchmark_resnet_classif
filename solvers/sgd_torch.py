@@ -22,7 +22,6 @@ class Solver(TorchSolver):
         wd = self.coupled_weight_decay or self.decoupled_weight_decay
         self.optimizer_klass = SGD
         self.optimizer_kwargs = dict(
-            self.model.parameters(),
             lr=self.lr,
             momentum=self.momentum,
             nesterov=self.nesterov,
