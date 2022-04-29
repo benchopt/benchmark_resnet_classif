@@ -3,7 +3,6 @@ from benchopt import safe_import_context
 with safe_import_context() as import_ctx:
     import numpy as np
     import tensorflow as tf
-    from torch.utils.data import Subset
     from torchvision import transforms
     import torchvision.datasets as datasets
 
@@ -24,10 +23,6 @@ def grayscale_to_rbg_tf(image):
 class Dataset(MultiFrameworkDataset):
 
     name = "MNIST"
-    parameters = {
-        'debug': [True],
-        'framework': ['pytorch', 'tensorflow'],
-    }
 
     # from
     # https://stackoverflow.com/a/67233938/4332585
@@ -45,10 +40,9 @@ class Dataset(MultiFrameworkDataset):
 
     tf_ds_name = 'mnist'
 
-    def __init__(self, debug=True, **parameters):
-        # TODO: implement subsampling for mnist debug
-        super().__init__(**parameters)
-        self.transform = transforms.Compose([
+    def get_torch_preprocessing_step(self):
+        # Here this dataset is in gray scale so we adapt the preprocessing.
+        transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(
                 self.normalization_mean,
@@ -56,23 +50,13 @@ class Dataset(MultiFrameworkDataset):
             ),
             transforms.Lambda(grayscale_to_rbg_torch),
         ])
+        return transform
+
+    def get_tf_preprocessing_step(self):
+
+        # Data preprocessing steps for grayscale
         keras_normalization = tf.keras.layers.Normalization(
             mean=self.normalization_mean,
             variance=np.square(self.normalization_std),
         )
-        self.image_preprocessing = (
-            lambda x: grayscale_to_rbg_tf(keras_normalization(x/255))
-        )
-        self.debug = debug
-
-    def get_tf_data(self):
-        o_str, data_dict = super().get_tf_data()
-        if self.debug:
-            data_dict['dataset'] = data_dict['dataset'].take(1000)
-        return o_str, data_dict
-
-    def get_torch_data(self):
-        o_str, data_dict = super().get_torch_data()
-        if self.debug:
-            data_dict['dataset'] = Subset(data_dict['dataset'], range(1000))
-        return o_str, data_dict
+        return lambda x: grayscale_to_rbg_tf(keras_normalization(x/255))

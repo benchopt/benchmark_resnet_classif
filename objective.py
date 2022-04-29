@@ -42,7 +42,7 @@ class Objective(BaseObjective):
 
     install_cmd = 'conda'
     requirements = [
-        'pip:torch', 'pip:torchvision', 'pip:pytorch-lightning ',
+        'pip:pytorch', 'pip:torchvision', 'pip:pytorch-lightning ',
         'pip:tensorflow', 'pip:tensorflow-datasets',
     ]
 
@@ -92,13 +92,13 @@ class Objective(BaseObjective):
 
         def _model_init_fn():
             model = model_klass(num_classes=self.n_classes)
-            return model
+            return BenchPLModule(model)
         return _model_init_fn
 
-    def get_model_init_fn(self):
-        if self.framework == 'tensorflow':
+    def get_model_init_fn(self, framework):
+        if framework == 'tensorflow':
             return self.get_tf_model_init_fn()
-        elif self.framework == 'pytorch':
+        elif framework == 'pytorch':
             return self.get_torch_model_init_fn()
 
     def set_data(
@@ -119,14 +119,18 @@ class Objective(BaseObjective):
         self.n_classes = n_classes
         self.framework = framework
 
-        # seeding
+        # Get the model initializer
+        self.get_one_beta = self.get_model_init_fn(framework)
+
+        # seeding for the models
+        # XXX: This should be changed once benchopt/benchopt#342 is merged
         tf.random.set_seed(0)
         seed_everything(0, workers=True)
 
         # https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#reproducibility
         # XXX: modify this with the correct amount of CPUs/GPUs
         self.trainer = Trainer(
-            accelerator="auto", strategy="noteardown"
+            accelerator="auto", strategy="noteardown", max_epochs=-1
         )
 
         # Set the batch size for the test dataloader
@@ -134,44 +138,29 @@ class Objective(BaseObjective):
 
     def compute(self, model):
         results = dict()
-        # XXX: this might be factorized but I think at the cost
-        # of readability. Since the only additional framework
-        # we might add is Jax atm I think it's ok to have this
-        # code not DRY.
-        if self.framework == 'tensorflow':
-            for dataset_name, dataset in zip(
-                ["train", "test"], [self.dataset, self.test_dataset]
-            ):
+        for dataset_name, dataset in zip(
+            ["train", "test"], [self.dataset, self.test_dataset]
+        ):
+            if self.framework == 'tensorflow':
                 metrics = model.evaluate(
                     dataset.batch(self._test_batch_size),
                     return_dict=True,
                 )
-                results[dataset_name + "_loss"] = metrics["loss"]
-                results[dataset_name + "_acc"] = metrics["accuracy"]
-        elif self.framework == 'pytorch':
-            for dataset_name, dataset in zip(
-                ["train", "test"],
-                [self.dataset, self.test_dataset],
-            ):
+            elif self.framework == 'pytorch':
                 dataloader = DataLoader(
                     dataset, batch_size=self._test_batch_size
                 )
-                metrics = self.trainer.test(model, dataloaders=dataloader)
-                results[dataset_name + "_loss"] = metrics[0]["loss"]
-                results[dataset_name + "_acc"] = metrics[0]["acc"]
+                metrics = self.trainer.test(model, dataloaders=dataloader)[0]
+            results[dataset_name + "_loss"] = metrics["loss"]
+            acc_name = "accuracy" if self.framework == 'tensorflow' else "acc"
+            results[dataset_name + "_acc"] = metrics[acc_name]
+
         results["value"] = results["train_loss"]
         return results
 
-    def get_one_beta(self):
-        model = self.get_model_init_fn()()
-        if self.framework == 'pytorch':
-            model = BenchPLModule(model)
-        return model
-
     def to_dict(self):
         # XXX: make sure to skip the small datasets when using vgg
-        model_init_fn = self.get_model_init_fn()
         return dict(
-            model_init_fn=model_init_fn,
+            model_init_fn=self.get_one_beta,
             dataset=self.dataset,
         )

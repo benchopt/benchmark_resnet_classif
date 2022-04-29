@@ -23,11 +23,6 @@ class TFSolver(BaseSolver):
 
     parameters = {
         'batch_size': [64],
-    }
-
-    parameters = {
-        'lr': [1e-3],
-        'batch_size': [64],
         'data_aug': [False, True],
         'lr_schedule': [None, 'step', 'cosine'],
         'decoupled_weight_decay': [0.0, 1e-4, 0.02],
@@ -36,13 +31,6 @@ class TFSolver(BaseSolver):
 
     install_cmd = 'conda'
     requirements = ['tensorflow-addons']
-
-    def __init__(self, **parameters):
-        self.data_aug_layer = tf.keras.models.Sequential([
-            tf.keras.layers.ZeroPadding2D(padding=4),
-            tf.keras.layers.RandomCrop(height=32, width=32),
-            tf.keras.layers.RandomFlip('horizontal'),
-        ])
 
     def skip(self, model_init_fn, dataset):
         if not isinstance(dataset, tf.data.Dataset):
@@ -80,21 +68,25 @@ class TFSolver(BaseSolver):
         self.optimizer_klass = extend_with_decoupled_weight_decay(
             self.optimizer_klass,
         )
+        self.dataset = dataset
         self.model_init_fn = model_init_fn
-        self.tf_dataset = dataset
+
         if self.data_aug:
+            data_aug_layer = tf.keras.models.Sequential([
+                tf.keras.layers.ZeroPadding2D(padding=4),
+                tf.keras.layers.RandomCrop(height=32, width=32),
+                tf.keras.layers.RandomFlip('horizontal'),
+            ])
+
             # XXX: unfortunately we need to do this before
             # batching since the random crop layer does not
             # crop at different locations in the same batch
             # https://github.com/keras-team/keras/issues/16399
-            self.tf_dataset = self.tf_dataset.map(
-                lambda x, y: (
-                    self.data_aug_layer(x[None], training=True)[0],
-                    y,
-                ),
+            self.dataset = self.dataset.map(
+                lambda x, y: (data_aug_layer(x[None], training=True)[0], y),
                 num_parallel_calls=tf.data.experimental.AUTOTUNE,
             )
-        self.tf_dataset = self.tf_dataset.batch(
+        self.dataset = self.dataset.batch(
             self.batch_size,
             num_parallel_calls=tf.data.experimental.AUTOTUNE,
         ).prefetch(
@@ -106,7 +98,7 @@ class TFSolver(BaseSolver):
         return stop_val + 1
 
     def run(self, callback):
-        self.tf_model = self.model_init_fn()
+        self.model = self.model_init_fn()
         self.optimizer = self.optimizer_klass(
             weight_decay=self.decoupled_weight_decay*self.lr,
             **self.optimizer_kwargs,
@@ -126,11 +118,11 @@ class TFSolver(BaseSolver):
                 'beta_regularizer',
                 'gamma_regularizer',
             ]
-            for layer in self.tf_model.layers:
+            for layer in self.model.layers:
                 for attr in target_regularizers:
                     if hasattr(layer, attr):
                         setattr(layer, attr, regularizer)
-        self.tf_model.compile(
+        self.model.compile(
             optimizer=self.optimizer,
             loss='sparse_categorical_crossentropy',
             # XXX: there might a problem here if the race is tight
@@ -142,14 +134,14 @@ class TFSolver(BaseSolver):
         )
 
         # Initial evaluation
-        callback(self.tf_model)
+        callback(self.model)
 
         # Launch training
-        self.tf_model.fit(
-            self.tf_dataset,
+        self.model.fit(
+            self.dataset,
             callbacks=[BenchoptCallback(callback), self.lr_wd_cback],
             epochs=MAX_EPOCHS,
         )
 
     def get_result(self):
-        return self.tf_model
+        return self.model
