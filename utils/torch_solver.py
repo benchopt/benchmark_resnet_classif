@@ -1,10 +1,11 @@
+import os
+import platform
 from benchopt import BaseSolver, safe_import_context
 from benchopt.stopping_criterion import SufficientProgressCriterion
 
 
 with safe_import_context() as import_ctx:
 
-    import cv2
     import joblib
     import torch
     from torchvision import transforms
@@ -56,10 +57,11 @@ class TorchSolver(BaseSolver):
             )
         # TODO: num_worker should not be hard coded. Finding a sensible way to
         # set this value is necessary here.
-        cv2.setNumThreads(0)
+        system = os.environ.get('RUNNER_OS', platform.system())
+        is_mac = system == 'Darwin' or system == 'macOS'
         self.dataloader = torch.utils.data.DataLoader(
             self.dataset, batch_size=self.batch_size,
-            num_workers=min(10, joblib.cpu_count()),
+            num_workers=min(10, joblib.cpu_count()) if not is_mac else 0,
         )
 
     @staticmethod
