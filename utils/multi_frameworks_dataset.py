@@ -12,10 +12,9 @@ with safe_import_context() as import_ctx:
 class MultiFrameworkDataset(BaseDataset, ABC):
     torch_split_kwarg = 'train'
 
-    def __init__(self, framework='pytorch', one_hot=True):
+    def __init__(self, framework='pytorch'):
         # Store the parameters of the dataset
         self.framework = framework
-        self.one_hot = one_hot
         self.transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(
@@ -56,8 +55,7 @@ class MultiFrameworkDataset(BaseDataset, ABC):
             ds = ds.map(
                 lambda x, y: (
                     self.image_preprocessing(x),
-                    tf.one_hot(y, self.ds_description['n_classes'])
-                    if self.one_hot else y,
+                    y,
                 ),
                 num_parallel_calls=tf.data.experimental.AUTOTUNE,
             )

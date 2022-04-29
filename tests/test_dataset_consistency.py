@@ -98,7 +98,6 @@ def test_datasets_consistency(dataset_module_name, dataset_type):
         add_kwargs = {}
     d_tf = dataset.Dataset.get_instance(
         framework='tensorflow',
-        one_hot=False,
         **add_kwargs,
     )
     d_torch = dataset.Dataset.get_instance(framework='pytorch', **add_kwargs)
