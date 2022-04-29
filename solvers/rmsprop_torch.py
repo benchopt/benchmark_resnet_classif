@@ -13,8 +13,8 @@ class Solver(TorchSolver):
 
     # any parameter defined here is accessible as a class attribute
     parameters = {
-        'alpha': [0.99, 0.9],
         'lr': [1e-3],
+        'rho': [0.99, 0.9],
         'momentum': [0, 0.9],
         **TorchSolver.parameters
     }
@@ -25,5 +25,5 @@ class Solver(TorchSolver):
         self.optimizer_kwargs = dict(
             lr=self.lr,
             momentum=self.momentum,
-            alpha=self.alpha,
+            alpha=self.rho,
         )

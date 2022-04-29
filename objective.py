@@ -1,9 +1,9 @@
 from benchopt import BaseObjective, safe_import_context
 
 with safe_import_context() as import_ctx:
-    from pytorch_lightning import Trainer
     from pytorch_lightning.utilities.seed import seed_everything
     import tensorflow as tf
+    from pytorch_lightning import Trainer
     from torch.utils.data import DataLoader
     import torchvision.models as models
     BenchPLModule = import_ctx.import_from("torch_helper", "BenchPLModule")
@@ -55,18 +55,6 @@ class Objective(BaseObjective):
             ('vgg', '16'),
         ]
     }
-
-    def __init__(self, batch_size=64, model_type='resnet', model_size='18'):
-        # XXX: seed everything correctly
-        # https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#reproducibility
-        # XXX: modify this with the correct amount of CPUs/GPUs
-        self.trainer = Trainer()
-        self.batch_size = batch_size
-        self.model_type = model_type
-        self.model_size = model_size
-        # seeding
-        tf.random.set_seed(0)
-        seed_everything(0, workers=True)
 
     def skip(
         self,
@@ -131,6 +119,19 @@ class Objective(BaseObjective):
         self.n_classes = n_classes
         self.framework = framework
 
+        # seeding
+        tf.random.set_seed(0)
+        seed_everything(0, workers=True)
+
+        # https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#reproducibility
+        # XXX: modify this with the correct amount of CPUs/GPUs
+        self.trainer = Trainer(
+            accelerator="auto", strategy="noteardown"
+        )
+
+        # Set the batch size for the test dataloader
+        self._test_batch_size = 100
+
     def compute(self, model):
         results = dict()
         # XXX: this might be factorized but I think at the cost
@@ -142,8 +143,7 @@ class Objective(BaseObjective):
                 ["train", "test"], [self.dataset, self.test_dataset]
             ):
                 metrics = model.evaluate(
-                    # TODO: optimize this with prefetching
-                    dataset.batch(self.batch_size),
+                    dataset.batch(self._test_batch_size),
                     return_dict=True,
                 )
                 results[dataset_name + "_loss"] = metrics["loss"]
@@ -153,7 +153,9 @@ class Objective(BaseObjective):
                 ["train", "test"],
                 [self.dataset, self.test_dataset],
             ):
-                dataloader = DataLoader(dataset, batch_size=self.batch_size)
+                dataloader = DataLoader(
+                    dataset, batch_size=self._test_batch_size
+                )
                 metrics = self.trainer.test(model, dataloaders=dataloader)
                 results[dataset_name + "_loss"] = metrics[0]["loss"]
                 results[dataset_name + "_acc"] = metrics[0]["acc"]

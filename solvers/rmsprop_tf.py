@@ -14,9 +14,9 @@ class Solver(TFSolver):
     # any parameter defined here is accessible as a class attribute
     parameters = {
         'lr': [1e-3],
-        'momentum': [0, 0.9],
         'rho': [0.99, 0.9],
-        **TFSolver.parameters,
+        'momentum': [0, 0.9],
+        **TFSolver.parameters
     }
 
     def set_objective(self, **kwargs):

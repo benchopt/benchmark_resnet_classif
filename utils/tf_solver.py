@@ -1,7 +1,9 @@
 from benchopt import BaseSolver, safe_import_context
+from benchopt.stopping_criterion import SufficientProgressCriterion
 
 with safe_import_context() as import_ctx:
     import tensorflow as tf
+
     BenchoptCallback = import_ctx.import_from(
         'tf_helper', 'BenchoptCallback'
     )
@@ -12,7 +14,13 @@ MAX_EPOCHS = int(1e9)
 class TFSolver(BaseSolver):
     """TF base solver"""
 
-    stopping_strategy = 'callback'
+    stopping_criterion = SufficientProgressCriterion(
+        patience=20, strategy='callback'
+    )
+
+    parameters = {
+        'batch_size': [64],
+    }
 
     parameters = {
         'batch_size': [64],
@@ -61,7 +69,7 @@ class TFSolver(BaseSolver):
         self.tf_model = self.model_init_fn()
         self.tf_model.compile(
             optimizer=self.optimizer,
-            loss='categorical_crossentropy',
+            loss='sparse_categorical_crossentropy',
             # XXX: there might a problem here if the race is tight
             # because this will compute accuracy for each batch
             # we might need to define a custom training step with an
