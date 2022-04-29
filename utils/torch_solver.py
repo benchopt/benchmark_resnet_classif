@@ -30,8 +30,6 @@ class TorchSolver(BaseSolver):
         'batch_size': [64],
         'data_aug': [False, True],
         'lr_schedule': [None, 'step', 'cosine'],
-        'coupled_weight_decay': [0.0, 1e-4, 0.02],
-        'decoupled_weight_decay': [0.0, 1e-4, 0.02],
     }
 
     def skip(self, model_init_fn, dataset):

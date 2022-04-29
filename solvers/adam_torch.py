@@ -14,6 +14,8 @@ class Solver(TorchSolver):
     # any parameter defined here is accessible as a class attribute
     parameters = {
         'lr': [1e-3],
+        'coupled_weight_decay': [0.0, 0.02],
+        'decoupled_weight_decay': [0.0, 0.02],
         **TorchSolver.parameters
     }
 

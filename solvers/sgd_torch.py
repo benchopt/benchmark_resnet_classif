@@ -14,6 +14,8 @@ class Solver(TorchSolver):
     parameters = {
         'nesterov, momentum': [(False, 0), (True, 0.9)],
         'lr': [1e-1],
+        'coupled_weight_decay': [0.0, 1e-4],
+        'decoupled_weight_decay': [0.0, 1e-4],
         **TorchSolver.parameters
     }
 
