@@ -12,6 +12,10 @@ with safe_import_context() as import_ctx:
 class MultiFrameworkDataset(BaseDataset, ABC):
     torch_split_kwarg = 'train'
 
+    parameters = {
+        'framework': ['pytorch', 'tensorflow'],
+    }
+
     def __init__(self, framework='pytorch'):
         # Store the parameters of the dataset
         self.framework = framework
@@ -63,6 +67,7 @@ class MultiFrameworkDataset(BaseDataset, ABC):
         return 'object', data_dict
 
     def get_data(self):
+        """Switch to select the data from the right framework."""
         if self.framework == 'pytorch':
             return self.get_torch_data()
         elif self.framework == 'tensorflow':

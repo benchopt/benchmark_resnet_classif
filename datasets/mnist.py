@@ -23,9 +23,6 @@ def grayscale_to_rbg_tf(image):
 class Dataset(MultiFrameworkDataset):
 
     name = "MNIST"
-    parameters = {
-        'framework': ['pytorch', 'tensorflow'],
-    }
 
     # from
     # https://stackoverflow.com/a/67233938/4332585
@@ -45,6 +42,8 @@ class Dataset(MultiFrameworkDataset):
 
     def __init__(self, **parameters):
         super().__init__(**parameters)
+
+        # Here this dataset is in gray scale so we adapt the preprocessing.
         self.transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(

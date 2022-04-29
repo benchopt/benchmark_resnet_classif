@@ -25,10 +25,6 @@ class Dataset(MultiFrameworkDataset):
         n_classes=10,
     )
 
-    parameters = {
-        'framework': ['pytorch', 'tensorflow'],
-    }
-
     torch_ds_klass = datasets.CIFAR10
 
     tf_ds_name = 'cifar10'

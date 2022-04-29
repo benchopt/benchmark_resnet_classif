@@ -39,22 +39,20 @@ class TorchSolver(BaseSolver):
             return True, 'Not a PT dataset'
         return False, None
 
-    def __init__(self, **parameters):
-        self.data_aug_transform = transforms.Compose([
-            transforms.RandomCrop(32, padding=4),
-            transforms.RandomHorizontalFlip(),
-        ])
-
     def set_objective(self, model_init_fn, dataset):
+        self.dataset = dataset
         self.model_init_fn = model_init_fn
-        self.dataset = dataset  # we use this in order
-        # to access some elements from the trainer when
-        # initializing it below
+
         if self.data_aug:
+            data_aug_transform = transforms.Compose([
+                transforms.RandomCrop(32, padding=4),
+                transforms.RandomHorizontalFlip(),
+            ])
             self.dataset = AugmentedDataset(
                 self.dataset,
-                self.data_aug_transform,
+                data_aug_transform,
             )
+
         # TODO: num_worker should not be hard coded. Finding a sensible way to
         # set this value is necessary here.
         system = os.environ.get('RUNNER_OS', platform.system())
