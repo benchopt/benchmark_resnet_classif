@@ -16,6 +16,16 @@ with safe_import_context() as import_ctx:
             self.model.stop_training = not self.cb_(self.model)
 
     class LRWDSchedulerCallback(tf.keras.callbacks.LearningRateScheduler):
+        """Callback that schedules jointly the learning rate and the weight decay
+
+        This is necessary as in TensorFlow, the decoupled weight decay is not
+        multiplied by the learning rate.
+        This is mentionned in the docs:
+        https://www.tensorflow.org/addons/api_docs/python/tfa/optimizers/extend_with_decoupled_weight_decay
+        In this case, they mention a per-step schedule, but in order to stick to the
+        PyTorch Lightning way of updating LR and WD, we stick to a per-epoch schedule
+        which is conveniently done with a Callback.
+        """
         def __init__(self, lr_schedule, wd_schedule, verbose=0):
             super(LRWDSchedulerCallback, self).__init__(
                 schedule=lr_schedule,
