@@ -40,9 +40,7 @@ class Dataset(MultiFrameworkDataset):
 
     tf_ds_name = 'mnist'
 
-    def __init__(self, **parameters):
-        super().__init__(**parameters)
-
+    def get_torch_preprocessing_step(self):
         # Here this dataset is in gray scale so we adapt the preprocessing.
         self.transform = transforms.Compose([
             transforms.ToTensor(),
@@ -52,10 +50,12 @@ class Dataset(MultiFrameworkDataset):
             ),
             transforms.Lambda(grayscale_to_rbg_torch),
         ])
+
+    def get_tf_preprocessing_step(self):
+
+        # Data preprocessing steps for grayscale
         keras_normalization = tf.keras.layers.Normalization(
             mean=self.normalization_mean,
             variance=np.square(self.normalization_std),
         )
-        self.image_preprocessing = (
-            lambda x: grayscale_to_rbg_tf(keras_normalization(x/255))
-        )
+        return lambda x: grayscale_to_rbg_tf(keras_normalization(x/255))

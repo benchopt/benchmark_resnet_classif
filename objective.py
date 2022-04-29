@@ -122,7 +122,8 @@ class Objective(BaseObjective):
         # Get the model initializer
         self.get_one_beta = self.get_model_init_fn(framework)
 
-        # seeding
+        # seeding for the models
+        # XXX: This should be changed once benchopt/benchopt#342 is merged
         tf.random.set_seed(0)
         seed_everything(0, workers=True)
 
