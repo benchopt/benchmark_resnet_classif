@@ -1,8 +1,10 @@
 from benchopt import BaseSolver, safe_import_context
+from benchopt.stopping_criterion import SufficientProgressCriterion
 
 with safe_import_context() as import_ctx:
-
+    import torch
     from pytorch_lightning import Trainer
+
     BenchoptCallback = import_ctx.import_from(
         'torch_helper', 'BenchoptCallback'
     )
@@ -11,13 +13,22 @@ with safe_import_context() as import_ctx:
 class TorchSolver(BaseSolver):
     """Torch base solver"""
 
-    stopping_strategy = 'callback'
+    stopping_criterion = SufficientProgressCriterion(
+        patience=20, strategy='callback'
+    )
 
-    def set_objective(self, pl_module, trainer, tf_model, tf_dataset):
+    parameters = {
+        'batch_size': [64],
+    }
+
+    def set_objective(self, pl_module, torch_dataset, tf_model, tf_dataset):
         self.pl_module = pl_module
-        self.main_trainer = trainer  # we use this in order
-        # to access some elements from the trainer when
-        # initializing it below
+        # TODO: num_worker should not be hard coded. Finding a sensible way to
+        # set this value is necessary here.
+        self.dataloader = torch.utils.data.DataLoader(
+            torch_dataset, batch_size=self.batch_size,
+            num_workers=6,
+        )
 
     @staticmethod
     def get_next(stop_val):
@@ -28,10 +39,14 @@ class TorchSolver(BaseSolver):
         callback(self.pl_module)
 
         # Setup the trainer
+        # TODO: for now, we are limited to 1 device due to pytorch_lightning
+        # bad interaction with benchopt. Removing this limitation would be
+        # nice to allow multi-GPU training.
         trainer = Trainer(
-            max_epochs=-1, callbacks=[BenchoptCallback(callback)]
+            max_epochs=-1, callbacks=[BenchoptCallback(callback)],
+            accelerator="auto", devices=1
         )
-        trainer.fit(self.pl_module)
+        trainer.fit(model=self.pl_module, train_dataloaders=self.dataloader)
 
     def get_result(self):
         return self.pl_module

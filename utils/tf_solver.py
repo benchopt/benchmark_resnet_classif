@@ -1,6 +1,8 @@
 from benchopt import BaseSolver, safe_import_context
+from benchopt.stopping_criterion import SufficientProgressCriterion
 
 with safe_import_context() as import_ctx:
+    import tensorflow as tf
 
     BenchoptCallback = import_ctx.import_from(
         'tf_helper', 'BenchoptCallback'
@@ -12,23 +14,29 @@ MAX_EPOCHS = int(1e9)
 class TFSolver(BaseSolver):
     """TF base solver"""
 
-    stopping_strategy = 'callback'
+    stopping_criterion = SufficientProgressCriterion(
+        patience=20, strategy='callback'
+    )
+
+    parameters = {
+        'batch_size': [64],
+    }
 
     # XXX: this should be removed once
     # https://github.com/benchopt/benchmark_resnet_classif/pull/6
     # and
     # https://github.com/benchopt/benchopt/pull/323
     # are merged
-    def skip(self, pl_module, trainer, tf_model, tf_dataset):
+    def skip(self, pl_module, torch_dataset, tf_model, tf_dataset):
         if tf_model is None or tf_dataset is None:
             return True, 'Dataset not fit for TF use'
         return False, None
 
-    def set_objective(self, pl_module, trainer, tf_model, tf_dataset):
+    def set_objective(self, pl_module, torch_dataset, tf_model, tf_dataset):
         self.tf_model = tf_model
         self.tf_model.compile(
             optimizer=self.optimizer,
-            loss='categorical_crossentropy',
+            loss='sparse_categorical_crossentropy',
             # XXX: there might a problem here if the race is tight
             # because this will compute accuracy for each batch
             # we might need to define a custom training step with an
@@ -36,7 +44,12 @@ class TFSolver(BaseSolver):
             # each batch.
             metrics='accuracy',
         )
-        self.tf_dataset = tf_dataset
+        self.tf_dataset = tf_dataset.batch(
+            self.batch_size,
+            num_parallel_calls=tf.data.experimental.AUTOTUNE,
+        ).prefetch(
+            buffer_size=tf.data.experimental.AUTOTUNE,
+        )
 
     @staticmethod
     def get_next(stop_val):
