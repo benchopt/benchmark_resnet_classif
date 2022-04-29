@@ -170,6 +170,6 @@ class Objective(BaseObjective):
         # XXX: make sure to skip the small datasets when using vgg
         model_init_fn = self.get_model_init_fn()
         return dict(
-            model=model_init_fn,
+            model_init_fn=model_init_fn,
             dataset=self.dataset,
         )
