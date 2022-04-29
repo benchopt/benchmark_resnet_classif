@@ -78,10 +78,10 @@ class Dataset(BaseDataset):
     def get_torch_data(self):
         inps_train, inps_test, tgts_train, tgts_test = self.get_np_data()
         dataset = TensorDataset(
-            torch.Tensor(inps_train), torch.Tensor(tgts_train),
+            torch.tensor(inps_train), torch.tensor(tgts_train),
         )
         test_dataset = TensorDataset(
-            torch.Tensor(inps_test), torch.Tensor(tgts_test),
+            torch.tensor(inps_test), torch.tensor(tgts_test),
         )
         return dataset, test_dataset
 
@@ -107,7 +107,7 @@ class Dataset(BaseDataset):
         data = dict(
             dataset=dataset,
             test_dataset=test_dataset,
-            framework='tensorflow',
+            framework=self.framework,
             **self.ds_description,
         )
 
