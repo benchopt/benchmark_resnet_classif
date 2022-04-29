@@ -38,8 +38,8 @@ class TorchSolver(BaseSolver):
             transforms.RandomHorizontalFlip(),
         ])
 
-    def set_objective(self, model, dataset):
-        self.model = model
+    def set_objective(self, model_init_fn, dataset):
+        self.model_init_fn = model_init_fn
         self.dataset = dataset  # we use this in order
         # to access some elements from the trainer when
         # initializing it below
@@ -58,7 +58,7 @@ class TorchSolver(BaseSolver):
 
     def run(self, callback):
         # model weight initialization
-        self.model.initialize_model_weights()
+        self.model = self.model_init_fn()
         # optimizer init
         self.model.configure_optimizers = lambda: self.optimizer_klass(
             self.model.parameters(),

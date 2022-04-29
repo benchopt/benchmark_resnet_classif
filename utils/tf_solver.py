@@ -31,8 +31,8 @@ class TFSolver(BaseSolver):
             return True, 'Not a TF dataset'
         return False, None
 
-    def set_objective(self, model, dataset):
-        self.tf_model = model
+    def set_objective(self, model_init_fn, dataset):
+        self.model_init_fn = model_init_fn
         self.tf_dataset = dataset
         if self.data_aug:
             # XXX: unfortunately we need to do this before
@@ -58,8 +58,7 @@ class TFSolver(BaseSolver):
         return stop_val + 1
 
     def run(self, callback):
-        # this cloning is done to avoid weights sharing between runs
-        self.tf_model = tf.keras.models.clone_model(self.tf_model)
+        self.tf_model = self.model_init_fn()
         self.tf_model.compile(
             optimizer=self.optimizer,
             loss='categorical_crossentropy',
