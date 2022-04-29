@@ -27,7 +27,7 @@ class TorchSolver(BaseSolver):
         'data_aug': [False, True],
     }
 
-    def skip(self, model, dataset):
+    def skip(self, model_init_fn, dataset):
         if not isinstance(dataset, torch.utils.data.Dataset):
             return True, 'Not a PT dataset'
         return False, None

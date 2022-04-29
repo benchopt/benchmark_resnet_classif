@@ -26,7 +26,7 @@ class TFSolver(BaseSolver):
             tf.keras.layers.RandomFlip('horizontal'),
         ])
 
-    def skip(self, model, dataset):
+    def skip(self, model_init_fn, dataset):
         if not isinstance(dataset, tf.data.Dataset):
             return True, 'Not a TF dataset'
         return False, None
