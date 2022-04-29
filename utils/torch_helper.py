@@ -2,7 +2,6 @@ from benchopt import safe_import_context
 
 with safe_import_context() as import_ctx:
     import torch
-    from torch import nn
     from torch.nn import functional as F
     from torch.utils.data import Dataset
 
