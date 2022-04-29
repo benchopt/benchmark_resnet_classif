@@ -68,7 +68,7 @@ class TorchSolver(BaseSolver):
 
     def run(self, callback):
         # model weight initialization
-        self.model = BenchPLModule(self.model_init_fn())
+        self.model = self.model_init_fn()
         # optimizer init
         self.model.configure_optimizers = lambda: self.optimizer_klass(
             self.model.parameters(),
