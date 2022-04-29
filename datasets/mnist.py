@@ -42,7 +42,7 @@ class Dataset(MultiFrameworkDataset):
 
     def get_torch_preprocessing_step(self):
         # Here this dataset is in gray scale so we adapt the preprocessing.
-        self.transform = transforms.Compose([
+        transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(
                 self.normalization_mean,
@@ -50,6 +50,7 @@ class Dataset(MultiFrameworkDataset):
             ),
             transforms.Lambda(grayscale_to_rbg_torch),
         ])
+        return transform
 
     def get_tf_preprocessing_step(self):
 
