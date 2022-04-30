@@ -14,14 +14,13 @@ class Solver(TorchSolver):
     parameters = {
         'nesterov, momentum': [(False, 0), (True, 0.9)],
         'lr': [1e-1],
-        'coupled_weight_decay': [0.0, 1e-4],
-        'decoupled_weight_decay': [0.0, 1e-4],
+        'weight_decay': [0.0, 1e-4],
         **TorchSolver.parameters
     }
 
     def set_objective(self, **kwargs):
         super().set_objective(**kwargs)
-        wd = self.coupled_weight_decay or self.decoupled_weight_decay
+        wd = self.weight_decay
         self.optimizer_klass = SGD
         self.optimizer_kwargs = dict(
             lr=self.lr,
