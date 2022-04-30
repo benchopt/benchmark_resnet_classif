@@ -41,9 +41,9 @@ with safe_import_context() as import_ctx:
                 wd = float(backend.get_value(
                     self.model.optimizer.weight_decay,
                 ))
-                wd = self.schedule(epoch, wd)
+                wd = self.wd_schedule(epoch, wd)
             except TypeError:  # Support for old API for backward compatibility
-                wd = self.schedule(epoch)
+                wd = self.wd_schedule(epoch)
             if not isinstance(wd, (tf.Tensor, float, np.float32, np.float64)):
                 raise ValueError(
                     'The output of the "schedule" function '
@@ -57,11 +57,6 @@ with safe_import_context() as import_ctx:
                 self.model.optimizer.weight_decay,
                 backend.get_value(wd),
             )
-            if self.verbose > 0:
-                io_utils.print_msg(
-                    f'\nEpoch {epoch + 1}: LearningRateScheduler'
-                    ' setting learning '
-                    f'rate to {wd}.')
 
         def on_epoch_end(self, epoch, logs=None):
             super().on_epoch_end(epoch, logs)
