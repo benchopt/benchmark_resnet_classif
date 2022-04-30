@@ -16,6 +16,7 @@ class Solver(TorchSolver):
         'lr': [1e-3],
         'rho': [0.99, 0.9],
         'momentum': [0, 0.9],
+        'coupled_weight_decay': [0.0, 1e-4, 0.02],
         **TorchSolver.parameters
     }
 
@@ -26,4 +27,5 @@ class Solver(TorchSolver):
             lr=self.lr,
             momentum=self.momentum,
             alpha=self.rho,
+            weight_decay=self.coupled_weight_decay,
         )

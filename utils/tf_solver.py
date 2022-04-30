@@ -3,9 +3,12 @@ from benchopt.stopping_criterion import SufficientProgressCriterion
 
 with safe_import_context() as import_ctx:
     import tensorflow as tf
-
+    from tensorflow_addons.optimizers import extend_with_decoupled_weight_decay
     BenchoptCallback = import_ctx.import_from(
         'tf_helper', 'BenchoptCallback'
+    )
+    LRWDSchedulerCallback = import_ctx.import_from(
+        'tf_helper', 'LRWDSchedulerCallback'
     )
 
 MAX_EPOCHS = int(1e9)
@@ -21,14 +24,58 @@ class TFSolver(BaseSolver):
     parameters = {
         'batch_size': [64],
         'data_aug': [False, True],
+        'lr_schedule': [None, 'step', 'cosine'],
     }
+
+    install_cmd = 'conda'
+    requirements = ['tensorflow-addons']
 
     def skip(self, model_init_fn, dataset):
         if not isinstance(dataset, tf.data.Dataset):
             return True, 'Not a TF dataset'
+        coupled_wd = getattr(self, 'coupled_weight_decay', 0.0)
+        decoupled_wd = getattr(self, 'decoupled_weight_decay', 0.0)
+        if coupled_wd and decoupled_wd:
+            return True, 'Cannot use both decoupled and coupled weight decay'
         return False, None
 
     def set_objective(self, model_init_fn, dataset):
+        # NOTE: in the following, we need to multiply by the weight decay
+        # by the learning rate to have a comparable setting with PyTorch
+        self.coupled_wd = getattr(self, 'coupled_weight_decay', 0.0)
+        if self.coupled_wd == 0.0:
+            self.coupled_wd = getattr(self, 'weight_decay', 0.0)
+        self.decoupled_wd = getattr(self, 'decoupled_weight_decay', 0.0)
+        if self.lr_schedule == 'step':
+            self.lr_scheduler, self.wd_scheduler = [
+                tf.keras.optimizers.schedules.ExponentialDecay(
+                    value,
+                    decay_rate=0.1,
+                    decay_steps=30,
+                    staircase=True,
+                ) for value in [self.lr, self.decoupled_wd*self.lr]
+            ]
+        elif self.lr_schedule == 'cosine':
+            self.lr_scheduler, self.wd_scheduler = [
+                tf.keras.optimizers.schedules.CosineDecay(
+                    value,
+                    200,  # the equivalent of T_max
+                ) for value in [self.lr, self.decoupled_wd*self.lr]
+            ]
+        else:
+            self.lr_scheduler = lambda epoch: self.lr
+            self.wd_scheduler = lambda epoch: self.decoupled_wd
+
+        # we set the decoupled weight decay always, and when it's 0
+        # the WD cback and the decoupled weight decay extension are
+        # essentially no-ops
+        self.lr_wd_cback = LRWDSchedulerCallback(
+            lr_schedule=self.lr_scheduler,
+            wd_schedule=self.wd_scheduler,
+        )
+        self.optimizer_klass = extend_with_decoupled_weight_decay(
+            self.optimizer_klass,
+        )
         self.dataset = dataset
         self.model_init_fn = model_init_fn
 
@@ -60,7 +107,31 @@ class TFSolver(BaseSolver):
 
     def run(self, callback):
         self.model = self.model_init_fn()
-        self.optimizer = self.optimizer_klass(**self.optimizer_kwargs)
+        self.optimizer = self.optimizer_klass(
+            # this scaling is needed as in TF the weight decay is
+            # not multiplied by the learning rate
+            weight_decay=self.decoupled_wd*self.lr,
+            **self.optimizer_kwargs,
+        )
+        if self.coupled_wd:
+            # this is equivalent to adding L2 regularization to all
+            # the weights and biases of the model (even if adding
+            # weight decay to the biases is not recommended), of a factor
+            # halved
+            l2_reg_factor = self.coupled_wd / 2
+            # taken from
+            # https://sthalles.github.io/keras-regularizer/
+            regularizer = tf.keras.regularizers.l2(l2_reg_factor)
+            target_regularizers = [
+                'kernel_regularizer',
+                'bias_regularizer',
+                'beta_regularizer',
+                'gamma_regularizer',
+            ]
+            for layer in self.model.layers:
+                for attr in target_regularizers:
+                    if hasattr(layer, attr):
+                        setattr(layer, attr, regularizer)
         self.model.compile(
             optimizer=self.optimizer,
             loss='sparse_categorical_crossentropy',
@@ -77,7 +148,7 @@ class TFSolver(BaseSolver):
         # Launch training
         self.model.fit(
             self.dataset,
-            callbacks=[BenchoptCallback(callback)],
+            callbacks=[BenchoptCallback(callback), self.lr_wd_cback],
             epochs=MAX_EPOCHS,
         )
 

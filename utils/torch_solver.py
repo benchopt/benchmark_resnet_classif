@@ -29,11 +29,16 @@ class TorchSolver(BaseSolver):
     parameters = {
         'batch_size': [64],
         'data_aug': [False, True],
+        'lr_schedule': [None, 'step', 'cosine'],
     }
 
     def skip(self, model_init_fn, dataset):
         if not isinstance(dataset, torch.utils.data.Dataset):
             return True, 'Not a PT dataset'
+        coupled_wd = getattr(self, 'coupled_weight_decay', 0.0)
+        decoupled_wd = getattr(self, 'decoupled_weight_decay', 0.0)
+        if coupled_wd and decoupled_wd:
+            return True, 'Cannot use both decoupled and coupled weight decay'
         return False, None
 
     def set_objective(self, model_init_fn, dataset):
@@ -59,6 +64,30 @@ class TorchSolver(BaseSolver):
             num_workers=min(10, joblib.cpu_count()) if not is_mac else 0,
         )
 
+    def set_lr_schedule_and_optimizer(self):
+        optimizer = self.optimizer_klass(
+            self.model.parameters(),
+            **self.optimizer_kwargs,
+        )
+        if self.lr_schedule is None:
+            self.model.configure_optimizers = lambda: optimizer
+            return
+        if self.lr_schedule == 'step':
+            scheduler = torch.optim.lr_scheduler.StepLR(
+                optimizer,
+                step_size=30,
+                gamma=0.1,
+            )
+        elif self.lr_schedule == 'cosine':
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+                optimizer,
+                T_max=200,
+            )
+        self.model.configure_optimizers = lambda: (
+            [optimizer],
+            [scheduler],
+        )
+
     @staticmethod
     def get_next(stop_val):
         return stop_val + 1
@@ -66,11 +95,8 @@ class TorchSolver(BaseSolver):
     def run(self, callback):
         # model weight initialization
         self.model = self.model_init_fn()
-        # optimizer init
-        self.model.configure_optimizers = lambda: self.optimizer_klass(
-            self.model.parameters(),
-            **self.optimizer_kwargs,
-        )
+        # optimizer and lr schedule init
+        self.set_lr_schedule_and_optimizer()
         # Initial evaluation
         callback(self.model)
 

@@ -15,7 +15,8 @@ class Solver(TFSolver):
     parameters = {
         'nesterov, momentum': [(False, 0), (True, 0.9)],
         'lr': [1e-1],
-        **TFSolver.parameters
+        'weight_decay': [0.0, 1e-4],
+        **TFSolver.parameters,
     }
 
     def set_objective(self, **kwargs):
