@@ -56,7 +56,6 @@ class Objective(BaseObjective):
         'pip:tensorflow',
     ]
 
-    # XXX: this might be a good spot to specify the size of the ResNet
     parameters = {
         'model_type, model_size': [
             ('resnet', '18'),
@@ -154,7 +153,10 @@ class Objective(BaseObjective):
             if self.framework == 'tensorflow':
                 ds = data.batch(test_batch_size)
                 if dataset_name == 'train':
-                    ds = ds.map(self.normalization)
+                    ds = ds.map(
+                        lambda x, y: (self.normalization(x), y),
+                        num_parallel_calls=tf.data.experimental.AUTOTUNE,
+                    )
                 self._datasets[dataset_name] = ds
             elif self.framework == 'pytorch':
                 # Don't use multiple workers on OSX as this leads to deadlock
@@ -190,8 +192,8 @@ class Objective(BaseObjective):
         return results
 
     def to_dict(self):
-        # XXX: make sure to skip the small datasets when using vgg
         return dict(
             model_init_fn=self.get_one_beta,
             dataset=self.dataset,
+            normalization=self.normalization,
         )
