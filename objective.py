@@ -3,6 +3,7 @@ import sys
 
 from benchopt import BaseObjective, safe_import_context
 
+
 with safe_import_context() as import_ctx:
     import joblib
     import tensorflow as tf
@@ -13,6 +14,9 @@ with safe_import_context() as import_ctx:
     from pytorch_lightning.utilities.seed import seed_everything
 
     BenchPLModule = import_ctx.import_from("torch_helper", "BenchPLModule")
+    AugmentedDataset = import_ctx.import_from(
+        'torch_helper', 'AugmentedDataset'
+    )
     TFResNet18 = import_ctx.import_from('tf_resnets', 'ResNet18')
     TFResNet34 = import_ctx.import_from('tf_resnets', 'ResNet34')
     TFResNet50 = import_ctx.import_from('tf_resnets', 'ResNet50')
@@ -52,7 +56,6 @@ class Objective(BaseObjective):
         'pip:tensorflow',
     ]
 
-    # XXX: this might be a good spot to specify the size of the ResNet
     parameters = {
         'model_type, model_size': [
             ('resnet', '18'),
@@ -71,6 +74,7 @@ class Objective(BaseObjective):
         image_width,
         n_classes,
         framework,
+        normalization,
     ):
         if framework == 'tensorflow' and image_width < 32:
             return True, 'images too small for TF networks'
@@ -116,6 +120,7 @@ class Objective(BaseObjective):
         image_width,
         n_classes,
         framework,
+        normalization,
     ):
         self.dataset = dataset
         self.test_dataset = test_dataset
@@ -124,6 +129,7 @@ class Objective(BaseObjective):
         self.width = image_width
         self.n_classes = n_classes
         self.framework = framework
+        self.normalization = normalization
 
         # Get the model initializer
         self.get_one_beta = self.get_model_init_fn(framework)
@@ -145,7 +151,13 @@ class Objective(BaseObjective):
         for dataset_name, data in [('train', self.dataset),
                                    ('test', self.test_dataset)]:
             if self.framework == 'tensorflow':
-                self._datasets[dataset_name] = data.batch(test_batch_size)
+                ds = data.batch(test_batch_size)
+                if dataset_name == 'train':
+                    ds = ds.map(
+                        lambda x, y: (self.normalization(x), y),
+                        num_parallel_calls=tf.data.experimental.AUTOTUNE,
+                    )
+                self._datasets[dataset_name] = ds
             elif self.framework == 'pytorch':
                 # Don't use multiple workers on OSX as this leads to deadlock
                 # in the CI.
@@ -153,6 +165,9 @@ class Objective(BaseObjective):
                 system = os.environ.get('RUNNER_OS', sys.platform)
                 is_mac = system in ['darwin', 'macOS']
                 num_workers = min(10, joblib.cpu_count()) if not is_mac else 0
+
+                if dataset_name == 'train':
+                    data = AugmentedDataset(data, None, self.normalization)
 
                 self._datasets[dataset_name] = DataLoader(
                     data, batch_size=test_batch_size,
@@ -171,14 +186,14 @@ class Objective(BaseObjective):
 
             results[dataset_name + "_loss"] = metrics["loss"]
             acc_name = "accuracy" if self.framework == 'tensorflow' else "acc"
-            results[dataset_name + "_acc"] = metrics[acc_name]
+            results[dataset_name + "_err"] = 1 - metrics[acc_name]
 
         results["value"] = results["train_loss"]
         return results
 
     def to_dict(self):
-        # XXX: make sure to skip the small datasets when using vgg
         return dict(
             model_init_fn=self.get_one_beta,
             dataset=self.dataset,
+            normalization=self.normalization,
         )

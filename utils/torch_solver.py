@@ -27,12 +27,12 @@ class TorchSolver(BaseSolver):
     )
 
     parameters = {
-        'batch_size': [64],
+        'batch_size': [128],
         'data_aug': [False, True],
         'lr_schedule': [None, 'step', 'cosine'],
     }
 
-    def skip(self, model_init_fn, dataset):
+    def skip(self, model_init_fn, dataset, normalization):
         if not isinstance(dataset, torch.utils.data.Dataset):
             return True, 'Not a PT dataset'
         coupled_wd = getattr(self, 'coupled_weight_decay', 0.0)
@@ -41,19 +41,23 @@ class TorchSolver(BaseSolver):
             return True, 'Cannot use both decoupled and coupled weight decay'
         return False, None
 
-    def set_objective(self, model_init_fn, dataset):
+    def set_objective(self, model_init_fn, dataset, normalization):
         self.dataset = dataset
         self.model_init_fn = model_init_fn
+        self.normalization = normalization
 
         if self.data_aug:
             data_aug_transform = transforms.Compose([
                 transforms.RandomCrop(32, padding=4),
                 transforms.RandomHorizontalFlip(),
             ])
-            self.dataset = AugmentedDataset(
-                self.dataset,
-                data_aug_transform,
-            )
+        else:
+            data_aug_transform = None
+        self.dataset = AugmentedDataset(
+            self.dataset,
+            data_aug_transform,
+            self.normalization,
+        )
 
         # TODO: num_worker should not be hard coded. Finding a sensible way to
         # set this value is necessary here.

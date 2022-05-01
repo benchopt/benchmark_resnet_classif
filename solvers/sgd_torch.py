@@ -12,9 +12,9 @@ class Solver(TorchSolver):
 
     # any parameter defined here is accessible as a class attribute
     parameters = {
-        'nesterov, momentum': [(False, 0), (True, 0.9)],
+        'nesterov, momentum': [(False, 0), (False, 0.9), (True, 0.9)],
         'lr': [1e-1],
-        'weight_decay': [0.0, 1e-4],
+        'weight_decay': [0.0, 5e-4],
         **TorchSolver.parameters
     }
 

@@ -3,7 +3,8 @@ import warnings
 
 import numpy as np
 import pytest
-from torch.utils.data import DataLoader
+import tensorflow as tf
+from torch.utils.data import DataLoader, Dataset
 
 from benchopt.utils.safe_import import set_benchmark
 
@@ -75,6 +76,25 @@ def get_matched_unmatched_indices_arrays(
     )
 
 
+class AugmentedDataset(Dataset):
+    def __init__(self, dataset, transform, normalization=None):
+        super().__init__()
+        self.dataset = dataset
+        self.transform = transform
+        self.normalization = normalization
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, idx):
+        x, y = self.dataset[idx]
+        if self.transform:
+            x = self.transform(x)
+        if self.normalization:
+            x = self.normalization(x)
+        return x, y
+
+
 @pytest.mark.parametrize('dataset_module_name', [
     'cifar',
     'mnist',
@@ -98,13 +118,25 @@ def test_datasets_consistency(dataset_module_name, dataset_type):
     _, torch_data = d_torch.get_data()
 
     for k in torch_data:
-        if k not in ['dataset', 'test_dataset', 'framework']:
+        if k not in ['dataset', 'test_dataset', 'framework', 'normalization']:
             assert torch_data[k] == tf_data[k], (
                 f"ds_description do not match between framework for key {k}"
             )
 
     tf_dataset = tf_data[dataset_type]
     torch_dataset = torch_data[dataset_type]
+    if dataset_type == 'dataset':
+        tf_normalization = tf_data['normalization']
+        torch_normalization = torch_data['normalization']
+        tf_dataset = tf_dataset.map(
+            lambda x, y: (tf_normalization(x), y),
+            num_parallel_calls=tf.data.experimental.AUTOTUNE,
+        )
+        torch_dataset = AugmentedDataset(
+            torch_dataset,
+            None,
+            normalization=torch_normalization,
+        )
     assert len(tf_dataset) == len(torch_dataset), (
         "len of the 2 datsets do not match"
     )
