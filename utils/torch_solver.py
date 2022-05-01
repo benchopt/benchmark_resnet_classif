@@ -27,7 +27,7 @@ class TorchSolver(BaseSolver):
     )
 
     parameters = {
-        'batch_size': [64],
+        'batch_size': [128],
         'data_aug': [False, True],
         'lr_schedule': [None, 'step', 'cosine'],
     }
