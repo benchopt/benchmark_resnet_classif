@@ -30,7 +30,7 @@ class TFSolver(BaseSolver):
     install_cmd = 'conda'
     requirements = ['pip:tensorflow-addons']
 
-    def skip(self, model_init_fn, dataset):
+    def skip(self, model_init_fn, dataset, normalization):
         if not isinstance(dataset, tf.data.Dataset):
             return True, 'Not a TF dataset'
         coupled_wd = getattr(self, 'coupled_weight_decay', 0.0)
@@ -39,7 +39,7 @@ class TFSolver(BaseSolver):
             return True, 'Cannot use both decoupled and coupled weight decay'
         return False, None
 
-    def set_objective(self, model_init_fn, dataset):
+    def set_objective(self, model_init_fn, dataset, normalization):
         # NOTE: in the following, we need to multiply by the weight decay
         # by the learning rate to have a comparable setting with PyTorch
         self.coupled_wd = getattr(self, 'coupled_weight_decay', 0.0)
@@ -97,7 +97,13 @@ class TFSolver(BaseSolver):
         self.dataset = self.dataset.batch(
             self.batch_size,
             num_parallel_calls=tf.data.experimental.AUTOTUNE,
-        ).prefetch(
+        )
+        if normalization is not None:
+            self.dataset = self.dataset.map(
+                lambda x, y: (normalization(x), y),
+                num_parallel_calls=tf.data.experimental.AUTOTUNE,
+            )
+        self.dataset = self.dataset.prefetch(
             buffer_size=tf.data.experimental.AUTOTUNE,
         )
 
