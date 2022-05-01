@@ -3,7 +3,6 @@ import sys
 
 from benchopt import BaseObjective, safe_import_context
 
-from utils.torch_solver import AugmentedDataset
 
 with safe_import_context() as import_ctx:
     import joblib
@@ -15,6 +14,9 @@ with safe_import_context() as import_ctx:
     from pytorch_lightning.utilities.seed import seed_everything
 
     BenchPLModule = import_ctx.import_from("torch_helper", "BenchPLModule")
+    AugmentedDataset = import_ctx.import_from(
+        'torch_helper', 'AugmentedDataset'
+    )
     TFResNet18 = import_ctx.import_from('tf_resnets', 'ResNet18')
     TFResNet34 = import_ctx.import_from('tf_resnets', 'ResNet34')
     TFResNet50 = import_ctx.import_from('tf_resnets', 'ResNet50')
