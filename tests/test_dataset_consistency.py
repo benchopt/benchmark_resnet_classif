@@ -4,7 +4,7 @@ import warnings
 import numpy as np
 import pytest
 import tensorflow as tf
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 
 from benchopt import safe_import_context
 from benchopt.utils.safe_import import set_benchmark
@@ -77,6 +77,25 @@ def get_matched_unmatched_indices_arrays(
     )
 
 
+class AugmentedDataset(Dataset):
+    def __init__(self, dataset, transform, normalization=None):
+        super().__init__()
+        self.dataset = dataset
+        self.transform = transform
+        self.normalization = normalization
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, idx):
+        x, y = self.dataset[idx]
+        if self.transform:
+            x = self.transform(x)
+        if self.normalization:
+            x = self.normalization(x)
+        return x, y
+
+
 @pytest.mark.parametrize('dataset_module_name', [
     'cifar',
     'mnist',
@@ -93,10 +112,6 @@ def test_datasets_consistency(dataset_module_name, dataset_type):
         simulated,
         svhn,
     )
-    with safe_import_context() as import_ctx:
-        AugmentedDataset = import_ctx.import_from(
-            'torch_helper', 'AugmentedDataset'
-        )
     dataset = eval(dataset_module_name)
     d_tf = dataset.Dataset.get_instance(framework='tensorflow')
     d_torch = dataset.Dataset.get_instance(framework='pytorch')
