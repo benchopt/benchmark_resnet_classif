@@ -49,7 +49,7 @@ class Objective(BaseObjective):
     install_cmd = 'conda'
     requirements = [
         'pip:pytorch', 'pip:torchvision', 'pip:pytorch-lightning ',
-        'pip:tensorflow', 'pip:tensorflow-datasets',
+        'pip:tensorflow',
     ]
 
     # XXX: this might be a good spot to specify the size of the ResNet
@@ -155,14 +155,14 @@ class Objective(BaseObjective):
                 num_workers = min(10, joblib.cpu_count()) if not is_mac else 0
 
                 self._datasets[dataset_name] = DataLoader(
-                    dataset, batch_size=self._test_batch_size,
+                    data, batch_size=test_batch_size,
                     num_workers=num_workers, persistent_workers=True,
                     pin_memory=True
                 )
 
     def compute(self, model):
         results = dict()
-        for dataset_name, dataset in self._datasets.item():
+        for dataset_name, dataset in self._datasets.items():
 
             if self.framework == 'tensorflow':
                 metrics = model.evaluate(dataset, return_dict=True)
