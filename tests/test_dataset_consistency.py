@@ -6,6 +6,7 @@ import pytest
 import tensorflow as tf
 from torch.utils.data import DataLoader
 
+from benchopt import safe_import_context
 from benchopt.utils.safe_import import set_benchmark
 
 # this means this test has to be run from the root
@@ -92,7 +93,10 @@ def test_datasets_consistency(dataset_module_name, dataset_type):
         simulated,
         svhn,
     )
-    from utils.torch_helper import AugmentedDataset
+    with safe_import_context() as import_ctx:
+        AugmentedDataset = import_ctx.import_from(
+            'torch_helper', 'AugmentedDataset'
+        )
     dataset = eval(dataset_module_name)
     d_tf = dataset.Dataset.get_instance(framework='tensorflow')
     d_torch = dataset.Dataset.get_instance(framework='pytorch')
