@@ -95,7 +95,9 @@ def test_datasets_consistency(dataset_module_name, dataset_type):
     try:
         assert_tf_images_equal_torch_images(X_tf, X_torch)
     except AssertionError:
-        transformer = random_projection.GaussianRandomProjection(n_components=4)
+        transformer = random_projection.GaussianRandomProjection(
+            n_components=4,
+        )
         X_tf_proj = transformer.fit_transform(X_tf.reshape(X_tf.shape[0], -1))
         X_torch_channel_last = np.transpose(X_torch, (0, 2, 3, 1))
         X_torch_proj = transformer.transform(
