@@ -3,6 +3,8 @@ import sys
 
 from benchopt import BaseObjective, safe_import_context
 
+from utils.torch_solver import AugmentedDataset
+
 with safe_import_context() as import_ctx:
     import joblib
     import tensorflow as tf
@@ -148,7 +150,10 @@ class Objective(BaseObjective):
         for dataset_name, data in [('train', self.dataset),
                                    ('test', self.test_dataset)]:
             if self.framework == 'tensorflow':
-                self._datasets[dataset_name] = data.batch(test_batch_size)
+                ds = data.batch(test_batch_size)
+                if dataset_name == 'train':
+                    ds = ds.map(self.normalization)
+                self._datasets[dataset_name] = ds
             elif self.framework == 'pytorch':
                 # Don't use multiple workers on OSX as this leads to deadlock
                 # in the CI.
@@ -156,6 +161,9 @@ class Objective(BaseObjective):
                 system = os.environ.get('RUNNER_OS', sys.platform)
                 is_mac = system in ['darwin', 'macOS']
                 num_workers = min(10, joblib.cpu_count()) if not is_mac else 0
+
+                if dataset_name == 'train':
+                    data = AugmentedDataset(data, None, self.normalization)
 
                 self._datasets[dataset_name] = DataLoader(
                     data, batch_size=test_batch_size,
