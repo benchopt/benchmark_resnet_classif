@@ -1,5 +1,5 @@
 import os
-import platform
+import sys
 from benchopt import BaseSolver, safe_import_context
 from benchopt.stopping_criterion import SufficientProgressCriterion
 
@@ -57,11 +57,12 @@ class TorchSolver(BaseSolver):
 
         # TODO: num_worker should not be hard coded. Finding a sensible way to
         # set this value is necessary here.
-        system = os.environ.get('RUNNER_OS', platform.system())
-        is_mac = system == 'Darwin' or system == 'macOS'
+        system = os.environ.get('RUNNER_OS', sys.platform)
+        is_mac = system in ['darwin', 'macOS']
         self.dataloader = torch.utils.data.DataLoader(
             self.dataset, batch_size=self.batch_size,
             num_workers=min(10, joblib.cpu_count()) if not is_mac else 0,
+            persistent_workers=True, pin_memory=True, shuffle=True
         )
 
     def set_lr_schedule_and_optimizer(self):
