@@ -171,7 +171,7 @@ class Objective(BaseObjective):
 
             results[dataset_name + "_loss"] = metrics["loss"]
             acc_name = "accuracy" if self.framework == 'tensorflow' else "acc"
-            results[dataset_name + "_acc"] = metrics[acc_name]
+            results[dataset_name + "_err"] = 1 - metrics[acc_name]
 
         results["value"] = results["train_loss"]
         return results
