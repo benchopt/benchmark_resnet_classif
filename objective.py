@@ -1,11 +1,17 @@
+import os
+import sys
+
 from benchopt import BaseObjective, safe_import_context
 
 with safe_import_context() as import_ctx:
-    from pytorch_lightning.utilities.seed import seed_everything
+    import joblib
     import tensorflow as tf
-    from pytorch_lightning import Trainer
-    from torch.utils.data import DataLoader
+
     import torchvision.models as models
+    from torch.utils.data import DataLoader
+    from pytorch_lightning import Trainer
+    from pytorch_lightning.utilities.seed import seed_everything
+
     BenchPLModule = import_ctx.import_from("torch_helper", "BenchPLModule")
     TFResNet18 = import_ctx.import_from('tf_resnets', 'ResNet18')
     TFResNet34 = import_ctx.import_from('tf_resnets', 'ResNet34')
@@ -134,23 +140,35 @@ class Objective(BaseObjective):
         )
 
         # Set the batch size for the test dataloader
-        self._test_batch_size = 100
+        test_batch_size = 100
+        self._datasets = {}
+        for dataset_name, data in [('train', self.dataset),
+                                   ('test', self.test_dataset)]:
+            if self.framework == 'tensorflow':
+                self._datasets[dataset_name] = data.batch(test_batch_size)
+            elif self.framework == 'pytorch':
+                # Don't use multiple workers on OSX as this leads to deadlock
+                # in the CI.
+                # XXX - try to come up with better way to set this.
+                system = os.environ.get('RUNNER_OS', sys.platform)
+                is_mac = system in ['darwin', 'macOS']
+                num_workers = min(10, joblib.cpu_count()) if not is_mac else 0
+
+                self._datasets[dataset_name] = DataLoader(
+                    dataset, batch_size=self._test_batch_size,
+                    num_workers=num_workers, persistent_workers=True,
+                    pin_memory=True
+                )
 
     def compute(self, model):
         results = dict()
-        for dataset_name, dataset in zip(
-            ["train", "test"], [self.dataset, self.test_dataset]
-        ):
+        for dataset_name, dataset in self._datasets.item():
+
             if self.framework == 'tensorflow':
-                metrics = model.evaluate(
-                    dataset.batch(self._test_batch_size),
-                    return_dict=True,
-                )
+                metrics = model.evaluate(dataset, return_dict=True)
             elif self.framework == 'pytorch':
-                dataloader = DataLoader(
-                    dataset, batch_size=self._test_batch_size
-                )
-                metrics = self.trainer.test(model, dataloaders=dataloader)[0]
+                metrics = self.trainer.test(model, dataloaders=dataset)[0]
+
             results[dataset_name + "_loss"] = metrics["loss"]
             acc_name = "accuracy" if self.framework == 'tensorflow' else "acc"
             results[dataset_name + "_acc"] = metrics[acc_name]

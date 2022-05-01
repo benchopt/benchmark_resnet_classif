@@ -28,7 +28,7 @@ class TFSolver(BaseSolver):
     }
 
     install_cmd = 'conda'
-    requirements = ['tensorflow-addons']
+    requirements = ['pip:tensorflow-addons']
 
     def skip(self, model_init_fn, dataset):
         if not isinstance(dataset, tf.data.Dataset):
@@ -64,7 +64,7 @@ class TFSolver(BaseSolver):
             ]
         else:
             self.lr_scheduler = lambda epoch: self.lr
-            self.wd_scheduler = lambda epoch: self.decoupled_wd
+            self.wd_scheduler = lambda epoch: self.decoupled_wd * self.lr
 
         # we set the decoupled weight decay always, and when it's 0
         # the WD cback and the decoupled weight decay extension are

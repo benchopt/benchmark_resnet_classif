@@ -76,7 +76,7 @@ class SingleDeviceStrategyNoTeardown(SingleDeviceStrategy):
                  precision_plugin=None):
         if device is None:
             # XXX - this is a dirty hack for GPU, find a better way to do it
-            device = "cuda" if torch.cuda.is_available() else "cpu"
+            device = "cuda:0" if torch.cuda.is_available() else "cpu"
         super().__init__(device, accelerator, checkpoint_io, precision_plugin)
 
     def teardown(self):
