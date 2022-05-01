@@ -6,7 +6,6 @@ import pytest
 import tensorflow as tf
 from torch.utils.data import DataLoader, Dataset
 
-from benchopt import safe_import_context
 from benchopt.utils.safe_import import set_benchmark
 
 # this means this test has to be run from the root
