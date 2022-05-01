@@ -108,6 +108,7 @@ class Dataset(BaseDataset):
             dataset=dataset,
             test_dataset=test_dataset,
             framework=self.framework,
+            normalization=None,
             **self.ds_description,
         )
 

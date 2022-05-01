@@ -71,6 +71,7 @@ class Objective(BaseObjective):
         image_width,
         n_classes,
         framework,
+        normalization,
     ):
         if framework == 'tensorflow' and image_width < 32:
             return True, 'images too small for TF networks'
@@ -116,6 +117,7 @@ class Objective(BaseObjective):
         image_width,
         n_classes,
         framework,
+        normalization,
     ):
         self.dataset = dataset
         self.test_dataset = test_dataset
@@ -124,6 +126,7 @@ class Objective(BaseObjective):
         self.width = image_width
         self.n_classes = n_classes
         self.framework = framework
+        self.normalization = normalization
 
         # Get the model initializer
         self.get_one_beta = self.get_model_init_fn(framework)
