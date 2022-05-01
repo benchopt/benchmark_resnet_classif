@@ -99,8 +99,12 @@ class Dataset(BaseDataset):
         """Switch to select the data from the right framework."""
         if self.framework == 'pytorch':
             dataset, test_dataset = self.get_torch_data()
+            normalization = None
         elif self.framework == 'tensorflow':
             dataset, test_dataset = self.get_tf_data()
+
+            def normalization(x):
+                return x
         else:
             raise ValueError(f"Framework not supported {self.framework}")
 
@@ -108,7 +112,7 @@ class Dataset(BaseDataset):
             dataset=dataset,
             test_dataset=test_dataset,
             framework=self.framework,
-            normalization=None,
+            normalization=normalization,
             **self.ds_description,
         )
 
