@@ -16,6 +16,9 @@ class MultiFrameworkDataset(BaseDataset, ABC):
         'framework': ['pytorch', 'tensorflow'],
     }
 
+    install_cmd = 'conda'
+    requirements = ['pip:tensorflow-datasets']
+
     def get_torch_preprocessing_step(self):
         return transforms.Compose([
             transforms.ToTensor(),
