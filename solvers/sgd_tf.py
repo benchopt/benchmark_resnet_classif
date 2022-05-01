@@ -15,7 +15,7 @@ class Solver(TFSolver):
     parameters = {
         'nesterov, momentum': [(False, 0), (True, 0.9)],
         'lr': [1e-1],
-        'weight_decay': [0.0, 1e-4],
+        'weight_decay': [0.0, 5e-4],
         **TFSolver.parameters,
     }
 
@@ -23,7 +23,8 @@ class Solver(TFSolver):
         self.optimizer_klass = SGD
         self.optimizer_kwargs = dict(
             learning_rate=self.lr,
-            momentum=self.momentum,
+            momentum=self.momentum*self.lr,
+            # this allows us to have the same scaling as PyTorch
             nesterov=self.nesterov,
         )
         super().set_objective(**kwargs)
