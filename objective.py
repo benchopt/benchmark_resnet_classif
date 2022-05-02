@@ -1,4 +1,3 @@
-from bdb import effective
 import os
 import sys
 
