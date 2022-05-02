@@ -83,17 +83,18 @@ class Objective(BaseObjective):
     def get_tf_model_init_fn(self):
         model_klass = TF_MODEL_MAP[self.model_type][self.model_size]
         add_kwargs = {}
+        input_width = self.width
         if self.model_type == 'resnet':
             add_kwargs['use_bias'] = False
 
-        # For now 128 is an arbitrary number
-        # to differentiate big and small images
-        if self.width < 128:
-            input_width = 4*self.width
-            no_initial_downsample = True
-        else:
-            input_width = self.width
-            no_initial_downsample = False
+            # For now 128 is an arbitrary number
+            # to differentiate big and small images
+            if self.width < 128:
+                input_width = 4*self.width
+                add_kwargs['no_initial_downsample'] = True
+            else:
+                add_kwargs['no_initial_downsample'] = False
+
 
         def _model_init_fn():
             model = model_klass(
@@ -101,7 +102,6 @@ class Objective(BaseObjective):
                 classes=self.n_classes,
                 classifier_activation='softmax',
                 input_shape=(input_width, input_width, 3),
-                no_initial_downsample=no_initial_downsample,
                 **add_kwargs,
             )
             return model
