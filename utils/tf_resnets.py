@@ -194,8 +194,11 @@ def remove_initial_downsample(large_model, use_bias=False):
         use_bias=use_bias,
         name='conv1_conv',
     )
+    input_shape = large_model.input_shape[1:]
+    input_shape[0] = input_shape[0] // 4
+    input_shape[1] = input_shape[1] // 4
     small_model = models.Sequential([
-        layers.Input((32, 32, 3)),
+        layers.Input(input_shape),
         first_conv,
         layers.BatchNormalization(axis=-1, epsilon=1.001e-5, name='conv1_bn'),
         layers.Activation('relu', name='conv1_relu'),
