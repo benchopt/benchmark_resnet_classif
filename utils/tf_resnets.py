@@ -3,6 +3,7 @@ from benchopt import safe_import_context
 with safe_import_context() as import_ctx:
     from keras.applications.resnet import ResNet
     from keras import layers
+    from keras import models
 
 
 # We might consider other options like
@@ -180,6 +181,32 @@ def stack_block(
     return x
 
 
+def remove_initial_downsample(large_model, use_bias=False):
+    trimmed_model = models.Model(
+        inputs=large_model.get_layer('conv2_block1_1_conv').input,
+        outputs=large_model.outputs,
+    )
+    first_conv = layers.Conv2D(
+        64,
+        3,
+        activation='relu',
+        padding='same',
+        use_bias=use_bias,
+        name='conv1_conv',
+    )
+    input_shape = list(large_model.input_shape[1:])
+    input_shape[0] = input_shape[0] // 4
+    input_shape[1] = input_shape[1] // 4
+    small_model = models.Sequential([
+        layers.Input(input_shape),
+        first_conv,
+        layers.BatchNormalization(axis=-1, epsilon=1.001e-5, name='conv1_bn'),
+        layers.Activation('relu', name='conv1_relu'),
+        trimmed_model,
+    ])
+    return small_model
+
+
 def ResNet18(include_top=True,
              weights='imagenet',
              input_tensor=None,
@@ -187,6 +214,7 @@ def ResNet18(include_top=True,
              pooling=None,
              classes=1000,
              use_bias=True,
+             no_initial_downsample=False,
              **kwargs):
     """Instantiates the ResNet18 architecture."""
 
@@ -226,7 +254,7 @@ def ResNet18(include_top=True,
             name='conv5',
         )
 
-    return ResNet(
+    model = ResNet(
         stack_fn,
         False,
         use_bias,
@@ -239,6 +267,9 @@ def ResNet18(include_top=True,
         classes,
         **kwargs,
     )
+    if no_initial_downsample:
+        model = remove_initial_downsample(model, use_bias=use_bias)
+    return model
 
 
 def ResNet34(include_top=True,
@@ -248,6 +279,7 @@ def ResNet34(include_top=True,
              pooling=None,
              classes=1000,
              use_bias=True,
+             no_initial_downsample=False,
              **kwargs):
     """Instantiates the ResNet34 architecture."""
 
@@ -287,7 +319,7 @@ def ResNet34(include_top=True,
             name='conv5',
         )
 
-    return ResNet(
+    model = ResNet(
         stack_fn,
         False,
         use_bias,
@@ -300,6 +332,9 @@ def ResNet34(include_top=True,
         classes,
         **kwargs,
     )
+    if no_initial_downsample:
+        model = remove_initial_downsample(model, use_bias=use_bias)
+    return model
 
 
 def ResNet50(include_top=True,
@@ -309,6 +344,7 @@ def ResNet50(include_top=True,
              pooling=None,
              classes=1000,
              use_bias=True,
+             no_initial_downsample=False,
              **kwargs):
     """Instantiates the ResNet50 architecture."""
 
@@ -347,7 +383,7 @@ def ResNet50(include_top=True,
             name='conv5',
         )
 
-    return ResNet(
+    model = ResNet(
         stack_fn,
         False,
         use_bias,
@@ -360,3 +396,6 @@ def ResNet50(include_top=True,
         classes,
         **kwargs,
     )
+    if no_initial_downsample:
+        model = remove_initial_downsample(model, use_bias=use_bias)
+    return model

@@ -17,6 +17,9 @@ with safe_import_context() as import_ctx:
     AugmentedDataset = import_ctx.import_from(
         'torch_helper', 'AugmentedDataset'
     )
+    remove_initial_downsample = import_ctx.import_from(
+        'torch_resnets', 'remove_initial_downsample'
+    )
     TFResNet18 = import_ctx.import_from('tf_resnets', 'ResNet18')
     TFResNet34 = import_ctx.import_from('tf_resnets', 'ResNet34')
     TFResNet50 = import_ctx.import_from('tf_resnets', 'ResNet50')
@@ -49,6 +52,8 @@ class Objective(BaseObjective):
 
     name = "ConvNet classification fitting"
     is_convex = False
+
+    image_width_cutout = 128
 
     install_cmd = 'conda'
     requirements = [
@@ -83,15 +88,24 @@ class Objective(BaseObjective):
     def get_tf_model_init_fn(self):
         model_klass = TF_MODEL_MAP[self.model_type][self.model_size]
         add_kwargs = {}
+        input_width = self.width
         if self.model_type == 'resnet':
             add_kwargs['use_bias'] = False
+
+            # For now 128 is an arbitrary number
+            # to differentiate big and small images
+            if self.width < self.image_width_cutout:
+                input_width = 4*self.width
+                add_kwargs['no_initial_downsample'] = True
+            else:
+                add_kwargs['no_initial_downsample'] = False
 
         def _model_init_fn():
             model = model_klass(
                 weights=None,
                 classes=self.n_classes,
                 classifier_activation='softmax',
-                input_shape=(self.width, self.width, 3),
+                input_shape=(input_width, input_width, 3),
                 **add_kwargs,
             )
             return model
@@ -102,6 +116,10 @@ class Objective(BaseObjective):
 
         def _model_init_fn():
             model = model_klass(num_classes=self.n_classes)
+            is_resnet = self.model_type == 'resnet'
+            is_small_images = self.width < self.image_width_cutout
+            if is_resnet and is_small_images:
+                model = remove_initial_downsample(model)
             return BenchPLModule(model)
         return _model_init_fn
 
