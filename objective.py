@@ -1,3 +1,4 @@
+from bdb import effective
 import os
 import sys
 
@@ -86,12 +87,22 @@ class Objective(BaseObjective):
         if self.model_type == 'resnet':
             add_kwargs['use_bias'] = False
 
+        # For now 128 is an arbitrary number
+        # to differentiate big and small images
+        if self.width < 128:
+            input_width = 4*self.width
+            no_initial_downsample = True
+        else:
+            input_width = self.width
+            no_initial_downsample = False
+
         def _model_init_fn():
             model = model_klass(
                 weights=None,
                 classes=self.n_classes,
                 classifier_activation='softmax',
-                input_shape=(self.width, self.width, 3),
+                input_shape=(input_width, input_width, 3),
+                no_initial_downsample=no_initial_downsample,
                 **add_kwargs,
             )
             return model
