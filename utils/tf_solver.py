@@ -39,7 +39,7 @@ class TFSolver(BaseSolver):
             return True, 'Cannot use both decoupled and coupled weight decay'
         return False, None
 
-    def set_objective(self, model_init_fn, dataset, normalization):
+    def get_lr_wd_cback(self, n_epochs=200):
         # NOTE: in the following, we need to multiply by the weight decay
         # by the learning rate to have a comparable setting with PyTorch
         self.coupled_wd = getattr(self, 'coupled_weight_decay', 0.0)
@@ -51,7 +51,7 @@ class TFSolver(BaseSolver):
                 tf.keras.optimizers.schedules.ExponentialDecay(
                     value,
                     decay_rate=0.1,
-                    decay_steps=30,
+                    decay_steps=n_epochs//2,
                     staircase=True,
                 ) for value in [self.lr, self.decoupled_wd*self.lr]
             ]
@@ -59,7 +59,7 @@ class TFSolver(BaseSolver):
             self.lr_scheduler, self.wd_scheduler = [
                 tf.keras.optimizers.schedules.CosineDecay(
                     value,
-                    200,  # the equivalent of T_max
+                    n_epochs,  # the equivalent of T_max
                 ) for value in [self.lr, self.decoupled_wd*self.lr]
             ]
         else:
@@ -69,10 +69,13 @@ class TFSolver(BaseSolver):
         # we set the decoupled weight decay always, and when it's 0
         # the WD cback and the decoupled weight decay extension are
         # essentially no-ops
-        self.lr_wd_cback = LRWDSchedulerCallback(
+        lr_wd_cback = LRWDSchedulerCallback(
             lr_schedule=self.lr_scheduler,
             wd_schedule=self.wd_scheduler,
         )
+        return lr_wd_cback
+
+    def set_objective(self, model_init_fn, dataset, normalization):
         self.optimizer_klass = extend_with_decoupled_weight_decay(
             self.optimizer_klass,
         )
@@ -113,6 +116,8 @@ class TFSolver(BaseSolver):
 
     def run(self, callback):
         self.model = self.model_init_fn()
+        n_epochs = callback.stopping_criterion.max_runs
+        lr_wd_cback = self.get_lr_wd_cback(n_epochs)
         self.optimizer = self.optimizer_klass(
             # this scaling is needed as in TF the weight decay is
             # not multiplied by the learning rate
@@ -154,7 +159,7 @@ class TFSolver(BaseSolver):
         # Launch training
         self.model.fit(
             self.dataset,
-            callbacks=[BenchoptCallback(callback), self.lr_wd_cback],
+            callbacks=[BenchoptCallback(callback), lr_wd_cback],
             epochs=MAX_EPOCHS,
         )
 
