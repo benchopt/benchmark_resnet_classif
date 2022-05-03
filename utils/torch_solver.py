@@ -111,7 +111,8 @@ class TorchSolver(BaseSolver):
         # nice to allow multi-GPU training.
         trainer = Trainer(
             max_epochs=-1, callbacks=[BenchoptCallback(callback)],
-            accelerator="auto", devices=1
+            accelerator="auto", devices=1,
+            enable_checkpointing=False,
         )
         trainer.fit(self.model, train_dataloaders=self.dataloader)
 

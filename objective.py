@@ -160,7 +160,8 @@ class Objective(BaseObjective):
         # https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#reproducibility
         # XXX: modify this with the correct amount of CPUs/GPUs
         self.trainer = Trainer(
-            accelerator="auto", strategy="noteardown", max_epochs=-1
+            accelerator="auto", strategy="noteardown", max_epochs=-1,
+            enable_checkpointing=False,
         )
 
         # Set the batch size for the test dataloader
