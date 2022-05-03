@@ -40,8 +40,8 @@ class Dataset(BaseDataset):
         n_samples=10,
         img_size=32,
         n_classes=2,
+        train_and_val_frac=0.8,
         train_frac=0.8,
-        val_frac=0.8,
         framework="pytorch",
         random_state=27,
     ):
@@ -49,15 +49,15 @@ class Dataset(BaseDataset):
         self.n_samples = n_samples
         self.img_size = img_size
         self.n_classes = n_classes
+        self.train_and_val_frac = train_and_val_frac
         self.train_frac = train_frac
-        self.val_frac = val_frac
         self.framework = framework
         self.random_state = random_state
         self.rng = np.random.default_rng(self.random_state)
 
     def get_np_data(self):
-        n_train_and_val = int(self.n_samples * self.train_frac)
-        n_train = int(self.val_frac * n_train_and_val)
+        n_train_and_val = int(self.n_samples * self.train_and_val_frac)
+        n_train = int(self.train_frac * n_train_and_val)
 
         # Get data description
         self.ds_description = dict(

@@ -20,7 +20,7 @@ class Dataset(MultiFrameworkDataset):
 
     ds_description = dict(
         n_samples_train=58_605,
-        n_samples_test=14_652,
+        n_samples_val=14_652,
         n_samples_test=26_032,
         image_width=32,
         n_classes=10,
