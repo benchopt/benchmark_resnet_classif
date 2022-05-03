@@ -10,6 +10,10 @@ with safe_import_context() as import_ctx:
     LRWDSchedulerCallback = import_ctx.import_from(
         'tf_helper', 'LRWDSchedulerCallback'
     )
+    BenchoptModelWrapper = import_ctx.import_from(
+        'tf_helper', 'BenchoptModelWrapper'
+    )
+
 
 MAX_EPOCHS = int(1e9)
 
@@ -118,7 +122,7 @@ class TFSolver(BaseSolver):
         return stop_val + 1
 
     def run(self, callback):
-        self.model = self.model_init_fn()
+        self.model = BenchoptModelWrapper(self.model_init_fn())
         n_epochs = callback.stopping_criterion.max_runs
         lr_wd_cback = self.get_lr_wd_cback(n_epochs)
         self.optimizer = self.optimizer_klass(
