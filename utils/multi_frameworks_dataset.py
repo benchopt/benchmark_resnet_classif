@@ -10,7 +10,9 @@ with safe_import_context() as import_ctx:
     from torchvision import transforms
     from torch.utils.data import random_split
 
-    AugmentedDataset = import_ctx.import_from("torch_helper", "AugmentedDataset")
+    AugmentedDataset = import_ctx.import_from(
+        "torch_helper", "AugmentedDataset"
+    )
 
 
 class MultiFrameworkDataset(BaseDataset, ABC):
@@ -99,7 +101,8 @@ class MultiFrameworkDataset(BaseDataset, ABC):
             f'train[{self.ds_description["n_samples_train"]}:]',
             "test",
         ]
-        for key, split in zip(["dataset", "val_dataset", "test_dataset"], splits):
+        for key, split in zip(["dataset", "val_dataset", "test_dataset"],
+                              splits):
             ds = tfds.load(
                 self.tf_ds_name,
                 split=split,

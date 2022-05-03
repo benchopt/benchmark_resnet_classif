@@ -77,7 +77,8 @@ class Dataset(BaseDataset):
                 self.img_size,
             ),
         ).astype(np.float32)
-        tgts = self.rng.integers(0, self.n_classes, (self.n_samples,)).astype(np.int64)
+        tgts = self.rng.integers(0, self.n_classes,
+                                 (self.n_samples,)).astype(np.int64)
         inps_train, inps_val, inps_test = (
             inps[:n_train],
             inps[n_train:n_train_and_val],
