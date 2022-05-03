@@ -52,7 +52,7 @@ class MultiFrameworkDataset(BaseDataset, ABC):
         for key, split in zip(["dataset", "test_dataset"], splits):
             split_kwarg = {self.torch_split_kwarg: split}
             transform_list = [transforms.ToTensor()]
-            if key == "test_dataset":
+            if key != "dataset":
                 transform_list.append(normalization_transform)
             transform = transforms.Compose(transform_list)
             data_dict[key] = self.torch_ds_klass(
@@ -105,7 +105,7 @@ class MultiFrameworkDataset(BaseDataset, ABC):
                 split=split,
                 as_supervised=True,
             )
-            if key == "test_dataset":
+            if key != "dataset":
                 ds = ds.map(
                     lambda x, y: (
                         image_preprocessing(x),
