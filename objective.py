@@ -167,6 +167,7 @@ class Objective(BaseObjective):
         test_batch_size = 100
         self._datasets = {}
         for dataset_name, data in [('train', self.dataset),
+                                   ('val', self.val_dataset),
                                    ('test', self.test_dataset)]:
             if self.framework == 'tensorflow':
                 ds = data.batch(test_batch_size)
@@ -206,7 +207,7 @@ class Objective(BaseObjective):
             acc_name = "accuracy" if self.framework == 'tensorflow' else "acc"
             results[dataset_name + "_err"] = 1 - metrics[acc_name]
 
-        results["value"] = results["train_loss"]
+        results["value"] = results["val_err"]
         return results
 
     def to_dict(self):

@@ -19,7 +19,8 @@ class Dataset(MultiFrameworkDataset):
     normalization_std = (0.2023, 0.1994, 0.2010)
 
     ds_description = dict(
-        n_samples_train=50_000,
+        n_samples_train=40_000,
+        n_samples_val=10_000,
         n_samples_test=10_000,
         image_width=32,
         n_classes=10,
