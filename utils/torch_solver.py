@@ -114,6 +114,7 @@ class TorchSolver(BaseSolver):
             max_epochs=-1, callbacks=[BenchoptCallback(callback)],
             accelerator="auto", devices=1,
             enable_checkpointing=False,
+            enable_model_summary=False,
         )
         trainer.fit(self.model, train_dataloaders=self.dataloader)
 
