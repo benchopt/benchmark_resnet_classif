@@ -60,3 +60,33 @@ with safe_import_context() as import_ctx:
         def on_epoch_end(self, epoch, logs=None):
             super().on_epoch_end(epoch, logs)
             logs['wd'] = backend.get_value(self.model.optimizer.weight_decay)
+
+    class BenchoptModelWrapper(tf.keras.models.Model):
+        """Wraps a model with a training step that does not compute
+        the extra metrics
+        """
+        def __init__(self, model, **kwargs):
+            super().__init__(**kwargs)
+            self.model = model
+
+        def call(self, x, training=None):
+            return self.model(x, training=training)
+
+        def train_step(self, data):
+            # Unpack the data. Its structure depends on your model and
+            # on what you pass to `fit()`.
+            x, y = data
+
+            with tf.GradientTape() as tape:
+                y_pred = self(x, training=True)  # Forward pass
+                # Compute the loss value
+                # (the loss function is configured in `compile()`)
+                loss = self.compiled_loss(y, y_pred, regularization_losses=self.losses)
+
+            # Compute gradients
+            trainable_vars = self.trainable_variables
+            gradients = tape.gradient(loss, trainable_vars)
+            # Update weights
+            self.optimizer.apply_gradients(zip(gradients, trainable_vars))
+            # Return a dict mapping metric names to current value
+            return {m.name: np.nan for m in self.metrics}
