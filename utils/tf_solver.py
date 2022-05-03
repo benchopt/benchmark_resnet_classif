@@ -97,7 +97,10 @@ class TFSolver(BaseSolver):
                 lambda x, y: (data_aug_layer(x[None], training=True)[0], y),
                 num_parallel_calls=tf.data.experimental.AUTOTUNE,
             )
-        self.dataset = self.dataset.batch(
+        self.dataset = self.dataset.shuffle(
+            buffer_size=1000,  # For now a hardcoded value
+            reshuffle_each_iteration=True,
+        ).batch(
             self.batch_size,
             num_parallel_calls=tf.data.experimental.AUTOTUNE,
         )
