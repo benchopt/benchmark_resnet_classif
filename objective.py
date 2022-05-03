@@ -193,7 +193,6 @@ class Objective(BaseObjective):
 
                 if dataset_name == 'train':
                     data = AugmentedDataset(data, None, self.normalization)
-
                 self._datasets[dataset_name] = DataLoader(
                     data, batch_size=test_batch_size,
                     num_workers=num_workers, persistent_workers=True,
