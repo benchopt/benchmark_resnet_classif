@@ -13,7 +13,7 @@ class MultiFrameworkDataset(BaseDataset, ABC):
     torch_split_kwarg = 'train'
 
     parameters = {
-        'framework': ['pytorch', 'tensorflow'],
+        'framework': ['lightning', 'tensorflow'],
     }
 
     install_cmd = 'conda'
@@ -26,7 +26,7 @@ class MultiFrameworkDataset(BaseDataset, ABC):
         )
         return normalization_transform
 
-    def get_torch_data(self):
+    def get_lightning_data(self):
 
         # Data preprocessing steps
         normalization_transform = self.get_torch_preprocessing_step()
@@ -94,7 +94,7 @@ class MultiFrameworkDataset(BaseDataset, ABC):
 
     def get_data(self):
         """Switch to select the data from the right framework."""
-        if self.framework == 'pytorch':
-            return self.get_torch_data()
+        if self.framework == 'lightning':
+            return self.get_lightning_data()
         elif self.framework == 'tensorflow':
             return self.get_tf_data()

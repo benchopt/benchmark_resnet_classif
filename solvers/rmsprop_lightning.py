@@ -4,12 +4,12 @@ from benchopt import safe_import_context
 with safe_import_context() as import_ctx:
     from torch.optim import RMSprop
 
-TorchSolver = import_ctx.import_from('torch_solver', 'TorchSolver')
+LightningSolver = import_ctx.import_from('lightning_solver', 'LightningSolver')
 
 
-class Solver(TorchSolver):
+class Solver(LightningSolver):
     """RMSPROP solver"""
-    name = 'RMSPROP-torch'
+    name = 'RMSPROP-lightning'
 
     # any parameter defined here is accessible as a class attribute
     parameters = {
@@ -17,7 +17,7 @@ class Solver(TorchSolver):
         'rho': [0.99, 0.9],
         'momentum': [0, 0.9],
         'coupled_weight_decay': [0.0, 1e-4, 0.02],
-        **TorchSolver.parameters
+        **LightningSolver.parameters
     }
 
     def set_objective(self, **kwargs):

@@ -13,9 +13,9 @@ with safe_import_context() as import_ctx:
     from pytorch_lightning import Trainer
     from pytorch_lightning.utilities.seed import seed_everything
 
-    BenchPLModule = import_ctx.import_from("torch_helper", "BenchPLModule")
+    BenchPLModule = import_ctx.import_from("lightning_helper", "BenchPLModule")
     AugmentedDataset = import_ctx.import_from(
-        'torch_helper', 'AugmentedDataset'
+        'lightning_helper', 'AugmentedDataset'
     )
     remove_initial_downsample = import_ctx.import_from(
         'torch_resnets', 'remove_initial_downsample'
@@ -111,7 +111,7 @@ class Objective(BaseObjective):
             return model
         return _model_init_fn
 
-    def get_torch_model_init_fn(self):
+    def get_lightning_model_init_fn(self):
         model_klass = TORCH_MODEL_MAP[self.model_type][self.model_size]
 
         def _model_init_fn():
@@ -126,8 +126,8 @@ class Objective(BaseObjective):
     def get_model_init_fn(self, framework):
         if framework == 'tensorflow':
             return self.get_tf_model_init_fn()
-        elif framework == 'pytorch':
-            return self.get_torch_model_init_fn()
+        elif framework == 'lightning':
+            return self.get_lightning_model_init_fn()
 
     def set_data(
         self,
@@ -176,7 +176,7 @@ class Objective(BaseObjective):
                         num_parallel_calls=tf.data.experimental.AUTOTUNE,
                     )
                 self._datasets[dataset_name] = ds
-            elif self.framework == 'pytorch':
+            elif self.framework == 'lightning':
                 # Don't use multiple workers on OSX as this leads to deadlock
                 # in the CI.
                 # XXX - try to come up with better way to set this.
@@ -199,7 +199,7 @@ class Objective(BaseObjective):
 
             if self.framework == 'tensorflow':
                 metrics = model.evaluate(dataset, return_dict=True)
-            elif self.framework == 'pytorch':
+            elif self.framework == 'lightning':
                 metrics = self.trainer.test(model, dataloaders=dataset)[0]
 
             results[dataset_name + "_loss"] = metrics["loss"]

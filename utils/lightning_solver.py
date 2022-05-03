@@ -12,15 +12,15 @@ with safe_import_context() as import_ctx:
     from pytorch_lightning import Trainer
 
     BenchoptCallback = import_ctx.import_from(
-        'torch_helper', 'BenchoptCallback'
+        'lightning_helper', 'BenchoptCallback'
     )
     AugmentedDataset = import_ctx.import_from(
-        'torch_helper', 'AugmentedDataset'
+        'lightning_helper', 'AugmentedDataset'
     )
 
 
-class TorchSolver(BaseSolver):
-    """Torch base solver"""
+class LightningSolver(BaseSolver):
+    """Pytorch Lightning base solver"""
 
     stopping_criterion = SufficientProgressCriterion(
         patience=20, strategy='callback'
@@ -111,7 +111,8 @@ class TorchSolver(BaseSolver):
         # nice to allow multi-GPU training.
         trainer = Trainer(
             max_epochs=-1, callbacks=[BenchoptCallback(callback)],
-            accelerator="auto", devices=1
+            accelerator="auto", devices=1, enable_checkpointing=False,
+            profiler="simple"
         )
         trainer.fit(self.model, train_dataloaders=self.dataloader)
 
