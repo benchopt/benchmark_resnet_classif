@@ -69,7 +69,7 @@ class TorchSolver(BaseSolver):
             persistent_workers=True, pin_memory=True, shuffle=True
         )
 
-    def set_lr_schedule_and_optimizer(self, n_epochs=200):
+    def set_lr_schedule_and_optimizer(self, max_epochs=200):
         optimizer = self.optimizer_klass(
             self.model.parameters(),
             **self.optimizer_kwargs,
@@ -78,15 +78,15 @@ class TorchSolver(BaseSolver):
             self.model.configure_optimizers = lambda: optimizer
             return
         if self.lr_schedule == 'step':
-            scheduler = torch.optim.lr_scheduler.StepLR(
+            scheduler = torch.optim.lr_scheduler.MultiStepLR(
                 optimizer,
-                step_size=n_epochs//2,
+                milestones=[max_epochs//2, max_epochs*3//4],
                 gamma=0.1,
             )
         elif self.lr_schedule == 'cosine':
             scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
                 optimizer,
-                T_max=n_epochs,
+                T_max=max_epochs,
             )
         self.model.configure_optimizers = lambda: (
             [optimizer],
@@ -101,8 +101,8 @@ class TorchSolver(BaseSolver):
         # model weight initialization
         self.model = self.model_init_fn()
         # optimizer and lr schedule init
-        n_epochs = callback.stopping_criterion.max_runs
-        self.set_lr_schedule_and_optimizer(n_epochs)
+        max_epochs = callback.stopping_criterion.max_runs
+        self.set_lr_schedule_and_optimizer(max_epochs)
         # Initial evaluation
         callback(self.model)
 
