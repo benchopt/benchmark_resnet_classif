@@ -73,8 +73,10 @@ class Objective(BaseObjective):
     def skip(
         self,
         dataset,
+        val_dataset,
         test_dataset,
         n_samples_train,
+        n_samples_val,
         n_samples_test,
         image_width,
         n_classes,
@@ -132,8 +134,10 @@ class Objective(BaseObjective):
     def set_data(
         self,
         dataset,
+        val_dataset,
         test_dataset,
         n_samples_train,
+        n_samples_val,
         n_samples_test,
         image_width,
         n_classes,
@@ -141,8 +145,10 @@ class Objective(BaseObjective):
         normalization,
     ):
         self.dataset = dataset
+        self.val_dataset = val_dataset
         self.test_dataset = test_dataset
         self.n_samples_train = n_samples_train
+        self.n_samples_val = n_samples_val
         self.n_samples_test = n_samples_test
         self.width = image_width
         self.n_classes = n_classes
