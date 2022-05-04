@@ -1,6 +1,5 @@
 import os
 import sys
-
 from benchopt import BaseSolver, safe_import_context
 from benchopt.stopping_criterion import SufficientProgressCriterion
 
@@ -10,15 +9,18 @@ with safe_import_context() as import_ctx:
     import joblib
     import torch
     from torchvision import transforms
-    from tqdm import tqdm
+    from pytorch_lightning import Trainer
 
+    BenchoptCallback = import_ctx.import_from(
+        'lightning_helper', 'BenchoptCallback'
+    )
     AugmentedDataset = import_ctx.import_from(
         'lightning_helper', 'AugmentedDataset'
     )
 
 
-class TorchSolver(BaseSolver):
-    """Pytorch base solver"""
+class LightningSolver(BaseSolver):
+    """Pytorch Lightning base solver"""
 
     stopping_criterion = SufficientProgressCriterion(
         patience=20, strategy='callback'
@@ -32,7 +34,7 @@ class TorchSolver(BaseSolver):
 
     def skip(self, model_init_fn, dataset, normalization):
         if not isinstance(dataset, torch.utils.data.Dataset):
-            return True, 'Not a torch dataset'
+            return True, 'Not a PT dataset'
         coupled_wd = getattr(self, 'coupled_weight_decay', 0.0)
         decoupled_wd = getattr(self, 'decoupled_weight_decay', 0.0)
         if coupled_wd and decoupled_wd:
@@ -61,20 +63,20 @@ class TorchSolver(BaseSolver):
         # set this value is necessary here.
         system = os.environ.get('RUNNER_OS', sys.platform)
         is_mac = system in ['darwin', 'macOS']
-        num_workers = min(10, joblib.cpu_count()) if not is_mac else 0
-        persistent_workers = num_workers > 0
         self.dataloader = torch.utils.data.DataLoader(
             self.dataset, batch_size=self.batch_size,
-            num_workers=num_workers,
-            persistent_workers=persistent_workers,
-            pin_memory=True, shuffle=True
+            num_workers=min(10, joblib.cpu_count()) if not is_mac else 0,
+            persistent_workers=True, pin_memory=True, shuffle=True
         )
 
-    def set_lr_schedule_and_optimizer(self, model, max_epochs=200):
+    def set_lr_schedule_and_optimizer(self, max_epochs=200):
         optimizer = self.optimizer_klass(
-            model.parameters(),
+            self.model.parameters(),
             **self.optimizer_kwargs,
         )
+        if self.lr_schedule is None:
+            self.model.configure_optimizers = lambda: optimizer
+            return
         if self.lr_schedule == 'step':
             scheduler = torch.optim.lr_scheduler.MultiStepLR(
                 optimizer,
@@ -86,13 +88,10 @@ class TorchSolver(BaseSolver):
                 optimizer,
                 T_max=max_epochs,
             )
-        else:
-            class NoOpScheduler:
-                def step(self):
-                    ...
-
-            scheduler = NoOpScheduler()
-        return optimizer, scheduler
+        self.model.configure_optimizers = lambda: (
+            [optimizer],
+            [scheduler],
+        )
 
     @staticmethod
     def get_next(stop_val):
@@ -100,28 +99,24 @@ class TorchSolver(BaseSolver):
 
     def run(self, callback):
         # model weight initialization
-        model = self.model_init_fn()
-        criterion = torch.nn.CrossEntropyLoss()
-
+        self.model = self.model_init_fn()
         # optimizer and lr schedule init
         max_epochs = callback.stopping_criterion.max_runs
-        optimizer, lr_schedule = self.set_lr_schedule_and_optimizer(
-            model,
-            max_epochs,
-        )
+        self.set_lr_schedule_and_optimizer(max_epochs)
         # Initial evaluation
-        while callback(model):
-            for X, y in tqdm(self.dataloader):
-                if torch.cuda.is_available():
-                    X, y = X.cuda(), y.cuda()
-                optimizer.zero_grad()
-                loss = criterion(model(X), y)
-                loss.backward()
+        callback(self.model)
 
-                optimizer.step()
-            lr_schedule.step()
-
-        self.model = model
+        # Setup the trainer
+        # TODO: for now, we are limited to 1 device due to pytorch_lightning
+        # bad interaction with benchopt. Removing this limitation would be
+        # nice to allow multi-GPU training.
+        trainer = Trainer(
+            max_epochs=-1, callbacks=[BenchoptCallback(callback)],
+            accelerator="auto", devices=1,
+            enable_checkpointing=False,
+            enable_model_summary=False,
+        )
+        trainer.fit(self.model, train_dataloaders=self.dataloader)
 
     def get_result(self):
         return self.model
