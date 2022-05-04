@@ -13,7 +13,10 @@ class MultiFrameworkDataset(BaseDataset, ABC):
     torch_split_kwarg = 'train'
 
     parameters = {
-        'framework': ['lightning', 'tensorflow', 'pytorch'],
+        # WARNING: this order is very important
+        # as tensorflow takes all the memory and doesn't have a mechanism to
+        # release it
+        'framework': ['pytorch', 'lightning', 'tensorflow'],
     }
 
     install_cmd = 'conda'
