@@ -26,13 +26,16 @@ class Dataset(BaseDataset):
         'n_samples, img_size': [
             (128, 32),
         ],
-        'framework': ['lightning', 'tensorflow', 'pytorch'],
+        # WARNING: this order is very important
+        # as tensorflow takes all the memory and doesn't have a mechanism to
+        # release it
+        'framework': ['pytorch', 'lightning', 'tensorflow'],
     }
 
     # This makes sure that for each solver, we have one simulated dataset that
     # will be compatible in the test_solver.
     test_parameters = {
-        'framework': ['lightning', 'tensorflow', 'pytorch'],
+        'framework': ['pytorch', 'lightning', 'tensorflow'],
     }
 
     def __init__(
