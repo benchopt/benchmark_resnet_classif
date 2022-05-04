@@ -162,6 +162,7 @@ class Objective(BaseObjective):
         self.trainer = Trainer(
             accelerator="auto", strategy="noteardown", max_epochs=-1,
             enable_checkpointing=False,
+            enable_model_summary=False
         )
 
         # Set the batch size for the test dataloader
