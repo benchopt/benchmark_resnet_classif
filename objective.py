@@ -1,6 +1,5 @@
 import os
 import sys
-from tqdm import tqdm
 
 from benchopt import BaseObjective, safe_import_context
 
@@ -9,7 +8,7 @@ with safe_import_context() as import_ctx:
     import joblib
     import torch
     import tensorflow as tf
-
+    from tqdm import tqdm
     import torchvision.models as models
     from torch.utils.data import DataLoader
     from pytorch_lightning import Trainer
