@@ -24,7 +24,9 @@ def generate_output_from_rand_image(framework, rand_image, torch_weights_map=Non
 
         def model_fn(image):
             with torch.no_grad():
-                return model(image).numpy()
+                output = model(image)
+                output = torch.softmax(output, dim=1)
+                return output.numpy()
         if torch.cuda.is_available():
             model = model.cuda()
             rand_image = rand_image.cuda()
