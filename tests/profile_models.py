@@ -20,18 +20,22 @@ def profile(framework, n_runs=100):
     if framework == 'pytorch':
         image, _ = dataset[0]
         if torch.cuda.is_available():
+            model = model.cuda()
+            model.eval()
+            model_fn = model
             image = image.cuda()
         image = image.unsqueeze(0)
     elif framework == 'tensorflow':
         image, _ = next(iter(dataset))
         image = image[None]
+        model_fn = model.predict
     # warm-up
     for _ in range(5):
-        model(image)
+        model_fn(image)
     # timing
     start = time.time()
     for _ in range(n_runs):
-        model(image)
+        model_fn(image)
     end = time.time()
     return end - start
 
