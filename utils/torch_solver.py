@@ -30,19 +30,20 @@ class TorchSolver(BaseSolver):
         'lr_schedule': [None, 'step', 'cosine'],
     }
 
-    def skip(self, model_init_fn, dataset, normalization):
-        if not isinstance(dataset, torch.utils.data.Dataset):
-            return True, 'Not a torch dataset'
+    def skip(self, model_init_fn, dataset, normalization, framework):
+        if framework != 'pytorch':
+            return True, 'Not a torch dataset/objective'
         coupled_wd = getattr(self, 'coupled_weight_decay', 0.0)
         decoupled_wd = getattr(self, 'decoupled_weight_decay', 0.0)
         if coupled_wd and decoupled_wd:
             return True, 'Cannot use both decoupled and coupled weight decay'
         return False, None
 
-    def set_objective(self, model_init_fn, dataset, normalization):
+    def set_objective(self, model_init_fn, dataset, normalization, framework):
         self.dataset = dataset
         self.model_init_fn = model_init_fn
         self.normalization = normalization
+        self.framework = framework
 
         if self.data_aug:
             data_aug_transform = transforms.Compose([

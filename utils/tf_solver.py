@@ -30,9 +30,9 @@ class TFSolver(BaseSolver):
     install_cmd = 'conda'
     requirements = ['pip:tensorflow-addons']
 
-    def skip(self, model_init_fn, dataset, normalization):
-        if not isinstance(dataset, tf.data.Dataset):
-            return True, 'Not a TF dataset'
+    def skip(self, model_init_fn, dataset, normalization, framework):
+        if framework != 'tensorflow':
+            return True, 'Not a TF dataset/objective'
         coupled_wd = getattr(self, 'coupled_weight_decay', 0.0)
         decoupled_wd = getattr(self, 'decoupled_weight_decay', 0.0)
         if coupled_wd and decoupled_wd:
@@ -73,12 +73,13 @@ class TFSolver(BaseSolver):
         )
         return lr_wd_cback
 
-    def set_objective(self, model_init_fn, dataset, normalization):
+    def set_objective(self, model_init_fn, dataset, normalization, framework):
         self.optimizer_klass = extend_with_decoupled_weight_decay(
             self.optimizer_klass,
         )
         self.dataset = dataset
         self.model_init_fn = model_init_fn
+        self.framework = framework
 
         if self.data_aug:
             data_aug_layer = tf.keras.models.Sequential([
