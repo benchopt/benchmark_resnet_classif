@@ -50,7 +50,10 @@ def basic_block(x, filters, stride=1, use_bias=True, conv_shortcut=True,
         shortcut = x
 
     if stride > 1:
-        x = layers.ZeroPadding2D(padding=((1,0),(1,0)), name=name + '_1_pad')(x)
+        x = layers.ZeroPadding2D(
+            padding=((1, 0), (1, 0)),
+            name=name + '_1_pad',
+        )(x)
         padding_mode = 'valid'
     else:
         padding_mode = 'same'
