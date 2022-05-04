@@ -57,7 +57,7 @@ class Objective(BaseObjective):
 
     install_cmd = 'conda'
     requirements = [
-        'pip:pytorch', 'pip:torchvision', 'pip:pytorch-lightning ',
+        'pip:torch', 'pip:torchvision', 'pip:pytorch-lightning ',
         'pip:tensorflow',
     ]
 
