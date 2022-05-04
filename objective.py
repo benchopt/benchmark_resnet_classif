@@ -58,6 +58,8 @@ class Objective(BaseObjective):
     install_cmd = 'conda'
     requirements = [
         'pip:torch', 'pip:torchvision', 'pip:pytorch-lightning ',
+        # TODO: rm below, and fix tests
+        'pip:tensorflow-datasets', 'pip:tensorflow-addons',
         'pip:tensorflow',
     ]
 
