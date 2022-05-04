@@ -1,6 +1,6 @@
 import os
 import sys
-from tqdm import tqdm
+
 from benchopt import BaseSolver, safe_import_context
 from benchopt.stopping_criterion import SufficientProgressCriterion
 
@@ -10,6 +10,7 @@ with safe_import_context() as import_ctx:
     import joblib
     import torch
     from torchvision import transforms
+    from tqdm import tqdm
 
     AugmentedDataset = import_ctx.import_from(
         'lightning_helper', 'AugmentedDataset'
@@ -66,21 +67,21 @@ class TorchSolver(BaseSolver):
             persistent_workers=True, pin_memory=True, shuffle=True
         )
 
-    def set_lr_schedule_and_optimizer(self, model):
+    def set_lr_schedule_and_optimizer(self, model, max_epochs=200):
         optimizer = self.optimizer_klass(
             model.parameters(),
             **self.optimizer_kwargs,
         )
         if self.lr_schedule == 'step':
-            scheduler = torch.optim.lr_scheduler.StepLR(
+            scheduler = torch.optim.lr_scheduler.MultiStepLR(
                 optimizer,
-                step_size=30,
+                milestones=[max_epochs//2, max_epochs*3//4],
                 gamma=0.1,
             )
         elif self.lr_schedule == 'cosine':
             scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
                 optimizer,
-                T_max=200,
+                T_max=max_epochs,
             )
         else:
             class NoOpScheduler:
@@ -100,12 +101,13 @@ class TorchSolver(BaseSolver):
         criterion = torch.nn.CrossEntropyLoss()
 
         # optimizer and lr schedule init
-        optimizer, lr_schedule = self.set_lr_schedule_and_optimizer(model)
+        max_epochs = callback.stopping_criterion.max_runs
+        optimizer, lr_schedule = self.set_lr_schedule_and_optimizer(max_epochs, model)
         # Initial evaluation
         while callback(model):
             for X, y in tqdm(self.dataloader):
-		if torch.cuda.is_available():
-	                X, y = X.cuda(), y.cuda()
+                if torch.cuda.is_available():
+                    X, y = X.cuda(), y.cuda()
                 optimizer.zero_grad()
                 loss = criterion(model(X), y)
                 loss.backward()

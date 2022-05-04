@@ -69,7 +69,7 @@ class LightningSolver(BaseSolver):
             persistent_workers=True, pin_memory=True, shuffle=True
         )
 
-    def set_lr_schedule_and_optimizer(self):
+    def set_lr_schedule_and_optimizer(self, max_epochs=200):
         optimizer = self.optimizer_klass(
             self.model.parameters(),
             **self.optimizer_kwargs,
@@ -78,15 +78,15 @@ class LightningSolver(BaseSolver):
             self.model.configure_optimizers = lambda: optimizer
             return
         if self.lr_schedule == 'step':
-            scheduler = torch.optim.lr_scheduler.StepLR(
+            scheduler = torch.optim.lr_scheduler.MultiStepLR(
                 optimizer,
-                step_size=30,
+                milestones=[max_epochs//2, max_epochs*3//4],
                 gamma=0.1,
             )
         elif self.lr_schedule == 'cosine':
             scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
                 optimizer,
-                T_max=200,
+                T_max=max_epochs,
             )
         self.model.configure_optimizers = lambda: (
             [optimizer],
@@ -101,7 +101,8 @@ class LightningSolver(BaseSolver):
         # model weight initialization
         self.model = self.model_init_fn()
         # optimizer and lr schedule init
-        self.set_lr_schedule_and_optimizer()
+        max_epochs = callback.stopping_criterion.max_runs
+        self.set_lr_schedule_and_optimizer(max_epochs)
         # Initial evaluation
         callback(self.model)
 
@@ -111,8 +112,9 @@ class LightningSolver(BaseSolver):
         # nice to allow multi-GPU training.
         trainer = Trainer(
             max_epochs=-1, callbacks=[BenchoptCallback(callback)],
-            accelerator="auto", devices=1, enable_checkpointing=False,
-            profiler="simple"
+            accelerator="auto", devices=1,
+            enable_checkpointing=False,
+            enable_model_summary=False,
         )
         trainer.fit(self.model, train_dataloaders=self.dataloader)
 

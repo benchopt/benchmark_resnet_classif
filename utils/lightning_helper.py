@@ -43,6 +43,9 @@ class BenchPLModule(LightningModule):
         loss = F.nll_loss(logits, y)
         return loss, logits, y
 
+    def optimizer_zero_grad(self, epoch, batch_idx, optimizer, optimizer_idx):
+        optimizer.zero_grad(set_to_none=True)
+
     def test_step(self, batch, batch_idx):
         loss, logits, y = self.loss_logits_y(batch)
         preds = torch.argmax(logits, dim=1)
