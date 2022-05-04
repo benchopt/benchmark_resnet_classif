@@ -31,7 +31,7 @@ class TorchSolver(BaseSolver):
     }
 
     def skip(self, model_init_fn, dataset, normalization, framework):
-        if not framework != 'pytorch':
+        if framework != 'pytorch':
             return True, 'Not a torch dataset/objective'
         coupled_wd = getattr(self, 'coupled_weight_decay', 0.0)
         decoupled_wd = getattr(self, 'decoupled_weight_decay', 0.0)
