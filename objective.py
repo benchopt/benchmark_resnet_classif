@@ -252,4 +252,5 @@ class Objective(BaseObjective):
             model_init_fn=self.get_one_beta,
             dataset=self.dataset,
             normalization=self.normalization,
+            framework=self.framework,
         )
