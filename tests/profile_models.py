@@ -13,7 +13,10 @@ def profile(framework, n_runs=100):
     from objective import Objective
 
     bench_dataset = Dataset.get_instance(framework=framework)
-    bench_objective = Objective.get_instance(model_type='resnet', model_size='18')
+    bench_objective = Objective.get_instance(
+        model_type='resnet',
+        model_size='18',
+    )
     bench_objective.set_dataset(bench_dataset)
     obj_dict = bench_objective.to_dict()
     model = obj_dict['model_init_fn']()
@@ -50,7 +53,11 @@ def profile(framework, n_runs=100):
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--framework', default='pytorch', choices=['pytorch', 'tensorflow'])
+    parser.add_argument(
+        '--framework',
+        default='pytorch',
+        choices=['pytorch', 'tensorflow'],
+    )
     parser.add_argument('--n_runs', default=100, type=int)
     args = parser.parse_args()
     timing = profile(args.framework, args.n_runs)
