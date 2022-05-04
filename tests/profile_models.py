@@ -6,11 +6,11 @@ from benchopt.utils.safe_import import set_benchmark
 
 set_benchmark('./')
 
-from datasets.simulated import Dataset
-from objective import Objective
-
 
 def profile(framework, n_runs=100):
+    from datasets.simulated import Dataset
+    from objective import Objective
+
     bench_dataset = Dataset.get_instance(framework=framework)
     bench_objective = Objective.get_instance(model_type='resnet', model_size='18')
     bench_objective.set_dataset(bench_dataset)
@@ -21,8 +21,10 @@ def profile(framework, n_runs=100):
         image, _ = dataset[0]
         if torch.cuda.is_available():
             image = image.cuda()
+        image = image.unsqueeze(0)
     elif framework == 'tensorflow':
         image, _ = next(iter(dataset))
+        image = image[None]
     # warm-up
     for _ in range(5):
         model(image)
