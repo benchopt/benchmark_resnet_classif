@@ -235,7 +235,8 @@ class Objective(BaseObjective):
         res = {'loss': 0., 'acc': 0, 'n_samples': 0}
         with torch.no_grad():
             for X, y in tqdm(dataloader):
-                X, y = X.cuda(), y.cuda()
+                if torch.cuda.is_available():
+                    X, y = X.cuda(), y.cuda()
                 res['n_samples'] += len(X)
                 y_proba = model(X)
                 res['loss'] += criterion(y_proba, y).item()
