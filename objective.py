@@ -227,16 +227,20 @@ class Objective(BaseObjective):
 
     def eval_torch(self, model, dataloader):
 
+        model.eval()
         criterion = torch.nn.CrossEntropyLoss()
         res = {'loss': 0., 'acc': 0, 'n_samples': 0}
-        for X, y in tqdm(dataloader):
-            X, y = X.cuda(), y.cuda()
-            res['n_samples'] += len(X)
-            y_proba = model(X)
-            res['loss'] += criterion(y_proba, y).item()
-            res['acc'] += (y_proba.argmax(axis=1) == y).sum().item()
+        with torch.no_grad():
+            for X, y in tqdm(dataloader):
+                X, y = X.cuda(), y.cuda()
+                res['n_samples'] += len(X)
+                y_proba = model(X)
+                res['loss'] += criterion(y_proba, y).item()
+                res['acc'] += (y_proba.argmax(axis=1) == y).sum().item()
         res['loss'] /= res['n_samples']
         res['acc'] /= res['n_samples']
+
+        model.train()
         return res
 
     def to_dict(self):
