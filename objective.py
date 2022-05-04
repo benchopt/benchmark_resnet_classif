@@ -185,13 +185,15 @@ class Objective(BaseObjective):
                 system = os.environ.get('RUNNER_OS', sys.platform)
                 is_mac = system in ['darwin', 'macOS']
                 num_workers = min(10, joblib.cpu_count()) if not is_mac else 0
+                persistent_workers = num_workers > 0
 
                 if dataset_name == 'train':
                     data = AugmentedDataset(data, None, self.normalization)
 
                 self._datasets[dataset_name] = DataLoader(
                     data, batch_size=test_batch_size,
-                    num_workers=num_workers, persistent_workers=True,
+                    num_workers=num_workers,
+                    persistent_workers=persistent_workers,
                     pin_memory=True
                 )
 
