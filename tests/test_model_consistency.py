@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 import tensorflow as tf
 import torch
 
@@ -92,9 +93,14 @@ def generate_output_from_rand_image(
     framework,
     rand_image,
     torch_weights_map=None,
+    optimizer=None,
 ):
     from datasets.cifar import Dataset
     from objective import Objective
+    from solvers.adam_tf import Solver as TFAdamSolver
+    from solvers.sgd_tf import Solver as TFSGDSolver
+    from solvers.adam_torch import Solver as TorchAdamSolver
+    from solvers.sgd_torch import Solver as TorchSGDSolver
 
     bench_dataset = Dataset.get_instance(framework=framework)
     bench_objective = Objective.get_instance(
@@ -108,13 +114,27 @@ def generate_output_from_rand_image(
         model.eval()
         rand_image = torch.tensor(rand_image)
 
+        if optimizer is not None:
+            if optimizer == 'adam':
+                solver_klass = TorchAdamSolver
+            elif optimizer == 'sgd':
+                solver_klass = TorchSGDSolver
+
+            def train_step():
+                solver = solver_klass.get_instance()
+                solver._set_objective(bench_objective)
+                optimizer, _ = solver.set_lr_schedule_and_optimizer(model)
+                criterion = torch.nn.CrossEntropyLoss()
+                loss = criterion(
+                    model(rand_image),
+                    torch.ones(1, dtype=torch.int64),
+                )
+                loss.backward()
+
+                optimizer.step()
+
         def model_fn(x):
             with torch.no_grad():
-                # x = model.conv1(x)
-                # x = model.bn1(x)
-                # x = model.relu(x)
-                # x = model.maxpool(x)
-                # output = x
                 output = model(x)
                 output = torch.softmax(output, dim=1)
             return output.numpy()
@@ -122,7 +142,7 @@ def generate_output_from_rand_image(
             model = model.cuda()
             rand_image = rand_image.cuda()
         torch_weights_map = {
-            name: param
+            name: param.clone().detach()
             for name, param in model.named_parameters()
         }
     elif framework == 'tensorflow':
@@ -130,20 +150,54 @@ def generate_output_from_rand_image(
         model_fn = model.predict
         if torch_weights_map:
             apply_torch_weights_to_tf(model, torch_weights_map)
+
+        if optimizer is not None:
+            if optimizer == 'adam':
+                solver_klass = TFAdamSolver
+            elif optimizer == 'sgd':
+                solver_klass = TFSGDSolver
+
+            def train_step():
+                solver = solver_klass.get_instance()
+                solver._set_objective(bench_objective)
+                _ = solver.get_lr_wd_cback(200)
+                optimizer = solver.optimizer_klass(
+                    weight_decay=solver.decoupled_wd*solver.lr,
+                    **solver.optimizer_kwargs,
+                )
+                model.compile(
+                    optimizer=optimizer,
+                    loss='sparse_categorical_crossentropy',
+                )
+                model.fit(
+                    rand_image,
+                    tf.ones([1], dtype=tf.int64),
+                )
+    if optimizer is not None:
+        train_step()
     output = model_fn(rand_image)
     return output, torch_weights_map
 
 
-def test_model_consistency():
+@pytest.mark.parametrize(
+    'optimizer', [
+        None,
+        'adam',
+        'sgd',
+    ],
+)
+def test_model_consistency(optimizer):
     rand_image = np.random.normal(size=(1, 3, 32, 32)).astype(np.float32)
     torch_output, torch_weights_map = generate_output_from_rand_image(
         'pytorch',
         rand_image,
+        optimizer=optimizer,
     )
     rand_image = np.transpose(rand_image, (0, 2, 3, 1))
     tf_output, _ = generate_output_from_rand_image(
         'tensorflow',
         rand_image,
         torch_weights_map,
+        optimizer=optimizer,
     )
     np.testing.assert_almost_equal(torch_output, tf_output, decimal=5)
