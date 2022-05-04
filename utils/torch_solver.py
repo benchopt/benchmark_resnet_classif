@@ -17,7 +17,7 @@ with safe_import_context() as import_ctx:
 
 
 class TorchSolver(BaseSolver):
-    """Pytorch based solver"""
+    """Pytorch base solver"""
 
     stopping_criterion = SufficientProgressCriterion(
         patience=20, strategy='callback'
@@ -97,7 +97,6 @@ class TorchSolver(BaseSolver):
     def run(self, callback):
         # model weight initialization
         model = self.model_init_fn()
-        model.cuda()
         criterion = torch.nn.CrossEntropyLoss()
 
         # optimizer and lr schedule init
@@ -105,7 +104,8 @@ class TorchSolver(BaseSolver):
         # Initial evaluation
         while callback(model):
             for X, y in tqdm(self.dataloader):
-                X, y = X.cuda(), y.cuda()
+		if torch.cuda.is_available():
+	                X, y = X.cuda(), y.cuda()
                 optimizer.zero_grad()
                 loss = criterion(model(X), y)
                 loss.backward()
