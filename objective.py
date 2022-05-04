@@ -6,16 +6,17 @@ from benchopt import BaseObjective, safe_import_context
 
 with safe_import_context() as import_ctx:
     import joblib
+    import torch
     import tensorflow as tf
-
+    from tqdm import tqdm
     import torchvision.models as models
     from torch.utils.data import DataLoader
     from pytorch_lightning import Trainer
     from pytorch_lightning.utilities.seed import seed_everything
 
-    BenchPLModule = import_ctx.import_from("torch_helper", "BenchPLModule")
+    BenchPLModule = import_ctx.import_from("lightning_helper", "BenchPLModule")
     AugmentedDataset = import_ctx.import_from(
-        'torch_helper', 'AugmentedDataset'
+        'lightning_helper', 'AugmentedDataset'
     )
     remove_initial_downsample = import_ctx.import_from(
         'torch_resnets', 'remove_initial_downsample'
@@ -57,7 +58,9 @@ class Objective(BaseObjective):
 
     install_cmd = 'conda'
     requirements = [
-        'pip:pytorch', 'pip:torchvision', 'pip:pytorch-lightning ',
+        'pip:torch', 'pip:torchvision', 'pip:pytorch-lightning ',
+        # TODO: rm below, and fix tests
+        'pip:tensorflow-datasets', 'pip:tensorflow-addons',
         'pip:tensorflow',
     ]
 
@@ -120,14 +123,28 @@ class Objective(BaseObjective):
             is_small_images = self.width < self.image_width_cutout
             if is_resnet and is_small_images:
                 model = remove_initial_downsample(model)
+            if torch.cuda.is_available():
+                model = model.cuda()
+            return model
+        return _model_init_fn
+
+    def get_lightning_model_init_fn(self):
+        torch_model_init_fn = self.get_torch_model_init_fn()
+
+        def _model_init_fn():
+            model = torch_model_init_fn()
             return BenchPLModule(model)
         return _model_init_fn
 
     def get_model_init_fn(self, framework):
         if framework == 'tensorflow':
             return self.get_tf_model_init_fn()
+        elif framework == 'lightning':
+            return self.get_lightning_model_init_fn()
         elif framework == 'pytorch':
             return self.get_torch_model_init_fn()
+        else:
+            raise ValueError(f"No framework named {framework}")
 
     def set_data(
         self,
@@ -160,7 +177,9 @@ class Objective(BaseObjective):
         # https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#reproducibility
         # XXX: modify this with the correct amount of CPUs/GPUs
         self.trainer = Trainer(
-            accelerator="auto", strategy="noteardown", max_epochs=-1
+            accelerator="auto", strategy="noteardown", max_epochs=-1,
+            enable_checkpointing=False,
+            enable_model_summary=False
         )
 
         # Set the batch size for the test dataloader
@@ -176,20 +195,22 @@ class Objective(BaseObjective):
                         num_parallel_calls=tf.data.experimental.AUTOTUNE,
                     )
                 self._datasets[dataset_name] = ds
-            elif self.framework == 'pytorch':
+            elif self.framework in ['lightning', 'pytorch']:
                 # Don't use multiple workers on OSX as this leads to deadlock
                 # in the CI.
                 # XXX - try to come up with better way to set this.
                 system = os.environ.get('RUNNER_OS', sys.platform)
                 is_mac = system in ['darwin', 'macOS']
                 num_workers = min(10, joblib.cpu_count()) if not is_mac else 0
+                persistent_workers = num_workers > 0
 
                 if dataset_name == 'train':
                     data = AugmentedDataset(data, None, self.normalization)
 
                 self._datasets[dataset_name] = DataLoader(
                     data, batch_size=test_batch_size,
-                    num_workers=num_workers, persistent_workers=True,
+                    num_workers=num_workers,
+                    persistent_workers=persistent_workers,
                     pin_memory=True
                 )
 
@@ -199,8 +220,10 @@ class Objective(BaseObjective):
 
             if self.framework == 'tensorflow':
                 metrics = model.evaluate(dataset, return_dict=True)
-            elif self.framework == 'pytorch':
+            elif self.framework == 'lightning':
                 metrics = self.trainer.test(model, dataloaders=dataset)[0]
+            elif self.framework == 'pytorch':
+                metrics = self.eval_torch(model, dataloader=dataset)
 
             results[dataset_name + "_loss"] = metrics["loss"]
             acc_name = "accuracy" if self.framework == 'tensorflow' else "acc"
@@ -209,9 +232,29 @@ class Objective(BaseObjective):
         results["value"] = results["train_loss"]
         return results
 
+    def eval_torch(self, model, dataloader):
+
+        model.eval()
+        criterion = torch.nn.CrossEntropyLoss()
+        res = {'loss': 0., 'acc': 0, 'n_samples': 0}
+        with torch.no_grad():
+            for X, y in tqdm(dataloader):
+                if torch.cuda.is_available():
+                    X, y = X.cuda(), y.cuda()
+                res['n_samples'] += len(X)
+                y_proba = model(X)
+                res['loss'] += criterion(y_proba, y).item()
+                res['acc'] += (y_proba.argmax(axis=1) == y).sum().item()
+        res['loss'] /= res['n_samples']
+        res['acc'] /= res['n_samples']
+
+        model.train()
+        return res
+
     def to_dict(self):
         return dict(
             model_init_fn=self.get_one_beta,
             dataset=self.dataset,
             normalization=self.normalization,
+            framework=self.framework,
         )
