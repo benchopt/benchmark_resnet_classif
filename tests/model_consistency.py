@@ -22,11 +22,16 @@ def generate_output_from_rand_image(framework, rand_image, torch_weights_map=Non
         model.eval()
         rand_image = torch.tensor(rand_image)
 
-        def model_fn(image):
+        def model_fn(x):
             with torch.no_grad():
-                output = model(image)
+                # x = model.conv1(x)
+                # x = model.bn1(x)
+                # x = model.relu(x)
+                # x = model.maxpool(x)
+                # output = x
+                output = model(x)
                 output = torch.softmax(output, dim=1)
-                return output.numpy()
+            return output.numpy()
         if torch.cuda.is_available():
             model = model.cuda()
             rand_image = rand_image.cuda()
@@ -35,10 +40,16 @@ def generate_output_from_rand_image(framework, rand_image, torch_weights_map=Non
             for name, param in model.named_parameters()
         }
         from torchsummary import summary
-        summary(model)
+        print(model)
     elif framework == 'tensorflow':
         rand_image = tf.convert_to_tensor(rand_image)
-        model_fn = model.predict
+
+        def model_fn(x):
+            # intermediary_output_model = tf.keras.models.Model(model.inputs, model.layers[2].output)
+            # output = intermediary_output_model.predict(x)
+            # output = np.transpose(output, (0, 3, 1, 2))
+            output = model.predict(x)
+            return output
         if torch_weights_map:
             used_weights = []
             def apply_conv_torch_weights_to_tf(tf_layer, torch_layer_name, used_weights):
@@ -101,4 +112,4 @@ rand_image = np.random.normal(size=(1, 3, 32, 32)).astype(np.float32)
 torch_output, torch_weights_map = generate_output_from_rand_image('pytorch', rand_image)
 rand_image = np.transpose(rand_image, (0, 2, 3, 1))
 tf_output, _ = generate_output_from_rand_image('tensorflow', rand_image, torch_weights_map)
-np.testing.assert_allclose(torch_output, tf_output)
+np.testing.assert_almost_equal(torch_output, tf_output, decimal=5)
