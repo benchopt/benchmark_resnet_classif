@@ -1,6 +1,7 @@
 import time
 
 import torch
+from torchsummary import summary
 
 from benchopt.utils.safe_import import set_benchmark
 
@@ -18,14 +19,20 @@ def profile(framework, n_runs=100):
     model = obj_dict['model_init_fn']()
     dataset = obj_dict['dataset']
     if framework == 'pytorch':
+        # summary of torch model
+        summary(model)
+        model.eval()
+
+        def model_fn(image):
+            with torch.no_grad():
+                return model(image).numpy()
         image, _ = dataset[0]
         if torch.cuda.is_available():
             model = model.cuda()
-            model.eval()
-            model_fn = model
             image = image.cuda()
         image = image.unsqueeze(0)
     elif framework == 'tensorflow':
+        model.summary()
         image, _ = next(iter(dataset))
         image = image[None]
         model_fn = model.predict
