@@ -121,8 +121,8 @@ class Objective(BaseObjective):
             is_small_images = self.width < self.image_width_cutout
             if is_resnet and is_small_images:
                 model = remove_initial_downsample(model)
-	    if torch.cuda.is_available():
-	    	model = model.cuda()
+            if torch.cuda.is_available():
+                model = model.cuda()
             return model
         return _model_init_fn
 
