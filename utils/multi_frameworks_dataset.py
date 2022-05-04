@@ -13,7 +13,7 @@ class MultiFrameworkDataset(BaseDataset, ABC):
     torch_split_kwarg = 'train'
 
     parameters = {
-        'framework': ['lightning', 'tensorflow', 'torch'],
+        'framework': ['lightning', 'tensorflow', 'pytorch'],
     }
 
     install_cmd = 'conda'
@@ -94,7 +94,7 @@ class MultiFrameworkDataset(BaseDataset, ABC):
 
     def get_data(self):
         """Switch to select the data from the right framework."""
-        if self.framework in ['torch', 'lightning']:
+        if self.framework in ['pytorch', 'lightning']:
             return self.get_torch_data()
         elif self.framework == 'tensorflow':
             return self.get_tf_data()

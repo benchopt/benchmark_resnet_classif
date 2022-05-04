@@ -26,13 +26,13 @@ class Dataset(BaseDataset):
         'n_samples, img_size': [
             (128, 32),
         ],
-        'framework': ['lightning', 'tensorflow', 'torch'],
+        'framework': ['lightning', 'tensorflow', 'pytorch'],
     }
 
     # This makes sure that for each solver, we have one simulated dataset that
     # will be compatible in the test_solver.
     test_parameters = {
-        'framework': ['lightning', 'tensorflow', 'torch'],
+        'framework': ['lightning', 'tensorflow', 'pytorch'],
     }
 
     def __init__(
@@ -97,7 +97,7 @@ class Dataset(BaseDataset):
 
     def get_data(self):
         """Switch to select the data from the right framework."""
-        if self.framework in ['lightning', 'torch']:
+        if self.framework in ['lightning', 'pytorch']:
             dataset, test_dataset = self.get_torch_data()
             normalization = None
         elif self.framework == 'tensorflow':

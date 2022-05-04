@@ -138,7 +138,7 @@ class Objective(BaseObjective):
             return self.get_tf_model_init_fn()
         elif framework == 'lightning':
             return self.get_lightning_model_init_fn()
-        elif framework == 'torch':
+        elif framework == 'pytorch':
             return self.get_torch_model_init_fn()
         else:
             raise ValueError(f"No framework named {framework}")
@@ -190,7 +190,7 @@ class Objective(BaseObjective):
                         num_parallel_calls=tf.data.experimental.AUTOTUNE,
                     )
                 self._datasets[dataset_name] = ds
-            elif self.framework in ['lightning', 'torch']:
+            elif self.framework in ['lightning', 'pytorch']:
                 # Don't use multiple workers on OSX as this leads to deadlock
                 # in the CI.
                 # XXX - try to come up with better way to set this.
@@ -215,7 +215,7 @@ class Objective(BaseObjective):
                 metrics = model.evaluate(dataset, return_dict=True)
             elif self.framework == 'lightning':
                 metrics = self.trainer.test(model, dataloaders=dataset)[0]
-            elif self.framework == 'torch':
+            elif self.framework == 'pytorch':
                 metrics = self.eval_torch(model, dataloader=dataset)
 
             results[dataset_name + "_loss"] = metrics["loss"]
