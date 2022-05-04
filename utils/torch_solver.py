@@ -102,7 +102,10 @@ class TorchSolver(BaseSolver):
 
         # optimizer and lr schedule init
         max_epochs = callback.stopping_criterion.max_runs
-        optimizer, lr_schedule = self.set_lr_schedule_and_optimizer(max_epochs, model)
+        optimizer, lr_schedule = self.set_lr_schedule_and_optimizer(
+            model,
+            max_epochs,
+        )
         # Initial evaluation
         while callback(model):
             for X, y in tqdm(self.dataloader):
