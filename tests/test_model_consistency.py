@@ -134,6 +134,7 @@ def generate_output_from_rand_image(
                 optimizer.step()
 
         def model_fn(x):
+            model.train()
             output = model(x)
             output = torch.softmax(output, dim=1)
             return output.detach().numpy()
@@ -149,7 +150,7 @@ def generate_output_from_rand_image(
 
         def model_fn(x):
             output = model(x, training=True)
-            return output
+            return output.numpy()
         if torch_weights_map:
             apply_torch_weights_to_tf(model, torch_weights_map)
 
@@ -202,4 +203,8 @@ def test_model_consistency(optimizer):
         torch_weights_map,
         optimizer=optimizer,
     )
-    np.testing.assert_almost_equal(torch_output, tf_output, decimal=5)
+    np.testing.assert_almost_equal(
+        torch_output,
+        tf_output,
+        decimal=5 if optimizer is None else 3,
+    )
