@@ -1,4 +1,4 @@
-from benchopt import safe_import_context
+from benchopt import BaseDataset, safe_import_context
 
 with safe_import_context() as import_ctx:
     import numpy as np
@@ -9,17 +9,13 @@ with safe_import_context() as import_ctx:
     AugmentedDataset = import_ctx.import_from(
         'torch_helper', 'AugmentedDataset'
     )
-    MultiFrameworkDataset = import_ctx.import_from(
-        'multi_frameworks_dataset',
-        'MultiFrameworkDataset',
-    )
 
 
 def make_channels_last(images):
     return np.transpose(images, (0, 2, 3, 1))
 
 
-class Dataset(MultiFrameworkDataset):
+class Dataset(BaseDataset):
 
     name = "Simulated"
 
