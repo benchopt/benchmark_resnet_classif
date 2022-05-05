@@ -121,6 +121,7 @@ def generate_output_from_rand_image(
                 solver_klass = TorchSGDSolver
 
             def train_step():
+                model.train()
                 solver = solver_klass.get_instance()
                 solver._set_objective(bench_objective)
                 optimizer, _ = solver.set_lr_schedule_and_optimizer(model)
@@ -132,6 +133,7 @@ def generate_output_from_rand_image(
                 loss.backward()
 
                 optimizer.step()
+                model.eval()
 
         def model_fn(x):
             with torch.no_grad():
