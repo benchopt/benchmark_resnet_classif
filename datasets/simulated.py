@@ -5,27 +5,14 @@ with safe_import_context() as import_ctx:
     import tensorflow as tf
     import torch
     from torch.utils.data import TensorDataset
-    from torchvision import transforms
 
     AugmentedDataset = import_ctx.import_from(
         'torch_helper', 'AugmentedDataset'
     )
-    TFDatasetCapsule = import_ctx.import_from(
-        'tf_helper', 'TFDatasetCapsule'
-    )
     MultiFrameworkDataset = import_ctx.import_from(
         'multi_frameworks_dataset',
         'MultiFrameworkDataset',
     )
-
-    MultiFrameworkDataset = import_ctx.import_from(
-        'multi_frameworks_dataset',
-        'MultiFrameworkDataset',
-    )
-
-
-def make_channels_last(images):
-    return np.transpose(images, (0, 2, 3, 1))
 
 
 def make_channels_last(images):
