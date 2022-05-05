@@ -1,6 +1,5 @@
 import os
 import sys
-
 from benchopt import BaseSolver, safe_import_context
 from benchopt.stopping_criterion import SufficientProgressCriterion
 
@@ -8,22 +7,20 @@ from benchopt.stopping_criterion import SufficientProgressCriterion
 with safe_import_context() as import_ctx:
 
     import joblib
-    from timm.data.mixup import Mixup
     import torch
-    from torch.utils.data._utils.collate import default_collate
     from torchvision import transforms
-    from tqdm import tqdm
+    from pytorch_lightning import Trainer
 
     BenchoptCallback = import_ctx.import_from(
-        'torch_helper', 'BenchoptCallback'
+        'lightning_helper', 'BenchoptCallback'
     )
     AugmentedDataset = import_ctx.import_from(
         'lightning_helper', 'AugmentedDataset'
     )
 
 
-class TorchSolver(BaseSolver):
-    """Pytorch base solver"""
+class LightningSolver(BaseSolver):
+    """Pytorch Lightning base solver"""
 
     stopping_criterion = SufficientProgressCriterion(
         patience=20, strategy='callback'
@@ -32,19 +29,12 @@ class TorchSolver(BaseSolver):
     parameters = {
         'batch_size': [128],
         'data_aug': [False, True],
-        'rand_aug': [False, True],
-        'mix': [False, True],
         'lr_schedule': [None, 'step', 'cosine'],
     }
 
-    install_cmd = 'conda'
-    requirements = ['timm']
-
     def skip(self, model_init_fn, dataset, normalization, framework):
-        if framework != 'pytorch':
-            return True, 'Not a torch dataset/objective'
-        if self.rand_aug and not self.data_aug:
-            return True, 'Data augmentation not activated for RA'
+        if framework != 'lightning':
+            return True, 'Not a PL dataset/objective'
         coupled_wd = getattr(self, 'coupled_weight_decay', 0.0)
         decoupled_wd = getattr(self, 'decoupled_weight_decay', 0.0)
         if coupled_wd and decoupled_wd:
@@ -57,25 +47,11 @@ class TorchSolver(BaseSolver):
         self.normalization = normalization
         self.framework = framework
 
-        if self.mix:
-            self.mixup_fn = lambda batch: Mixup(
-                mixup_alpha=0.1,
-                cutmix_alpha=1.0,
-                num_classes=dataset.n_classes,
-            )(*default_collate(batch))
-            # TODO: change below
-            self.model.loss_type = 'bce'
         if self.data_aug:
-            aug_list = [
-                # TODO: we need to change the size
-                # to fit the dataset
+            data_aug_transform = transforms.Compose([
                 transforms.RandomCrop(32, padding=4),
                 transforms.RandomHorizontalFlip(),
-            ]
-            if self.rand_aug:
-                # we put magnitude to 10, to copy TF models
-                aug_list.insert(0, transforms.RandAugment(magnitude=10))
-            data_aug_transform = transforms.Compose(aug_list)
+            ])
         else:
             data_aug_transform = None
         self.dataset = AugmentedDataset(
@@ -94,15 +70,17 @@ class TorchSolver(BaseSolver):
             self.dataset, batch_size=self.batch_size,
             num_workers=num_workers,
             persistent_workers=persistent_workers,
-            pin_memory=True, shuffle=True,
-            collate_fn=self.mixup_fn if self.mix else None,
+            pin_memory=True, shuffle=True
         )
 
-    def set_lr_schedule_and_optimizer(self, model, max_epochs=200):
+    def set_lr_schedule_and_optimizer(self, max_epochs=200):
         optimizer = self.optimizer_klass(
-            model.parameters(),
+            self.model.parameters(),
             **self.optimizer_kwargs,
         )
+        if self.lr_schedule is None:
+            self.model.configure_optimizers = lambda: optimizer
+            return
         if self.lr_schedule == 'step':
             scheduler = torch.optim.lr_scheduler.MultiStepLR(
                 optimizer,
@@ -114,13 +92,10 @@ class TorchSolver(BaseSolver):
                 optimizer,
                 T_max=max_epochs,
             )
-        else:
-            class NoOpScheduler:
-                def step(self):
-                    ...
-
-            scheduler = NoOpScheduler()
-        return optimizer, scheduler
+        self.model.configure_optimizers = lambda: (
+            [optimizer],
+            [scheduler],
+        )
 
     @staticmethod
     def get_next(stop_val):
@@ -128,28 +103,24 @@ class TorchSolver(BaseSolver):
 
     def run(self, callback):
         # model weight initialization
-        model = self.model_init_fn()
-        criterion = torch.nn.CrossEntropyLoss()
-
+        self.model = self.model_init_fn()
         # optimizer and lr schedule init
         max_epochs = callback.stopping_criterion.max_runs
-        optimizer, lr_schedule = self.set_lr_schedule_and_optimizer(
-            model,
-            max_epochs,
-        )
+        self.set_lr_schedule_and_optimizer(max_epochs)
         # Initial evaluation
-        while callback(model):
-            for X, y in tqdm(self.dataloader):
-                if torch.cuda.is_available():
-                    X, y = X.cuda(), y.cuda()
-                optimizer.zero_grad()
-                loss = criterion(model(X), y)
-                loss.backward()
+        callback(self.model)
 
-                optimizer.step()
-            lr_schedule.step()
-
-        self.model = model
+        # Setup the trainer
+        # TODO: for now, we are limited to 1 device due to pytorch_lightning
+        # bad interaction with benchopt. Removing this limitation would be
+        # nice to allow multi-GPU training.
+        trainer = Trainer(
+            max_epochs=-1, callbacks=[BenchoptCallback(callback)],
+            accelerator="auto", devices=1,
+            enable_checkpointing=False,
+            enable_model_summary=False,
+        )
+        trainer.fit(self.model, train_dataloaders=self.dataloader)
 
     def get_result(self):
         return self.model

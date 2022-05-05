@@ -2,30 +2,30 @@ from benchopt import safe_import_context
 
 
 with safe_import_context() as import_ctx:
-    from tensorflow.keras.optimizers import RMSprop
+    from torch.optim import RMSprop
 
-TFSolver = import_ctx.import_from('tf_solver', 'TFSolver')
+LightningSolver = import_ctx.import_from('lightning_solver', 'LightningSolver')
 
 
-class Solver(TFSolver):
-    """RMSProp solver"""
-    name = 'RMSProp-tf'
+class Solver(LightningSolver):
+    """RMSPROP solver"""
+    name = 'RMSPROP-lightning'
 
     # any parameter defined here is accessible as a class attribute
     parameters = {
         'lr': [1e-3],
         'rho': [0.99, 0.9],
         'momentum': [0, 0.9],
-        'decoupled_weight_decay': [0.0, 1e-4, 0.02],
         'coupled_weight_decay': [0.0, 1e-4, 0.02],
-        **TFSolver.parameters
+        **LightningSolver.parameters
     }
 
     def set_objective(self, **kwargs):
+        super().set_objective(**kwargs)
         self.optimizer_klass = RMSprop
         self.optimizer_kwargs = dict(
-            learning_rate=self.lr,
+            lr=self.lr,
             momentum=self.momentum,
-            rho=self.rho,
+            alpha=self.rho,
+            weight_decay=self.coupled_weight_decay,
         )
-        super().set_objective(**kwargs)

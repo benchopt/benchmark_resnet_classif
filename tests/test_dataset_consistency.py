@@ -1,12 +1,17 @@
+import os
 import warnings
 
-from benchopt.utils.safe_import import set_benchmark
 import numpy as np
 import pytest
-from torch.utils.data import DataLoader
+import tensorflow as tf
+from torch.utils.data import DataLoader, Dataset
+
+from benchopt.utils.safe_import import set_benchmark
 
 # this means this test has to be run from the root
-set_benchmark('./')
+set_benchmark('.')
+
+CI = os.environ.get('CI', False)
 
 
 def tf_dataset_to_np_array(tf_dataset, n_samples):
@@ -51,7 +56,8 @@ def get_matched_unmatched_indices_arrays(
     stride=0,
     epsilon=1.5e-6,
 ):
-    diff = array_1[:len(array_1)-stride] - array_2[stride:]
+    n_samples = len(array_1)
+    diff = array_1[:n_samples-stride] - array_2[stride:]
     close = np.abs(diff) <= epsilon
     close = np.all(close, axis=(1, 2, 3))
     matched_indices_1 = np.where(close)[0]
@@ -59,9 +65,7 @@ def get_matched_unmatched_indices_arrays(
     unmatched_indices_1 = list(np.where(~close)[0])
     unmatched_indices_2 = list(np.where(~close)[0] + stride)
     unmatched_indices_1 = unmatched_indices_1 + list(range(
-        len(array_1) - 1,
-        len(array_1) - stride - 1,
-        -1,
+        n_samples - stride, n_samples,
     ))
     unmatched_indices_2 = list(range(stride)) + unmatched_indices_2
     return (
@@ -72,6 +76,25 @@ def get_matched_unmatched_indices_arrays(
     )
 
 
+class AugmentedDataset(Dataset):
+    def __init__(self, dataset, transform, normalization=None):
+        super().__init__()
+        self.dataset = dataset
+        self.transform = transform
+        self.normalization = normalization
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, idx):
+        x, y = self.dataset[idx]
+        if self.transform:
+            x = self.transform(x)
+        if self.normalization:
+            x = self.normalization(x)
+        return x, y
+
+
 @pytest.mark.parametrize('dataset_module_name', [
     'cifar',
     'mnist',
@@ -80,6 +103,8 @@ def get_matched_unmatched_indices_arrays(
 ])
 @pytest.mark.parametrize('dataset_type', ['dataset', 'test_dataset'])
 def test_datasets_consistency(dataset_module_name, dataset_type):
+    if dataset_module_name == 'svhn' and dataset_type == 'dataset' and CI:
+        pytest.skip('SVHN dataset is too heavy for CI')
     from datasets import (  # noqa: F401
         cifar,
         mnist,
@@ -87,22 +112,46 @@ def test_datasets_consistency(dataset_module_name, dataset_type):
         svhn,
     )
     dataset = eval(dataset_module_name)
-    d_tf = dataset.Dataset.get_instance(framework='tensorflow', one_hot=False)
+    d_tf = dataset.Dataset.get_instance(framework='tensorflow')
     d_torch = dataset.Dataset.get_instance(framework='pytorch')
     _, tf_data = d_tf.get_data()
     _, torch_data = d_torch.get_data()
-    n_samples_key = 'n_samples_train' if dataset_type == 'dataset' \
-        else 'n_samples_test'
-    n_samples = tf_data[n_samples_key]
-    assert n_samples == torch_data[n_samples_key], \
-        'Number of samples is different'
+
+    for k in torch_data:
+        if k not in ['dataset', 'test_dataset', 'framework', 'normalization']:
+            assert torch_data[k] == tf_data[k], (
+                f"ds_description do not match between framework for key {k}"
+            )
+
     tf_dataset = tf_data[dataset_type]
     torch_dataset = torch_data[dataset_type]
+    if dataset_type == 'dataset':
+        tf_normalization = tf_data['normalization']
+        torch_normalization = torch_data['normalization']
+        tf_dataset = tf_dataset.map(
+            lambda x, y: (tf_normalization(x), y),
+            num_parallel_calls=tf.data.experimental.AUTOTUNE,
+        )
+        torch_dataset = AugmentedDataset(
+            torch_dataset,
+            None,
+            normalization=torch_normalization,
+        )
+    assert len(tf_dataset) == len(torch_dataset), (
+        "len of the 2 datsets do not match"
+    )
+
+    # Conver to numpy arrays
+    n_samples = len(torch_dataset)
     tf_np_array = tf_dataset_to_np_array(tf_dataset, n_samples)
     X_tf, y_tf = order_images_labels(*tf_np_array)
     torch_np_array = torch_dataset_to_np_array(torch_dataset, n_samples)
     X_torch, y_torch = order_images_labels(*torch_np_array)
+
     try:
+        # XXX - use 1-nearest neighbor from sklearn to find the closest image.
+        # this should be mostly efficient and require less custom yet beautiful
+        # code.
         assert_tf_images_equal_torch_images(X_tf, X_torch)
     except AssertionError:
         # TODO: refactor all this BS
@@ -123,6 +172,7 @@ def test_datasets_consistency(dataset_module_name, dataset_type):
             ) = get_matched_unmatched_indices_arrays(
                 X_tf,
                 X_torch_channel_last,
+                stride
             )
             if dataset_module_name != 'svhn' or dataset_type == 'test_dataset':
                 np.testing.assert_array_equal(

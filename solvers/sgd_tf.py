@@ -13,15 +13,17 @@ class Solver(TFSolver):
 
     # any parameter defined here is accessible as a class attribute
     parameters = {
-        'nesterov, momentum': [(False, 0), (True, 0.9)],
-        'lr': [1e-3],
+        'nesterov, momentum': [(False, 0), (False, 0.9), (True, 0.9)],
+        'lr': [1e-1],
+        'weight_decay': [0.0, 5e-4],
         **TFSolver.parameters,
     }
 
-    def set_objective(self, model, dataset):
-        self.optimizer = SGD(
+    def set_objective(self, **kwargs):
+        self.optimizer_klass = SGD
+        self.optimizer_kwargs = dict(
             learning_rate=self.lr,
             momentum=self.momentum,
             nesterov=self.nesterov,
         )
-        super().set_objective(model, dataset)
+        super().set_objective(**kwargs)

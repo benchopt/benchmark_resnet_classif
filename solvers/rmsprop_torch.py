@@ -13,17 +13,19 @@ class Solver(TorchSolver):
 
     # any parameter defined here is accessible as a class attribute
     parameters = {
-        'alpha': [0.99, 0.9],
         'lr': [1e-3],
+        'rho': [0.99, 0.9],
         'momentum': [0, 0.9],
+        'coupled_weight_decay': [0.0, 1e-4, 0.02],
         **TorchSolver.parameters
     }
 
-    def set_objective(self, model, dataset):
-        super().set_objective(model, dataset)
-        self.model.configure_optimizers = lambda: RMSprop(
-            self.model.parameters(),
+    def set_objective(self, **kwargs):
+        super().set_objective(**kwargs)
+        self.optimizer_klass = RMSprop
+        self.optimizer_kwargs = dict(
             lr=self.lr,
             momentum=self.momentum,
-            alpha=self.alpha,
+            alpha=self.rho,
+            weight_decay=self.coupled_weight_decay,
         )

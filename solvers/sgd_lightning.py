@@ -3,19 +3,19 @@ from benchopt import safe_import_context
 with safe_import_context() as import_ctx:
     from torch.optim import SGD
 
-TorchSolver = import_ctx.import_from('torch_solver', 'TorchSolver')
+LightningSolver = import_ctx.import_from('lightning_solver', 'LightningSolver')
 
 
-class Solver(TorchSolver):
+class Solver(LightningSolver):
     """Stochastic Gradient descent solver"""
-    name = 'SGD-torch'
+    name = 'SGD-lightning'
 
     # any parameter defined here is accessible as a class attribute
     parameters = {
         'nesterov, momentum': [(False, 0), (False, 0.9), (True, 0.9)],
         'lr': [1e-1],
         'weight_decay': [0.0, 5e-4],
-        **TorchSolver.parameters
+        **LightningSolver.parameters
     }
 
     def set_objective(self, **kwargs):

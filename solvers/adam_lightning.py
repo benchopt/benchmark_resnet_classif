@@ -4,19 +4,19 @@ from benchopt import safe_import_context
 with safe_import_context() as import_ctx:
     from torch.optim import Adam, AdamW
 
-TorchSolver = import_ctx.import_from('torch_solver', 'TorchSolver')
+LightningSolver = import_ctx.import_from('lightning_solver', 'LightningSolver')
 
 
-class Solver(TorchSolver):
+class Solver(LightningSolver):
     """Adam solver"""
-    name = 'Adam-torch'
+    name = 'Adam-lightning'
 
     # any parameter defined here is accessible as a class attribute
     parameters = {
         'lr': [1e-3],
         'coupled_weight_decay': [0.0, 0.02],
         'decoupled_weight_decay': [0.0, 0.02],
-        **TorchSolver.parameters
+        **LightningSolver.parameters
     }
 
     def set_objective(self, **kwargs):

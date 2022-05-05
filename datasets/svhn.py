@@ -25,10 +25,6 @@ class Dataset(MultiFrameworkDataset):
         n_classes=10,
     )
 
-    parameters = {
-        'framework': ['pytorch', 'tensorflow'],
-    }
-
     torch_ds_klass = datasets.SVHN
     torch_split_kwarg = 'split'
 

@@ -14,9 +14,12 @@ class Solver(TFSolver):
     # any parameter defined here is accessible as a class attribute
     parameters = {
         'lr': [1e-3],
+        'decoupled_weight_decay': [0.0, 0.02],
+        'coupled_weight_decay': [0.0, 0.02],
         **TFSolver.parameters,
     }
 
-    def set_objective(self, model, dataset):
-        self.optimizer = Adam(learning_rate=self.lr)
-        super().set_objective(model, dataset)
+    def set_objective(self, **kwargs):
+        self.optimizer_klass = Adam
+        self.optimizer_kwargs = dict(learning_rate=self.lr)
+        super().set_objective(**kwargs)

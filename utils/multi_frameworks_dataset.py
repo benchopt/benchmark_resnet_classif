@@ -6,88 +6,98 @@ with safe_import_context() as import_ctx:
     import numpy as np
     import tensorflow as tf
     import tensorflow_datasets as tfds
-    import torch
     from torchvision import transforms
-
-    AugmentedDataset = import_ctx.import_from(
-        'torch_helper', 'AugmentedDataset'
-    )
-    TFDatasetCapsule = import_ctx.import_from(
-        'tf_helper', 'TFDatasetCapsule'
-    )
 
 
 class MultiFrameworkDataset(BaseDataset, ABC):
     torch_split_kwarg = 'train'
 
-    def __init__(self, framework='pytorch', one_hot=True):
-        # Store the parameters of the dataset
-        self.framework = framework
-        self.one_hot = one_hot
-        self.transform = transforms.PILToTensor()
-        self.normalization = transforms.Compose([
-            transforms.ConvertImageDtype(torch.float32),
-            transforms.Normalize(
-                self.normalization_mean,
-                self.normalization_std,
-            ),
-        ])
-        keras_normalization = tf.keras.layers.Normalization(
-            mean=self.normalization_mean,
-            variance=np.square(self.normalization_std),
+    parameters = {
+        # WARNING: this order is very important
+        # as tensorflow takes all the memory and doesn't have a mechanism to
+        # release it
+        'framework': ['pytorch', 'lightning', 'tensorflow'],
+    }
+
+    install_cmd = 'conda'
+    requirements = ['pip:tensorflow-datasets']
+
+    def get_torch_preprocessing_step(self):
+        normalization_transform = transforms.Normalize(
+            self.normalization_mean,
+            self.normalization_std,
         )
-        self.image_preprocessing = lambda x: keras_normalization(x/255)
+        return normalization_transform
 
     def get_torch_data(self):
-        data_dict = dict(framework=self.framework, **self.ds_description)
+
+        # Data preprocessing steps
+        normalization_transform = self.get_torch_preprocessing_step()
+
+        # Map correct split name for torch_ds_klass
         if self.torch_split_kwarg == 'train':
             splits = [True, False]
         elif self.torch_split_kwarg == 'split':
             splits = ['train', 'test']
+        else:
+            raise ValueError(f"unknown split_kwargs {self.torch_split_kwarg}")
+
+        # Load data
+        data_dict = dict(
+            framework=self.framework,
+            normalization=normalization_transform,
+            **self.ds_description,
+        )
         for key, split in zip(['dataset', 'test_dataset'], splits):
             split_kwarg = {self.torch_split_kwarg: split}
-            ds = self.torch_ds_klass(
+            transform_list = [transforms.ToTensor()]
+            if key == 'test_dataset':
+                transform_list.append(normalization_transform)
+            transform = transforms.Compose(transform_list)
+            data_dict[key] = self.torch_ds_klass(
                 root='./data',
                 download=True,
-                transform=self.transform,
+                transform=transform,
                 **split_kwarg,
-            )
-            # XXX: maybe consider AugMixDataset from
-            # https://github.com/rwightman/pytorch-image-models/blob/ef72ad417709b5ba6404d85d3adafd830d507b2a/timm/data/dataset.py
-            data_dict[key] = AugmentedDataset(
-                ds,
-                None,
-                self.normalization,
             )
         return 'object', data_dict
 
+    def get_tf_preprocessing_step(self):
+
+        # Data preprocessing steps
+        keras_normalization = tf.keras.layers.Normalization(
+            mean=self.normalization_mean,
+            variance=np.square(self.normalization_std),
+        )
+        return lambda x: keras_normalization(x/255)
+
     def get_tf_data(self):
-        data_dict = dict(framework=self.framework, **self.ds_description)
+
+        image_preprocessing = self.get_tf_preprocessing_step()
+
+        # Load data
+        data_dict = dict(
+            framework=self.framework,
+            normalization=image_preprocessing,
+            **self.ds_description,
+        )
         for key, split in zip(['dataset', 'test_dataset'], ['train', 'test']):
             ds = tfds.load(
                 self.tf_ds_name,
                 split=split,
                 as_supervised=True,
             )
-            ds = ds.map(
-                lambda x, y: (
-                    self.image_preprocessing(x)
-                    if key == 'test_dataset' else x,
-                    tf.one_hot(y, self.ds_description['n_classes'])
-                    if self.one_hot else y,
-                ),
-                num_parallel_calls=tf.data.experimental.AUTOTUNE,
-            )
-            data_dict[key] = ds
-            if key == 'dataset':
-                data_dict[key] = TFDatasetCapsule(
-                    data_dict[key],
-                    self.image_preprocessing,
+            if key == 'test_dataset':
+                ds = ds.map(
+                    lambda x, y: (image_preprocessing(x), y,),
+                    num_parallel_calls=tf.data.experimental.AUTOTUNE,
                 )
+            data_dict[key] = ds
         return 'object', data_dict
 
     def get_data(self):
-        if self.framework == 'pytorch':
+        """Switch to select the data from the right framework."""
+        if self.framework in ['pytorch', 'lightning']:
             return self.get_torch_data()
         elif self.framework == 'tensorflow':
             return self.get_tf_data()
