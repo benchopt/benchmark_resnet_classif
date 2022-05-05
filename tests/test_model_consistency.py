@@ -111,7 +111,6 @@ def generate_output_from_rand_image(
     obj_dict = bench_objective.to_dict()
     model = obj_dict['model_init_fn']()
     if framework == 'pytorch':
-        model.eval()
         rand_image = torch.tensor(rand_image)
 
         if optimizer is not None:
@@ -133,13 +132,11 @@ def generate_output_from_rand_image(
                 loss.backward()
 
                 optimizer.step()
-                model.eval()
 
         def model_fn(x):
-            with torch.no_grad():
-                output = model(x)
-                output = torch.softmax(output, dim=1)
-            return output.numpy()
+            output = model(x)
+            output = torch.softmax(output, dim=1)
+            return output.detach().numpy()
         if torch.cuda.is_available():
             model = model.cuda()
             rand_image = rand_image.cuda()
@@ -149,7 +146,9 @@ def generate_output_from_rand_image(
         }
     elif framework == 'tensorflow':
         rand_image = tf.convert_to_tensor(rand_image)
-        model_fn = model.predict
+        def model_fn(x):
+            output = model(x, training=True)
+            return output
         if torch_weights_map:
             apply_torch_weights_to_tf(model, torch_weights_map)
 
