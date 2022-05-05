@@ -146,6 +146,7 @@ def generate_output_from_rand_image(
         }
     elif framework == 'tensorflow':
         rand_image = tf.convert_to_tensor(rand_image)
+
         def model_fn(x):
             output = model(x, training=True)
             return output
