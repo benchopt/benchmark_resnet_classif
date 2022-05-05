@@ -197,7 +197,7 @@ def remove_initial_downsample(large_model, use_bias=False):
     first_conv = layers.Conv2D(
         64,
         3,
-        activation='relu',
+        activation='linear',
         padding='same',
         use_bias=use_bias,
         name='conv1_conv',
