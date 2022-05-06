@@ -8,7 +8,7 @@ from benchopt.utils.safe_import import set_benchmark
 set_benchmark('./')
 
 
-def profile(framework, n_runs=100):
+def profile(framework, n_runs=100, verbose=1):
     from datasets.simulated import Dataset
     from objective import Objective
 
@@ -23,22 +23,27 @@ def profile(framework, n_runs=100):
     dataset = obj_dict['dataset']
     if framework == 'pytorch':
         # summary of torch model
-        summary(model)
-        model.eval()
+        if verbose > 0:
+            summary(model)
 
         def model_fn(image):
-            with torch.no_grad():
-                return model(image).numpy()
+            if torch.cuda.is_available():
+                return model(image).detach().cpu().numpy()
+            else:
+                return model(image).detach().numpy()
         image, _ = dataset[0]
         if torch.cuda.is_available():
             model = model.cuda()
             image = image.cuda()
         image = image.unsqueeze(0)
     elif framework == 'tensorflow':
-        model.summary()
+        if verbose > 0:
+            model.summary()
         image, _ = next(iter(dataset))
         image = image[None]
-        model_fn = model.predict
+
+        def model_fn(image):
+            return model(image).numpy()
     # warm-up
     for _ in range(5):
         model_fn(image)
