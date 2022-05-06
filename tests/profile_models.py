@@ -27,10 +27,12 @@ def profile(framework, n_runs=100, verbose=1):
             summary(model)
 
         def model_fn(image):
+            output = model(image)
+            output = torch.softmax(output, dim=1)
             if torch.cuda.is_available():
-                return model(image).detach().cpu().numpy()
+                return output.detach().cpu().numpy()
             else:
-                return model(image).detach().numpy()
+                return output.detach().numpy()
         image, _ = dataset[0]
         if torch.cuda.is_available():
             model = model.cuda()
