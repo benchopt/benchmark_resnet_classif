@@ -161,7 +161,15 @@ class TFSolver(BaseSolver):
         # Launch training
         self.model.fit(
             self.dataset,
-            callbacks=[BenchoptCallback(callback), lr_wd_cback],
+            callbacks=[
+                BenchoptCallback(callback),
+                lr_wd_cback,
+                tf.keras.callbacks.TensorBoard(
+                    log_dir='./logs',
+                    write_graph=False,
+                    profile_batch=(10, 15),
+                ),
+            ],
             epochs=MAX_EPOCHS,
         )
 
