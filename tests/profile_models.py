@@ -22,6 +22,7 @@ def profile(framework, n_runs=100, verbose=1):
     model = obj_dict['model_init_fn']()
     dataset = obj_dict['dataset']
     if framework == 'pytorch':
+        model.train()
         # summary of torch model
         if verbose > 0:
             summary(model)
