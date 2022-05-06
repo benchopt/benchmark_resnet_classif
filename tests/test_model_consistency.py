@@ -94,6 +94,8 @@ def generate_output_from_rand_image(
     rand_image,
     torch_weights_map=None,
     optimizer=None,
+    n_train_steps=1,
+    **extra_solver_kwargs,
 ):
     from datasets.cifar import Dataset
     from objective import Objective
@@ -119,19 +121,24 @@ def generate_output_from_rand_image(
             elif optimizer == 'sgd':
                 solver_klass = TorchSGDSolver
 
-            def train_step():
+            def train_step(n_steps):
                 model.train()
-                solver = solver_klass.get_instance()
+                solver = solver_klass.get_instance(
+                    lr=1e-3,
+                    **extra_solver_kwargs,
+                )
                 solver._set_objective(bench_objective)
                 optimizer, _ = solver.set_lr_schedule_and_optimizer(model)
                 criterion = torch.nn.CrossEntropyLoss()
-                loss = criterion(
-                    model(rand_image),
-                    torch.ones(1, dtype=torch.int64),
-                )
-                loss.backward()
+                for _ in range(n_steps):
+                    optimizer.zero_grad()
+                    loss = criterion(
+                        model(rand_image),
+                        torch.ones(1, dtype=torch.int64),
+                    )
+                    loss.backward()
 
-                optimizer.step()
+                    optimizer.step()
 
         def model_fn(x):
             model.train()
@@ -160,8 +167,11 @@ def generate_output_from_rand_image(
             elif optimizer == 'sgd':
                 solver_klass = TFSGDSolver
 
-            def train_step():
-                solver = solver_klass.get_instance()
+            def train_step(n_steps):
+                solver = solver_klass.get_instance(
+                    lr=1e-3,
+                    **extra_solver_kwargs,
+                )
                 solver._set_objective(bench_objective)
                 _ = solver.get_lr_wd_cback(200)
                 optimizer = solver.optimizer_klass(
@@ -175,26 +185,30 @@ def generate_output_from_rand_image(
                 model.fit(
                     rand_image,
                     tf.ones([1], dtype=tf.int64),
+                    epochs=n_steps,
                 )
     if optimizer is not None:
-        train_step()
+        train_step(n_train_steps)
     output = model_fn(rand_image)
     return output, torch_weights_map
 
 
 @pytest.mark.parametrize(
-    'optimizer', [
-        None,
-        'adam',
-        'sgd',
+    'optimizer, extra_solver_kwargs', [
+        (None, {}),
+        ('adam', {}),
+        ('sgd', {}),
+        ('sgd', dict(weight_decay=5e-1)),
     ],
 )
-def test_model_consistency(optimizer):
+def test_model_consistency(optimizer, extra_solver_kwargs):
     rand_image = np.random.normal(size=(1, 3, 32, 32)).astype(np.float32)
     torch_output, torch_weights_map = generate_output_from_rand_image(
         'pytorch',
         rand_image,
         optimizer=optimizer,
+        **extra_solver_kwargs,
+        n_train_steps=2,
     )
     rand_image = np.transpose(rand_image, (0, 2, 3, 1))
     tf_output, _ = generate_output_from_rand_image(
@@ -202,9 +216,12 @@ def test_model_consistency(optimizer):
         rand_image,
         torch_weights_map,
         optimizer=optimizer,
+        **extra_solver_kwargs,
+        n_train_steps=2,
     )
-    np.testing.assert_almost_equal(
+    np.testing.assert_allclose(
         torch_output,
         tf_output,
-        decimal=5 if optimizer is None else 3,
+        rtol=0,
+        atol=5e-5,
     )
