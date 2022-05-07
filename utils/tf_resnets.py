@@ -43,6 +43,7 @@ def basic_block(x, filters, stride=1, use_bias=True, conv_shortcut=True,
             strides=stride,
             use_bias=use_bias,
             name=name + '_0_conv',
+            kernel_initializer='he_normal',
         )(x)
         shortcut = layers.BatchNormalization(
             axis=bn_axis, epsilon=1.001e-5, name=name + '_0_bn')(shortcut)
@@ -59,6 +60,7 @@ def basic_block(x, filters, stride=1, use_bias=True, conv_shortcut=True,
         padding_mode = 'same'
     x = layers.Conv2D(
         filters, kernel_size, padding=padding_mode, strides=stride,
+        kernel_initializer='he_normal',
         use_bias=use_bias,
         name=name + '_1_conv')(x)
     x = layers.BatchNormalization(
@@ -70,6 +72,7 @@ def basic_block(x, filters, stride=1, use_bias=True, conv_shortcut=True,
         kernel_size,
         padding='SAME',
         use_bias=use_bias,
+        kernel_initializer='he_normal',
         name=name + '_2_conv',
     )(x)
     x = layers.BatchNormalization(
@@ -104,6 +107,7 @@ def bottleneck_block(x, filters, kernel_size=3, stride=1, conv_shortcut=True,
             1,
             strides=stride,
             use_bias=use_bias,
+            kernel_initializer='he_normal',
             name=name + '_0_conv',
             )(x)
         shortcut = layers.BatchNormalization(
@@ -116,6 +120,7 @@ def bottleneck_block(x, filters, kernel_size=3, stride=1, conv_shortcut=True,
         1,
         strides=stride,
         use_bias=use_bias,
+        kernel_initializer='he_normal',
         name=name + '_1_conv',
     )(x)
     x = layers.BatchNormalization(
@@ -127,6 +132,7 @@ def bottleneck_block(x, filters, kernel_size=3, stride=1, conv_shortcut=True,
         kernel_size,
         padding='SAME',
         use_bias=use_bias,
+        kernel_initializer='he_normal',
         name=name + '_2_conv',
     )(x)
     x = layers.BatchNormalization(
@@ -137,6 +143,7 @@ def bottleneck_block(x, filters, kernel_size=3, stride=1, conv_shortcut=True,
         4 * filters,
         1,
         use_bias=use_bias,
+        kernel_initializer='he_normal',
         name=name + '_3_conv',
     )(x)
     x = layers.BatchNormalization(
@@ -200,6 +207,7 @@ def remove_initial_downsample(large_model, use_bias=False):
         activation='linear',
         padding='same',
         use_bias=use_bias,
+        kernel_initializer='he_normal',
         name='conv1_conv',
     )
     input_shape = list(large_model.input_shape[1:])
