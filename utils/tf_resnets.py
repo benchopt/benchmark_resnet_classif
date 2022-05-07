@@ -4,7 +4,7 @@ with safe_import_context() as import_ctx:
     from keras.applications.resnet import ResNet
     from keras import initializers
     from keras import layers
-    from keras import models
+    from tensorflow.keras import models
 
 
 # We might consider other options like
