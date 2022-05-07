@@ -160,7 +160,7 @@ class TFSolver(BaseSolver):
 
         # Launch training
         cback_list = tf.keras.callbacks.CallbackList(
-            [callback, lr_wd_cback],
+            [BenchoptCallback(callback), lr_wd_cback],
             model=self.model,
         )
         # It's important to create the callback list ourselves in order
