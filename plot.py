@@ -20,7 +20,7 @@ def fill_between_x(fig, x, q_min, q_max, y, color, marker, label,
         return fig
 
 
-def plot_objective_curve(df, obj_col='objective_value', solver_filters=None):
+def plot_objective_curve(df, obj_col='objective_value', solver_filters=None, solvers=None):
     """Plot objective curve for a given benchmark and dataset.
     Plot the objective value F(x) as a function of the time.
     Parameters
@@ -34,6 +34,8 @@ def plot_objective_curve(df, obj_col='objective_value', solver_filters=None):
     fig : matplotlib.Figure or pyplot.Figure
         The rendered figure, used to create HTML reports.
     """
+    assert not (solvers is not None and solver_filters is not None), \
+        'You can either specify solvers or solver_filters, but not both.'
     markers = {i: v for i, v in enumerate(plt.Line2D.markers)}
 
     df = df.copy()
@@ -41,7 +43,16 @@ def plot_objective_curve(df, obj_col='objective_value', solver_filters=None):
     objective_name = df['objective_name'].unique()[0]
     title = f"{objective_name}\nData: {dataset_name}"
     df.query(f"`{obj_col}` not in [inf, -inf]", inplace=True)
-    if solver_filters is not None:
+    if solvers is not None:
+        query = ''
+        for solver in solvers:
+            if query:
+                query += ' & '
+            query += f"solver_name == '{solver}'"
+        df.query(query, inplace=True)
+        if len(df) == 0:
+            raise ValueError(f"No solvers after filters '{solver_filters}'")
+    elif solver_filters is not None:
         query = ''
         for solver_filter in solver_filters:
             if query:
