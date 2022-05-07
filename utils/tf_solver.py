@@ -154,7 +154,7 @@ class TFSolver(BaseSolver):
             # encompassing model that will not compute metrics for
             # each batch.
             metrics='accuracy',
-            steps_per_execution=100,
+            steps_per_execution=400,
         )
 
         cback_list = tf.keras.callbacks.CallbackList(
