@@ -155,6 +155,7 @@ class TFSolver(BaseSolver):
             # each batch.
             metrics='accuracy',
             steps_per_execution=400,
+            jit_compile=True,
         )
 
         cback_list = tf.keras.callbacks.CallbackList(
