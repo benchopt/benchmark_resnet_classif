@@ -163,6 +163,7 @@ class TFSolver(BaseSolver):
             self.dataset,
             callbacks=[BenchoptCallback(callback), lr_wd_cback],
             epochs=MAX_EPOCHS,
+            verbose=0,
         )
 
     def get_result(self):
