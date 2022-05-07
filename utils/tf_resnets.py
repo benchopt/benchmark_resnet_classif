@@ -52,6 +52,7 @@ def basic_block(x, filters, stride=1, use_bias=True, conv_shortcut=True,
             kernel_initializer=torch_init,
         )(x)
         shortcut = layers.BatchNormalization(
+            momentum=0.9,
             axis=bn_axis, epsilon=1.001e-5, name=name + '_0_bn')(shortcut)
     else:
         shortcut = x
@@ -70,6 +71,7 @@ def basic_block(x, filters, stride=1, use_bias=True, conv_shortcut=True,
         use_bias=use_bias,
         name=name + '_1_conv')(x)
     x = layers.BatchNormalization(
+        momentum=0.9,
         axis=bn_axis, epsilon=1.001e-5, name=name + '_1_bn')(x)
     x = layers.Activation('relu', name=name + '_1_relu')(x)
 
@@ -82,6 +84,7 @@ def basic_block(x, filters, stride=1, use_bias=True, conv_shortcut=True,
         name=name + '_2_conv',
     )(x)
     x = layers.BatchNormalization(
+        momentum=0.9,
         axis=bn_axis, epsilon=1.001e-5, name=name + '_2_bn')(x)
 
     x = layers.Add(name=name + '_add')([shortcut, x])
@@ -122,6 +125,7 @@ def bottleneck_block(x, filters, kernel_size=3, stride=1, conv_shortcut=True,
             name=name + '_0_conv',
             )(x)
         shortcut = layers.BatchNormalization(
+            momentum=0.9,
             axis=bn_axis, epsilon=1.001e-5, name=name + '_0_bn')(shortcut)
     else:
         shortcut = x
@@ -135,6 +139,7 @@ def bottleneck_block(x, filters, kernel_size=3, stride=1, conv_shortcut=True,
         name=name + '_1_conv',
     )(x)
     x = layers.BatchNormalization(
+        momentum=0.9,
         axis=bn_axis, epsilon=1.001e-5, name=name + '_1_bn')(x)
     x = layers.Activation('relu', name=name + '_1_relu')(x)
 
@@ -147,6 +152,7 @@ def bottleneck_block(x, filters, kernel_size=3, stride=1, conv_shortcut=True,
         name=name + '_2_conv',
     )(x)
     x = layers.BatchNormalization(
+        momentum=0.9,
         axis=bn_axis, epsilon=1.001e-5, name=name + '_2_bn')(x)
     x = layers.Activation('relu', name=name + '_2_relu')(x)
 
@@ -158,6 +164,7 @@ def bottleneck_block(x, filters, kernel_size=3, stride=1, conv_shortcut=True,
         name=name + '_3_conv',
     )(x)
     x = layers.BatchNormalization(
+        momentum=0.9,
         axis=bn_axis, epsilon=1.001e-5, name=name + '_3_bn')(x)
 
     x = layers.Add(name=name + '_add')([shortcut, x])
@@ -232,7 +239,9 @@ def remove_initial_downsample(large_model, use_bias=False):
     small_model = models.Sequential([
         layers.Input(input_shape),
         first_conv,
-        layers.BatchNormalization(axis=-1, epsilon=1.001e-5, name='conv1_bn'),
+        layers.BatchNormalization(
+            momentum=0.9,
+            axis=-1, epsilon=1.001e-5, name='conv1_bn'),
         layers.Activation('relu', name='conv1_relu'),
         trimmed_model,
     ])
