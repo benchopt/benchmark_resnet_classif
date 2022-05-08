@@ -94,22 +94,22 @@ class TFSolver(BaseSolver):
             # https://github.com/keras-team/keras/issues/16399
             self.dataset = self.dataset.map(
                 lambda x, y: (data_aug_layer(x[None], training=True)[0], y),
-                num_parallel_calls=10,
+                num_parallel_calls=tf.data.experimental.AUTOTUNE,
             )
         self.dataset = self.dataset.shuffle(
             buffer_size=1000,  # For now a hardcoded value
             reshuffle_each_iteration=True,
         ).batch(
             self.batch_size,
-            num_parallel_calls=10,
+            num_parallel_calls=tf.data.experimental.AUTOTUNE,
         )
         if normalization is not None:
             self.dataset = self.dataset.map(
                 lambda x, y: (normalization(x), y),
-                num_parallel_calls=10,
+                num_parallel_calls=tf.data.experimental.AUTOTUNE,
             )
         self.dataset = self.dataset.prefetch(
-            buffer_size=10,
+            buffer_size=tf.data.experimental.AUTOTUNE,
         )
 
     @staticmethod
