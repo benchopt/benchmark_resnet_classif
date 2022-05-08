@@ -13,9 +13,17 @@ def _remove_prefix(text, prefix):
 
 
 def fill_between_x(fig, x, q_min, q_max, y, color, marker, label,
-                   plotly=False):
+                   plotly=False, alpha=1.0):
     if not plotly:
-        plt.plot(x, y, color=color, marker=marker, label=label, linewidth=3)
+        plt.plot(
+            x,
+            y,
+            color=color,
+            marker=marker,
+            label=label,
+            linewidth=3,
+            alpha=alpha,
+        )
         plt.fill_betweenx(y, q_min, q_max, color=color, alpha=.3)
         return fig
 
@@ -45,7 +53,8 @@ def plot_objective_curve(df, obj_col='objective_value', solver_filters=None, sol
     df.query(f"`{obj_col}` not in [inf, -inf]", inplace=True)
     if solvers is not None:
         query = ''
-        for solver in solvers:
+        for solver_dict in solvers:
+            solver = solver_dict['id']
             if query:
                 query += ' & '
             query += f"solver_name == '{solver}'"
@@ -71,6 +80,20 @@ def plot_objective_curve(df, obj_col='objective_value', solver_filters=None, sol
         return fig
 
     for i, solver_name in enumerate(solver_names):
+        if solvers:
+            solver_dict = [
+                solver_dict for solver_dict in solvers
+                if solver_dict['id'] == solver_name
+            ][0]
+            color = solver_dict['color']
+            marker = solver_dict['marker']
+            label = solver_dict['label']
+            alpha = solver_dict['alpha']
+        else:
+            color = CMAP(i % CMAP.N)
+            marker = markers[i % len(markers)]
+            label = solver_name
+            alpha = 1.0
         df_ = df[df['solver_name'] == solver_name]
         curve = df_.groupby('stop_val').median()
 
@@ -78,8 +101,8 @@ def plot_objective_curve(df, obj_col='objective_value', solver_filters=None, sol
         q9 = df_.groupby('stop_val')['time'].quantile(.9)
 
         fill_between_x(
-            fig, curve['time'], q1, q9, curve[obj_col], color=CMAP(i % CMAP.N),
-            marker=markers[i % len(markers)], label=solver_name, plotly=False
+            fig, curve['time'], q1, q9, curve[obj_col], color=color,
+            marker=marker, label=label, plotly=False, alpha=alpha,
         )
     # legend = plt.legend(fontsize=14, loc='lower left')
     plt.yscale('log')
