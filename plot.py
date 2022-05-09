@@ -177,11 +177,10 @@ if __name__ == "__main__":
         },
         {
             'id': 'SGD-tf[batch_size=128,data_aug=True,lr=0.1,lr_schedule=cosine,momentum=0.9,nesterov=False,weight_decay=0.0005]',
-            'color': CMAP(4),
-            'marker': markers[4],
+            'color': CMAP(6),
+            'marker': markers[6],
             'alpha': 1.0,
             'label': 'Best SGD (TF/Keras)',
-            'linestyle': '--',
         },
     ]
 
