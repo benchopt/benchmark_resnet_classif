@@ -13,7 +13,7 @@ def _remove_prefix(text, prefix):
 
 
 def fill_between_x(fig, x, q_min, q_max, y, color, marker, label,
-                   plotly=False, alpha=1.0):
+                   plotly=False, alpha=1.0, linestyle='-'):
     if not plotly:
         plt.plot(
             x,
@@ -23,6 +23,7 @@ def fill_between_x(fig, x, q_min, q_max, y, color, marker, label,
             label=label,
             linewidth=3,
             alpha=alpha,
+            linestyle=linestyle,
         )
         plt.fill_betweenx(y, q_min, q_max, color=color, alpha=.3)
         return fig
@@ -95,11 +96,13 @@ def plot_objective_curve(
             marker = solver_dict['marker']
             label = solver_dict['label']
             alpha = solver_dict['alpha']
+            linestyle = solver_dict.get('linestyle', '-')
         else:
             color = CMAP(i % CMAP.N)
             marker = markers[i % len(markers)]
             label = solver_name
             alpha = 1.0
+            linestyle = '-'
         df_ = df[df['solver_name'] == solver_name]
         curve = df_.groupby('stop_val').median()
 
@@ -109,6 +112,7 @@ def plot_objective_curve(
         fill_between_x(
             fig, curve['time'], q1, q9, curve[obj_col], color=color,
             marker=marker, label=label, plotly=False, alpha=alpha,
+            linestyle=linestyle,
         )
     plt.legend(fontsize=14, loc='upper right')
     plt.yscale('log')
@@ -127,43 +131,57 @@ if __name__ == "__main__":
     results_file = Path("outputs") / "benchopt_run_2022-05-06_10h38m09.csv"
     df = pd.read_csv(results_file)
 
-    common_color = CMAP(0)
     markers = {i: v for i, v in enumerate(plt.Line2D.markers)}
     solvers = [
         {
             'id': 'SGD-torch[batch_size=128,data_aug=False,lr=0.1,lr_schedule=None,momentum=0,nesterov=False,weight_decay=0.0]',
-            'color': common_color,
+            'color': CMAP(0),
             'marker': markers[0],
             'alpha': 0.2,
             'label': 'Vanilla SGD',
         },
         {
             'id': 'SGD-torch[batch_size=128,data_aug=True,lr=0.1,lr_schedule=None,momentum=0,nesterov=False,weight_decay=0.0]',
-            'color': common_color,
+            'color': CMAP(1),
             'marker': markers[1],
             'alpha': 0.4,
             'label': 'SGD + data aug.',
         },
         {
             'id': 'SGD-torch[batch_size=128,data_aug=True,lr=0.1,lr_schedule=None,momentum=0.9,nesterov=False,weight_decay=0.0]',
-            'color': common_color,
+            'color': CMAP(2),
             'marker': markers[2],
             'alpha': 0.6,
             'label': 'SGD + data aug. + momentum',
         },
         {
             'id': 'SGD-torch[batch_size=128,data_aug=True,lr=0.1,lr_schedule=cosine,momentum=0.9,nesterov=False,weight_decay=0.0]',
-            'color': common_color,
+            'color': CMAP(3),
             'marker': markers[3],
             'alpha': 0.8,
             'label': 'SGD + data aug. + momentum + cosine LR sched.',
         },
         {
             'id': 'SGD-torch[batch_size=128,data_aug=True,lr=0.1,lr_schedule=cosine,momentum=0.9,nesterov=False,weight_decay=0.0005]',
-            'color': common_color,
+            'color': CMAP(4),
             'marker': markers[4],
             'alpha': 1.0,
             'label': 'Best SGD',
+        },
+        {
+            'id': 'Adam-torch[batch_size=128,coupled_weight_decay=0.0,data_aug=True,decoupled_weight_decay=0.02,lr=0.001,lr_schedule=cosine]',
+            'color': CMAP(5),
+            'marker': markers[5],
+            'alpha': 1.0,
+            'label': 'Best Adam',
+        },
+        {
+            'id': 'SGD-tf[batch_size=128,data_aug=True,lr=0.1,lr_schedule=cosine,momentum=0.9,nesterov=False,weight_decay=0.0005]',
+            'color': CMAP(4),
+            'marker': markers[4],
+            'alpha': 1.0,
+            'label': 'Best SGD (TF/Keras)',
+            'linestyle': '--',
         },
     ]
 
