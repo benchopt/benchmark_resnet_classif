@@ -168,7 +168,7 @@ class Objective(BaseObjective):
         self.normalization = normalization
 
         # Get the model initializer
-        self.get_one_beta = self.get_model_init_fn(framework)
+        self.get_one_solution = self.get_model_init_fn(framework)
 
         # seeding for the models
         # XXX: This should be changed once benchopt/benchopt#342 is merged
@@ -254,7 +254,7 @@ class Objective(BaseObjective):
 
     def to_dict(self):
         return dict(
-            model_init_fn=self.get_one_beta,
+            model_init_fn=self.get_one_solution,
             dataset=self.dataset,
             normalization=self.normalization,
             framework=self.framework,
