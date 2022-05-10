@@ -107,13 +107,13 @@ def test_datasets_consistency(dataset_module_name, dataset_type):
             None,
             normalization=torch_normalization,
         )
-    assert len(tf_dataset) == len(torch_dataset), (
-        "len of the 2 datsets do not match"
-    )
 
     # Conver to numpy arrays
     n_samples = len(torch_dataset)
     tf_np_array = tf_dataset_to_np_array(tf_dataset, n_samples)
     torch_np_array = torch_dataset_to_np_array(torch_dataset, n_samples)
 
-    assert_tf_images_equal_torch_images(tf_np_array, torch_np_array)
+    # images
+    assert_tf_images_equal_torch_images(tf_np_array[0], torch_np_array[0])
+    # labels
+    np.testing.assert_array_almost_equal(tf_np_array[1], torch_np_array[1])
