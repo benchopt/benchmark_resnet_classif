@@ -83,7 +83,7 @@ if __name__ == "__main__":
             registration_dir = Path("./torch_tf_datasets_registrations/")
             filepath = registration_dir / f"{dataset}_{trainstr}.npy"
             if args.force_registration or not filepath.exists():
-                X1, y1 = get_numpy_from_torch(dataset, train)
-                X2, y2 = get_numpy_from_tf(dataset, train)
-                perm = find_permutation_labels(X1, y1, X2, y2)
+                X_torch, y_torch = get_numpy_from_torch(dataset, train)
+                X_tf, y_tf = get_numpy_from_tf(dataset, train)
+                perm = find_permutation_labels(X_torch, y_torch, X_tf, y_tf)
                 np.save(filepath, perm)
