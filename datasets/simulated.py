@@ -19,7 +19,7 @@ class Dataset(BaseDataset):
     # the cross product for each key in the dictionary.
     parameters = {
         'n_samples, img_size': [
-            (128, 32),
+            (160, 32),
         ],
         # WARNING: this order is very important
         # as tensorflow takes all the memory and doesn't have a mechanism to
