@@ -74,8 +74,11 @@ class TorchSolver(BaseSolver):
                 cutmix_alpha=1.0,
                 num_classes=n_classes,
             )(*default_collate(batch))
-            # TODO: change below
-            self.model.loss_type = 'bce'
+            # XXX we can have the loss be bce or categorical, maybe
+            # this should be a user choice
+            # the best way to determine the convention is to look at
+            # what was done in the original paper
+            self.loss_type = 'bce'
         if self.data_aug:
             aug_list = [
                 # TODO: we need to change the size
@@ -85,6 +88,7 @@ class TorchSolver(BaseSolver):
             ]
             if self.rand_aug:
                 # we put magnitude to 10, to copy TF models
+                # TODO: this doesn't work on floats
                 aug_list.insert(0, transforms.RandAugment(magnitude=10))
             data_aug_transform = transforms.Compose(aug_list)
         else:
