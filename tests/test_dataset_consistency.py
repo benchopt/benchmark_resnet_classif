@@ -120,7 +120,7 @@ def test_datasets_consistency(dataset_module_name, dataset_type):
             'mnist': 'mnist',
             'svhn': 'svhn_cropped',
         }[dataset_module_name]
-        filepath = registration_dir / f"{tf_ds_name}_train.npy"
+        filepath = registration_dir / f"{tf_ds_name}_test.npy"
         if filepath.exists():
             registration_indices = np.load(filepath)
         else:
