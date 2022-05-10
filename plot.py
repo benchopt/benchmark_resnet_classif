@@ -115,7 +115,8 @@ def plot_objective_curve(
             linestyle=linestyle,
         )
     plt.legend(fontsize=14, loc='upper right')
-    plt.yscale('log')
+    # plt.yscale('log')
+    plt.ylim([0.01, 0.2])
     plt.xlabel("Time [sec]", fontsize=14)
     ylabel = f"{_remove_prefix(obj_col, 'objective_')}: F(x)" if ylabel is None else ylabel
     plt.ylabel(
@@ -128,7 +129,7 @@ def plot_objective_curve(
     return fig
 
 if __name__ == "__main__":
-    results_file = Path("outputs") / "benchopt_run_2022-05-06_10h38m09.csv"
+    results_file = Path("outputs") / "bench_cifar.csv"
     df = pd.read_csv(results_file)
 
     markers = {i: v for i, v in enumerate(plt.Line2D.markers)}
