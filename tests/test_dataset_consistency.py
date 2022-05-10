@@ -1,3 +1,4 @@
+from pathlib import Path
 import os
 
 import numpy as np
@@ -112,8 +113,27 @@ def test_datasets_consistency(dataset_module_name, dataset_type):
     n_samples = len(torch_dataset)
     tf_np_array = tf_dataset_to_np_array(tf_dataset, n_samples)
     torch_np_array = torch_dataset_to_np_array(torch_dataset, n_samples)
+    if dataset_type == 'test_dataset' and dataset_module_name != 'simulated':
+        registration_dir = Path("./torch_tf_datasets_registrations/")
+        tf_ds_name = {
+            'cifar': 'cifar10',
+            'mnist': 'mnist',
+            'svhn': 'svhn_cropped',
+        }[dataset_module_name]
+        filepath = registration_dir / f"{tf_ds_name}_train.npy"
+        if filepath.exists():
+            registration_indices = np.load(filepath)
+        else:
+            raise FileNotFoundError(
+                f'Registration file not found for dataset {dataset_module_name}'
+            )
+        X_torch = torch_np_array[0][registration_indices]
+        y_torch = torch_np_array[1][registration_indices]
+    else:
+        X_torch = torch_np_array[0]
+        y_torch = torch_np_array[1]
 
     # images
-    assert_tf_images_equal_torch_images(tf_np_array[0], torch_np_array[0])
+    assert_tf_images_equal_torch_images(tf_np_array[0], X_torch)
     # labels
-    np.testing.assert_array_almost_equal(tf_np_array[1], torch_np_array[1])
+    np.testing.assert_array_almost_equal(tf_np_array[1], y_torch)
