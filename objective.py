@@ -61,6 +61,7 @@ class Objective(BaseObjective):
         'pip:torch', 'pip:torchvision', 'pip:pytorch-lightning ',
         # TODO: rm below, and fix tests
         'pip:timm', 'pip:tensorflow-datasets', 'pip:tensorflow-addons',
+        'pip:tf-models-official',
         'pip:tensorflow',
     ]
 
