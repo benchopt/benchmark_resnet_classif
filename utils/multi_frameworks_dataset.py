@@ -13,7 +13,7 @@ with safe_import_context() as import_ctx:
     from torch.utils.data import random_split, Subset
 
     AugmentedDataset = import_ctx.import_from(
-        "torch_helper", "AugmentedDataset"
+        "lightning_helper", "AugmentedDataset"
     )
     filter_ds_on_indices = import_ctx.import_from(
         "tf_helper", "filter_ds_on_indices"
@@ -46,11 +46,13 @@ class MultiFrameworkDataset(BaseDataset, ABC):
         if registration_indices is None:
             self.train_val_split_spec = False
         self.tf_train_indices, self.tf_val_indices = train_test_split(
-            np.range(len(registration_indices)),
-            self.ds_description["n_samples_val"],
-            self.ds_description["n_samples_train"],
+            np.arange(len(registration_indices)),
+            test_size=self.ds_description["n_samples_val"],
+            train_size=self.ds_description["n_samples_train"],
             random_state=self.random_state,
         )
+        self.tf_train_indices = np.sort(self.tf_train_indices)
+        self.tf_val_indices = np.sort(self.tf_val_indices)
         self.torch_train_indices = registration_indices[self.tf_train_indices]
         self.torch_val_indices = registration_indices[self.tf_val_indices]
         self.train_val_split_spec = True
@@ -160,13 +162,19 @@ class MultiFrameworkDataset(BaseDataset, ABC):
                 )
             data_dict[key] = ds
         if self.train_val_split_spec:
-            data_dict["dataset"] = filter_ds_on_indices(
-                data_dict["dataset"],
-                self.tf_train_indices,
-            )
             data_dict["val_dataset"] = filter_ds_on_indices(
                 data_dict["dataset"],
                 self.tf_val_indices,
+            ).map(
+                lambda x, y: (
+                    image_preprocessing(x),
+                    y,
+                ),
+                num_parallel_calls=tf.data.experimental.AUTOTUNE,
+            )
+            data_dict["dataset"] = filter_ds_on_indices(
+                data_dict["dataset"],
+                self.tf_train_indices,
             )
         return "object", data_dict
 
