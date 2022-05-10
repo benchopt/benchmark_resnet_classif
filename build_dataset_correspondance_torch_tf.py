@@ -24,7 +24,7 @@ def find_permutation(X1, X2, tol=1e-5):
 
 def find_permutation_labels(X1, y1, X2, y2, tol=1e-4):
     labels = set(y1)
-    assert labels == set(y2), "inconsistant labels"
+    assert labels == set(y2), "inconsistent labels"
     n, _ = X1.shape
     assert X2.shape == X1.shape
     assert len(y1) == n
