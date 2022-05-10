@@ -125,7 +125,7 @@ def test_datasets_consistency(dataset_module_name, dataset_type):
             registration_indices = np.load(filepath)
         else:
             raise FileNotFoundError(
-                f'Registration file not found for dataset {dataset_module_name}'
+                f'Registration file not found for {dataset_module_name}'
             )
         X_torch = torch_np_array[0][registration_indices]
         y_torch = torch_np_array[1][registration_indices]
