@@ -31,7 +31,7 @@ class MultiFrameworkDataset(BaseDataset, ABC):
     }
 
     install_cmd = "conda"
-    requirements = ["pip:tensorflow-datasets"]
+    requirements = ["pip:tensorflow-datasets", "scikit-learn"]
 
     def get_registration_indices(self):
         registration_dir = Path("./torch_tf_datasets_registrations/")
