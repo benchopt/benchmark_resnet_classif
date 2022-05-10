@@ -3,9 +3,14 @@ import warnings
 
 import numpy as np
 import pytest
+<<<<<<< HEAD
 from sklearn import random_projection
 from sklearn.neighbors import NearestNeighbors
 from torch.utils.data import DataLoader
+=======
+import tensorflow as tf
+from torch.utils.data import DataLoader, Dataset
+>>>>>>> main
 
 from benchopt.utils.safe_import import set_benchmark
 
@@ -74,13 +79,25 @@ def test_datasets_consistency(dataset_module_name, dataset_type):
     _, torch_data = d_torch.get_data()
 
     for k in torch_data:
-        if k not in ['dataset', 'test_dataset', 'framework']:
+        if k not in ['dataset', 'test_dataset', 'framework', 'normalization']:
             assert torch_data[k] == tf_data[k], (
                 f"ds_description do not match between framework for key {k}"
             )
 
     tf_dataset = tf_data[dataset_type]
     torch_dataset = torch_data[dataset_type]
+    if dataset_type == 'dataset':
+        tf_normalization = tf_data['normalization']
+        torch_normalization = torch_data['normalization']
+        tf_dataset = tf_dataset.map(
+            lambda x, y: (tf_normalization(x), y),
+            num_parallel_calls=tf.data.experimental.AUTOTUNE,
+        )
+        torch_dataset = AugmentedDataset(
+            torch_dataset,
+            None,
+            normalization=torch_normalization,
+        )
     assert len(tf_dataset) == len(torch_dataset), (
         "len of the 2 datsets do not match"
     )

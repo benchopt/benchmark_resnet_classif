@@ -43,6 +43,9 @@ class BenchPLModule(LightningModule):
         loss = F.nll_loss(logits, y)
         return loss, logits, y
 
+    def optimizer_zero_grad(self, epoch, batch_idx, optimizer, optimizer_idx):
+        optimizer.zero_grad(set_to_none=True)
+
     def test_step(self, batch, batch_idx):
         loss, logits, y = self.loss_logits_y(batch)
         preds = torch.argmax(logits, dim=1)
@@ -56,10 +59,11 @@ class BenchPLModule(LightningModule):
 
 
 class AugmentedDataset(Dataset):
-    def __init__(self, dataset, transform):
+    def __init__(self, dataset, transform, normalization=None):
         super().__init__()
         self.dataset = dataset
         self.transform = transform
+        self.normalization = normalization
 
     def __len__(self):
         return len(self.dataset)
@@ -68,6 +72,8 @@ class AugmentedDataset(Dataset):
         x, y = self.dataset[idx]
         if self.transform:
             x = self.transform(x)
+        if self.normalization:
+            x = self.normalization(x)
         return x, y
 
 
