@@ -128,6 +128,11 @@ class TFSolver(BaseSolver):
             self.batch_size,
             num_parallel_calls=tf.data.experimental.AUTOTUNE,
         )
+        if self.mix:
+            self.dataset = self.dataset.map(
+                mix_fn,
+                num_parallel_calls=tf.data.experimental.AUTOTUNE,
+            )
         if normalization is not None:
             self.dataset = self.dataset.map(
                 lambda x, y: (normalization(x), y),
