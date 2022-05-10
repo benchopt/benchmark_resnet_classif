@@ -1,17 +1,22 @@
 from abc import ABC
+from pathlib import Path
 
 from benchopt import BaseDataset, safe_import_context
 
 with safe_import_context() as import_ctx:
     import numpy as np
+    from sklearn.model_selection import train_test_split
     import tensorflow as tf
     import tensorflow_datasets as tfds
     import torch
     from torchvision import transforms
-    from torch.utils.data import random_split
+    from torch.utils.data import random_split, Subset
 
     AugmentedDataset = import_ctx.import_from(
         "torch_helper", "AugmentedDataset"
+    )
+    filter_ds_on_indices = import_ctx.import_from(
+        "tf_helper", "filter_ds_on_indices"
     )
 
 
@@ -27,6 +32,28 @@ class MultiFrameworkDataset(BaseDataset, ABC):
 
     install_cmd = "conda"
     requirements = ["pip:tensorflow-datasets"]
+
+    def get_registration_indices(self):
+        registration_dir = Path("./torch_tf_datasets_registrations/")
+        filepath = registration_dir / f"{self.tf_ds_name}_train.npy"
+        if filepath.exists():
+            return np.load(filepath)
+        print('Registration file not found')
+        return None
+
+    def set_train_val_indices(self):
+        registration_indices = self.get_registration_indices()
+        if registration_indices is None:
+            self.train_val_split_spec = False
+        self.tf_train_indices, self.tf_val_indices = train_test_split(
+            np.range(len(registration_indices)),
+            self.ds_description["n_samples_val"],
+            self.ds_description["n_samples_train"],
+            random_state=self.random_state,
+        )
+        self.torch_train_indices = registration_indices[self.tf_train_indices]
+        self.torch_val_indices = registration_indices[self.tf_val_indices]
+        self.train_val_split_spec = True
 
     def get_torch_preprocessing_step(self):
         normalization_transform = transforms.Normalize(
@@ -66,14 +93,21 @@ class MultiFrameworkDataset(BaseDataset, ABC):
                 transform=transform,
                 **split_kwarg,
             )
-        train_dataset, val_dataset = random_split(
-            data_dict["dataset"],
-            [
-                self.ds_description["n_samples_train"],
-                self.ds_description["n_samples_val"],
-            ],
-            generator=torch.Generator().manual_seed(self.random_state),
-        )
+        if self.train_val_split_spec:
+            train_dataset = Subset(
+                data_dict["dataset"],
+                self.torch_train_indices,
+            )
+            val_dataset = Subset(data_dict["dataset"], self.torch_val_indices)
+        else:
+            train_dataset, val_dataset = random_split(
+                data_dict["dataset"],
+                [
+                    self.ds_description["n_samples_train"],
+                    self.ds_description["n_samples_val"],
+                ],
+                generator=torch.Generator().manual_seed(self.random_state),
+            )
         data_dict["dataset"] = train_dataset
         data_dict["val_dataset"] = AugmentedDataset(
             val_dataset, None, normalization_transform
@@ -99,13 +133,18 @@ class MultiFrameworkDataset(BaseDataset, ABC):
             normalization=image_preprocessing,
             **self.ds_description,
         )
-        splits = [
-            f'train[:{self.ds_description["n_samples_train"]}]',
-            f'train[{self.ds_description["n_samples_train"]}:]',
-            "test",
-        ]
-        for key, split in zip(["dataset", "val_dataset", "test_dataset"],
-                              splits):
+        splits = ["test"]
+        datasets = ["test_dataset"]
+        if self.train_val_split_spec:
+            splits.append('train')
+            datasets.append('dataset')
+        else:
+            splits += [
+                f'train[:{self.ds_description["n_samples_train"]}]',
+                f'train[{self.ds_description["n_samples_train"]}:]',
+            ]
+            datasets += ["dataset", "val_dataset"]
+        for key, split in zip(datasets, splits):
             ds = tfds.load(
                 self.tf_ds_name,
                 split=split,
@@ -120,11 +159,21 @@ class MultiFrameworkDataset(BaseDataset, ABC):
                     num_parallel_calls=tf.data.experimental.AUTOTUNE,
                 )
             data_dict[key] = ds
+        if self.train_val_split_spec:
+            data_dict["dataset"] = filter_ds_on_indices(
+                data_dict["dataset"],
+                self.tf_train_indices,
+            )
+            data_dict["val_dataset"] = filter_ds_on_indices(
+                data_dict["dataset"],
+                self.tf_val_indices,
+            )
         return "object", data_dict
 
     def get_data(self):
-        self.random_state = 42  # Hackish
         """Switch to select the data from the right framework."""
+        self.random_state = 42  # Hackish
+        self.set_train_val_indices()
         if self.framework in ['pytorch', 'lightning']:
             return self.get_torch_data()
         elif self.framework == "tensorflow":
