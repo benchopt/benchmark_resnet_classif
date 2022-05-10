@@ -48,7 +48,7 @@ class TorchSolver(BaseSolver):
             return True, 'Cannot use both decoupled and coupled weight decay'
         return False, None
 
-    def set_objective(self, model_init_fn, dataset, normalization, framework):
+    def set_objective(self, model_init_fn, dataset, normalization, framework, n_classes):
         self.dataset = dataset
         self.model_init_fn = model_init_fn
         self.normalization = normalization
@@ -58,7 +58,7 @@ class TorchSolver(BaseSolver):
             self.mixup_fn = lambda batch: Mixup(
                 mixup_alpha=0.1,
                 cutmix_alpha=1.0,
-                num_classes=dataset.n_classes,
+                num_classes=n_classes,
             )(*default_collate(batch))
             # TODO: change below
             self.model.loss_type = 'bce'

@@ -78,7 +78,14 @@ class TFSolver(BaseSolver):
         )
         return lr_wd_cback
 
-    def set_objective(self, model_init_fn, dataset, normalization, framework):
+    def set_objective(
+        self,
+        model_init_fn,
+        dataset,
+        normalization,
+        framework,
+        n_classes
+    ):
         self.optimizer_klass = extend_with_decoupled_weight_decay(
             self.optimizer_klass,
         )
@@ -90,11 +97,11 @@ class TFSolver(BaseSolver):
             orig_mix_fn = augment.MixupAndCutmix(
                 mixup_alpha=0.1,
                 cutmix_alpha=1.0,
-                num_classes=dataset.n_classes,
+                num_classes=n_classes,
             )
 
             def mix_fn(x, y):
-                y.set_shape([self.batch_size, dataset.n_classes])
+                y.set_shape([self.batch_size, n_classes])
                 x, y = orig_mix_fn(x, y)
                 return x, y
 

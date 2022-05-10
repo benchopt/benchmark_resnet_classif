@@ -258,4 +258,5 @@ class Objective(BaseObjective):
             dataset=self.dataset,
             normalization=self.normalization,
             framework=self.framework,
+            n_classes=self.n_classes,
         )
