@@ -120,7 +120,7 @@ jobs:
 
     - name: install test dependencies
       run: |
-        pip install pytest torch torchvision tensorflow tensorflow-datasets
+        pip install pytest torch torchvision tensorflow tensorflow-datasets scikit-learn
 
     - name: Test
       run: |
