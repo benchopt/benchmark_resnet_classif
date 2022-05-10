@@ -30,16 +30,16 @@ class TFSolver(BaseSolver):
     install_cmd = 'conda'
     requirements = ['pip:tensorflow-addons']
 
-    def skip(self, model_init_fn, dataset, normalization):
-        if not isinstance(dataset, tf.data.Dataset):
-            return True, 'Not a TF dataset'
+    def skip(self, model_init_fn, dataset, normalization, framework):
+        if framework != 'tensorflow':
+            return True, 'Not a TF dataset/objective'
         coupled_wd = getattr(self, 'coupled_weight_decay', 0.0)
         decoupled_wd = getattr(self, 'decoupled_weight_decay', 0.0)
         if coupled_wd and decoupled_wd:
             return True, 'Cannot use both decoupled and coupled weight decay'
         return False, None
 
-    def set_objective(self, model_init_fn, dataset, normalization):
+    def get_lr_wd_cback(self, max_epochs=200):
         # NOTE: in the following, we need to multiply by the weight decay
         # by the learning rate to have a comparable setting with PyTorch
         self.coupled_wd = getattr(self, 'coupled_weight_decay', 0.0)
@@ -48,18 +48,16 @@ class TFSolver(BaseSolver):
         self.decoupled_wd = getattr(self, 'decoupled_weight_decay', 0.0)
         if self.lr_schedule == 'step':
             self.lr_scheduler, self.wd_scheduler = [
-                tf.keras.optimizers.schedules.ExponentialDecay(
-                    value,
-                    decay_rate=0.1,
-                    decay_steps=30,
-                    staircase=True,
+                tf.keras.optimizers.schedules.PiecewiseConstantDecay(
+                    [max_epochs//2, max_epochs*3//4],
+                    [value, value*1e-1, value*1e-2],
                 ) for value in [self.lr, self.decoupled_wd*self.lr]
             ]
         elif self.lr_schedule == 'cosine':
             self.lr_scheduler, self.wd_scheduler = [
                 tf.keras.optimizers.schedules.CosineDecay(
                     value,
-                    200,  # the equivalent of T_max
+                    max_epochs,  # the equivalent of T_max
                 ) for value in [self.lr, self.decoupled_wd*self.lr]
             ]
         else:
@@ -69,15 +67,19 @@ class TFSolver(BaseSolver):
         # we set the decoupled weight decay always, and when it's 0
         # the WD cback and the decoupled weight decay extension are
         # essentially no-ops
-        self.lr_wd_cback = LRWDSchedulerCallback(
+        lr_wd_cback = LRWDSchedulerCallback(
             lr_schedule=self.lr_scheduler,
             wd_schedule=self.wd_scheduler,
         )
+        return lr_wd_cback
+
+    def set_objective(self, model_init_fn, dataset, normalization, framework):
         self.optimizer_klass = extend_with_decoupled_weight_decay(
             self.optimizer_klass,
         )
         self.dataset = dataset
         self.model_init_fn = model_init_fn
+        self.framework = framework
 
         if self.data_aug:
             data_aug_layer = tf.keras.models.Sequential([
@@ -94,7 +96,10 @@ class TFSolver(BaseSolver):
                 lambda x, y: (data_aug_layer(x[None], training=True)[0], y),
                 num_parallel_calls=tf.data.experimental.AUTOTUNE,
             )
-        self.dataset = self.dataset.batch(
+        self.dataset = self.dataset.shuffle(
+            buffer_size=1000,  # For now a hardcoded value
+            reshuffle_each_iteration=True,
+        ).batch(
             self.batch_size,
             num_parallel_calls=tf.data.experimental.AUTOTUNE,
         )
@@ -113,6 +118,8 @@ class TFSolver(BaseSolver):
 
     def run(self, callback):
         self.model = self.model_init_fn()
+        max_epochs = callback.stopping_criterion.max_runs
+        lr_wd_cback = self.get_lr_wd_cback(max_epochs)
         self.optimizer = self.optimizer_klass(
             # this scaling is needed as in TF the weight decay is
             # not multiplied by the learning rate
@@ -154,7 +161,7 @@ class TFSolver(BaseSolver):
         # Launch training
         self.model.fit(
             self.dataset,
-            callbacks=[BenchoptCallback(callback), self.lr_wd_cback],
+            callbacks=[BenchoptCallback(callback), lr_wd_cback],
             epochs=MAX_EPOCHS,
         )
 

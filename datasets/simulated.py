@@ -26,13 +26,16 @@ class Dataset(BaseDataset):
         "n_samples, img_size": [
             (128, 32),
         ],
-        "framework": ["pytorch", "tensorflow"],
+        # WARNING: this order is very important
+        # as tensorflow takes all the memory and doesn't have a mechanism to
+        # release it
+        'framework': ['pytorch', 'lightning', 'tensorflow'],
     }
 
     # This makes sure that for each solver, we have one simulated dataset that
     # will be compatible in the test_solver.
     test_parameters = {
-        "framework": ["pytorch", "tensorflow"],
+        'framework': ['pytorch', 'lightning', 'tensorflow'],
     }
 
     def __init__(
@@ -136,7 +139,7 @@ class Dataset(BaseDataset):
 
     def get_data(self):
         """Switch to select the data from the right framework."""
-        if self.framework == "pytorch":
+        if self.framework in ['lightning', 'pytorch']:
             dataset, val_dataset, test_dataset = self.get_torch_data()
             normalization = None
         elif self.framework == "tensorflow":

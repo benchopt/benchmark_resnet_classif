@@ -19,7 +19,10 @@ class MultiFrameworkDataset(BaseDataset, ABC):
     torch_split_kwarg = "train"
 
     parameters = {
-        "framework": ["pytorch", "tensorflow"],
+        # WARNING: this order is very important
+        # as tensorflow takes all the memory and doesn't have a mechanism to
+        # release it
+        'framework': ['pytorch', 'lightning', 'tensorflow'],
     }
 
     install_cmd = "conda"
@@ -122,7 +125,7 @@ class MultiFrameworkDataset(BaseDataset, ABC):
     def get_data(self):
         self.random_state = 42  # Hackish
         """Switch to select the data from the right framework."""
-        if self.framework == "pytorch":
+        if self.framework in ['pytorch', 'lightning']:
             return self.get_torch_data()
         elif self.framework == "tensorflow":
             return self.get_tf_data()
