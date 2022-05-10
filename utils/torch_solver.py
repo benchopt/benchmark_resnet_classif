@@ -14,9 +14,6 @@ with safe_import_context() as import_ctx:
     from torchvision import transforms
     from tqdm import tqdm
 
-    BenchoptCallback = import_ctx.import_from(
-        'torch_helper', 'BenchoptCallback'
-    )
     AugmentedDataset = import_ctx.import_from(
         'lightning_helper', 'AugmentedDataset'
     )
