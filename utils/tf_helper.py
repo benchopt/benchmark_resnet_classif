@@ -80,7 +80,7 @@ def filter_ds_on_indices(ds, indices):
         return index_in_arr
 
     ds = ds.enumerate().filter(hash_table_filter).map(
-        lambda x: x[1],
+        lambda id, value: value,
         num_parallel_calls=tf.data.experimental.AUTOTUNE,
     )
     return ds
