@@ -37,7 +37,14 @@ class TorchSolver(BaseSolver):
     install_cmd = 'conda'
     requirements = ['timm']
 
-    def skip(self, model_init_fn, dataset, normalization, framework):
+    def skip(
+        self,
+        model_init_fn,
+        dataset,
+        normalization,
+        framework,
+        n_classes,
+    ):
         if framework != 'pytorch':
             return True, 'Not a torch dataset/objective'
         if self.rand_aug and not self.data_aug:
@@ -48,7 +55,14 @@ class TorchSolver(BaseSolver):
             return True, 'Cannot use both decoupled and coupled weight decay'
         return False, None
 
-    def set_objective(self, model_init_fn, dataset, normalization, framework, n_classes):
+    def set_objective(
+        self,
+        model_init_fn,
+        dataset,
+        normalization,
+        framework,
+        n_classes,
+    ):
         self.dataset = dataset
         self.model_init_fn = model_init_fn
         self.normalization = normalization

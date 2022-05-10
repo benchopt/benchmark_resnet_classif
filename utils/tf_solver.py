@@ -33,7 +33,14 @@ class TFSolver(BaseSolver):
     install_cmd = 'conda'
     requirements = ['pip:tensorflow-addons', 'pip:tf-models-official']
 
-    def skip(self, model_init_fn, dataset, normalization, framework):
+    def skip(
+        self,
+        model_init_fn,
+        dataset,
+        normalization,
+        framework,
+        n_classes,
+    ):
         if framework != 'tensorflow':
             return True, 'Not a TF dataset/objective'
         if self.rand_aug and not self.data_aug:
@@ -100,8 +107,8 @@ class TFSolver(BaseSolver):
                 num_classes=n_classes,
             )
 
-            def mix_fn(x, y):
-                y.set_shape([self.batch_size, n_classes])
+            def mix_fn(x, y, batch_size=self.batch_size, n_classes=n_classes):
+                y.set_shape([batch_size])
                 x, y = orig_mix_fn(x, y)
                 return x, y
 
@@ -112,11 +119,11 @@ class TFSolver(BaseSolver):
                 tf.keras.layers.RandomFlip('horizontal'),
             ])
 
-            def aug_function(x):
+            def aug_function(x, rand_aug=self.rand_aug):
                 im_batch = x[None]
-                if self.rand_aug:
-                    self.ra = augment.RandAugment()
-                    im_batch = self.ra(im_batch)
+                if rand_aug:
+                    ra = augment.RandAugment()
+                    im_batch = ra(im_batch)
                 aug_x = data_aug_layer(im_batch, training=True)
                 return aug_x[0]
 
@@ -133,6 +140,7 @@ class TFSolver(BaseSolver):
             reshuffle_each_iteration=True,
         ).batch(
             self.batch_size,
+            drop_remainder=self.mix,
             num_parallel_calls=tf.data.experimental.AUTOTUNE,
         )
         if self.mix:
@@ -184,7 +192,7 @@ class TFSolver(BaseSolver):
                         setattr(layer, attr, regularizer)
         self.model.compile(
             optimizer=self.optimizer,
-            loss='sparse_categorical_crossentropy',
+            loss='sparse_categorical_crossentropy' if not self.mix else 'categorical_crossentropy',
             # XXX: there might a problem here if the race is tight
             # because this will compute accuracy for each batch
             # we might need to define a custom training step with an
