@@ -1,18 +1,19 @@
+import argparse
+from pathlib import Path
+
 import numpy as np
+from sklearn.neighbors import NearestNeighbors
+import tensorflow_datasets as tfds
 import torch
 import torchvision
 import torchvision.transforms as transforms
-
-import tensorflow_datasets as tfds
-
-from sklearn.neighbors import NearestNeighbors
 
 
 def find_permutation(X1, X2, tol=1e-5):
     """
     Find the matching permutation between two arrays X1 and X2
     """
-    nn = NearestNeighbors(n_neighbors=1)
+    nn = NearestNeighbors(n_neighbors=1, algorithm='brute')
     nn.fit(X1)
     dists, idx = nn.kneighbors(X2)
     idx = idx[:, 0]
@@ -39,18 +40,19 @@ def find_permutation_labels(X1, y1, X2, y2, tol=1e-4):
 
 def get_numpy_from_torch(dataset_name, train=True):
     if dataset_name == "cifar10":
-        dataset = torchvision.datasets.CIFAR10(
-            root="./data",
-            train=train,
-            download=True,
-            transform=transforms.ToTensor(),
-        )
+        dataset_klass = torchvision.datasets.CIFAR10
+        split_kwarg = dict(train=train)
     elif dataset_name == "mnist":
-        dataset = torchvision.datasets.MNIST(
+        dataset_klass = torchvision.datasets.MNIST
+        split_kwarg = dict(train=train)
+    elif dataset_name == "svhn_cropped":
+        dataset_klass = torchvision.datasets.SVHN
+        split_kwarg = dict(split="train" if train else "test")
+    dataset = dataset_klass(
             root="./data",
-            train=train,
             download=True,
             transform=transforms.ToTensor(),
+            **split_kwarg,
         )
     loader = torch.utils.data.DataLoader(
         dataset, batch_size=len(dataset), shuffle=False
@@ -70,15 +72,18 @@ def get_numpy_from_tf(dataset_name, train=True):
 
 
 if __name__ == "__main__":
-    datasets = ["cifar10", "mnist"]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--force_registration")
+    args = parser.parse_args()
+    datasets = ["cifar10", "mnist", "svhn_cropped"]
     for dataset in datasets:
         for train in [True, False]:
             print(f"Registration for {dataset}, train = {train}")
-            X1, y1 = get_numpy_from_torch(dataset, train)
-            X2, y2 = get_numpy_from_tf(dataset, train)
-            perm = find_permutation_labels(X1, y1, X2, y2)
             trainstr = "train" if train else "test"
-            np.save(
-                f"./torch_tf_datasets_registrations/{dataset}_{trainstr}.npy",
-                perm,
-            )
+            registration_dir = Path("./torch_tf_datasets_registrations/")
+            filepath = registration_dir / f"{dataset}_{trainstr}.npy"
+            if args.force_registration or not filepath.exists():
+                X1, y1 = get_numpy_from_torch(dataset, train)
+                X2, y2 = get_numpy_from_tf(dataset, train)
+                perm = find_permutation_labels(X1, y1, X2, y2)
+                np.save(filepath, perm)
