@@ -8,7 +8,9 @@ from benchopt.stopping_criterion import SufficientProgressCriterion
 with safe_import_context() as import_ctx:
 
     import joblib
+    from timm.data.mixup import Mixup
     import torch
+    from torch.utils.data._utils.collate import default_collate
     from torchvision import transforms
     from tqdm import tqdm
 
@@ -27,29 +29,68 @@ class TorchSolver(BaseSolver):
     parameters = {
         'batch_size': [128],
         'data_aug': [False, True],
+        'rand_aug': [False, True],
+        'mix': [False, True],
         'lr_schedule': [None, 'step', 'cosine'],
     }
 
-    def skip(self, model_init_fn, dataset, normalization, framework):
+    install_cmd = 'conda'
+    requirements = ['timm']
+
+    def skip(
+        self,
+        model_init_fn,
+        dataset,
+        normalization,
+        framework,
+        n_classes,
+    ):
         if framework != 'pytorch':
             return True, 'Not a torch dataset/objective'
+        if self.rand_aug and not self.data_aug:
+            return True, 'Data augmentation not activated for RA'
         coupled_wd = getattr(self, 'coupled_weight_decay', 0.0)
         decoupled_wd = getattr(self, 'decoupled_weight_decay', 0.0)
         if coupled_wd and decoupled_wd:
             return True, 'Cannot use both decoupled and coupled weight decay'
         return False, None
 
-    def set_objective(self, model_init_fn, dataset, normalization, framework):
+    def set_objective(
+        self,
+        model_init_fn,
+        dataset,
+        normalization,
+        framework,
+        n_classes,
+    ):
         self.dataset = dataset
         self.model_init_fn = model_init_fn
         self.normalization = normalization
         self.framework = framework
 
+        if self.mix:
+            self.mixup_fn = lambda batch: Mixup(
+                mixup_alpha=0.1,
+                cutmix_alpha=1.0,
+                num_classes=n_classes,
+            )(*default_collate(batch))
+            # XXX we can have the loss be bce or categorical, maybe
+            # this should be a user choice
+            # the best way to determine the convention is to look at
+            # what was done in the original paper
+            self.loss_type = 'bce'
         if self.data_aug:
-            data_aug_transform = transforms.Compose([
+            aug_list = [
+                # TODO: we need to change the size
+                # to fit the dataset
                 transforms.RandomCrop(32, padding=4),
                 transforms.RandomHorizontalFlip(),
-            ])
+            ]
+            if self.rand_aug:
+                # we put magnitude to 10, to copy TF models
+                # TODO: this doesn't work on floats
+                aug_list.insert(0, transforms.RandAugment(magnitude=10))
+            data_aug_transform = transforms.Compose(aug_list)
         else:
             data_aug_transform = None
         self.dataset = AugmentedDataset(
@@ -68,7 +109,8 @@ class TorchSolver(BaseSolver):
             self.dataset, batch_size=self.batch_size,
             num_workers=num_workers,
             persistent_workers=persistent_workers,
-            pin_memory=True, shuffle=True
+            pin_memory=True, shuffle=True,
+            collate_fn=self.mixup_fn if self.mix else None,
         )
 
     def set_lr_schedule_and_optimizer(self, model, max_epochs=200):

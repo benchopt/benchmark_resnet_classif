@@ -2,6 +2,7 @@ from benchopt import BaseSolver, safe_import_context
 from benchopt.stopping_criterion import SufficientProgressCriterion
 
 with safe_import_context() as import_ctx:
+    from official.vision.beta.ops import augment
     import tensorflow as tf
     from tensorflow_addons.optimizers import extend_with_decoupled_weight_decay
     BenchoptCallback = import_ctx.import_from(
@@ -24,15 +25,26 @@ class TFSolver(BaseSolver):
     parameters = {
         'batch_size': [128],
         'data_aug': [False, True],
+        'rand_aug': [False, True],
+        'mix': [False, True],
         'lr_schedule': [None, 'step', 'cosine'],
     }
 
     install_cmd = 'conda'
-    requirements = ['pip:tensorflow-addons']
+    requirements = ['pip:tensorflow-addons', 'pip:tf-models-official']
 
-    def skip(self, model_init_fn, dataset, normalization, framework):
+    def skip(
+        self,
+        model_init_fn,
+        dataset,
+        normalization,
+        framework,
+        n_classes,
+    ):
         if framework != 'tensorflow':
             return True, 'Not a TF dataset/objective'
+        if self.rand_aug and not self.data_aug:
+            return True, 'Data augmentation not activated for RA'
         coupled_wd = getattr(self, 'coupled_weight_decay', 0.0)
         decoupled_wd = getattr(self, 'decoupled_weight_decay', 0.0)
         if coupled_wd and decoupled_wd:
@@ -73,13 +85,32 @@ class TFSolver(BaseSolver):
         )
         return lr_wd_cback
 
-    def set_objective(self, model_init_fn, dataset, normalization, framework):
+    def set_objective(
+        self,
+        model_init_fn,
+        dataset,
+        normalization,
+        framework,
+        n_classes
+    ):
         self.optimizer_klass = extend_with_decoupled_weight_decay(
             self.optimizer_klass,
         )
         self.dataset = dataset
         self.model_init_fn = model_init_fn
         self.framework = framework
+
+        if self.mix:
+            orig_mix_fn = augment.MixupAndCutmix(
+                mixup_alpha=0.1,
+                cutmix_alpha=1.0,
+                num_classes=n_classes,
+            )
+
+            def mix_fn(x, y, batch_size=self.batch_size, n_classes=n_classes):
+                y.set_shape([batch_size])
+                x, y = orig_mix_fn(x, y)
+                return x, y
 
         if self.data_aug:
             data_aug_layer = tf.keras.models.Sequential([
@@ -88,12 +119,20 @@ class TFSolver(BaseSolver):
                 tf.keras.layers.RandomFlip('horizontal'),
             ])
 
+            def aug_function(x, rand_aug=self.rand_aug):
+                im_batch = x[None]
+                if rand_aug:
+                    ra = augment.RandAugment()
+                    im_batch = ra(im_batch)
+                aug_x = data_aug_layer(im_batch, training=True)
+                return aug_x[0]
+
             # XXX: unfortunately we need to do this before
             # batching since the random crop layer does not
             # crop at different locations in the same batch
             # https://github.com/keras-team/keras/issues/16399
             self.dataset = self.dataset.map(
-                lambda x, y: (data_aug_layer(x[None], training=True)[0], y),
+                lambda x, y: (aug_function(x), y),
                 num_parallel_calls=tf.data.experimental.AUTOTUNE,
             )
         self.dataset = self.dataset.shuffle(
@@ -101,8 +140,14 @@ class TFSolver(BaseSolver):
             reshuffle_each_iteration=True,
         ).batch(
             self.batch_size,
+            drop_remainder=self.mix,
             num_parallel_calls=tf.data.experimental.AUTOTUNE,
         )
+        if self.mix:
+            self.dataset = self.dataset.map(
+                mix_fn,
+                num_parallel_calls=tf.data.experimental.AUTOTUNE,
+            )
         if normalization is not None:
             self.dataset = self.dataset.map(
                 lambda x, y: (normalization(x), y),
@@ -147,7 +192,7 @@ class TFSolver(BaseSolver):
                         setattr(layer, attr, regularizer)
         self.model.compile(
             optimizer=self.optimizer,
-            loss='sparse_categorical_crossentropy',
+            loss='sparse_categorical_crossentropy' if not self.mix else 'categorical_crossentropy',
             # XXX: there might a problem here if the race is tight
             # because this will compute accuracy for each batch
             # we might need to define a custom training step with an

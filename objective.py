@@ -60,7 +60,8 @@ class Objective(BaseObjective):
     requirements = [
         'pip:torch', 'pip:torchvision', 'pip:pytorch-lightning ',
         # TODO: rm below, and fix tests
-        'pip:tensorflow-datasets', 'pip:tensorflow-addons',
+        'pip:timm', 'pip:tensorflow-datasets', 'pip:tensorflow-addons',
+        'pip:tf-models-official',
         'pip:tensorflow',
     ]
 
@@ -219,6 +220,10 @@ class Objective(BaseObjective):
         for dataset_name, dataset in self._datasets.items():
 
             if self.framework == 'tensorflow':
+                # XXX: with mixup, we have a one hot encoding of the labels
+                # which means we need a categorical Xent, rather than a
+                # sparse one: it would be nice to have something custom here
+                # that computes the needed metrics to avoid that problem.
                 metrics = model.evaluate(dataset, return_dict=True)
             elif self.framework == 'lightning':
                 metrics = self.trainer.test(model, dataloaders=dataset)[0]
@@ -257,4 +262,5 @@ class Objective(BaseObjective):
             dataset=self.dataset,
             normalization=self.normalization,
             framework=self.framework,
+            n_classes=self.n_classes,
         )

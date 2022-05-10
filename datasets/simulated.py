@@ -6,11 +6,6 @@ with safe_import_context() as import_ctx:
     import torch
     from torch.utils.data import TensorDataset
 
-    MultiFrameworkDataset = import_ctx.import_from(
-        'multi_frameworks_dataset',
-        'MultiFrameworkDataset',
-    )
-
 
 def make_channels_last(images):
     return np.transpose(images, (0, 2, 3, 1))
@@ -24,7 +19,7 @@ class Dataset(BaseDataset):
     # the cross product for each key in the dictionary.
     parameters = {
         'n_samples, img_size': [
-            (128, 32),
+            (160, 32),
         ],
         # WARNING: this order is very important
         # as tensorflow takes all the memory and doesn't have a mechanism to
