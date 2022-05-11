@@ -38,6 +38,7 @@ def plot_objective_curve(
     title=None,
     ylabel=None,
     percent=False,
+    y_lim=None,
 ):
     """Plot objective curve for a given benchmark and dataset.
     Plot the objective value F(x) as a function of the time.
@@ -120,7 +121,7 @@ def plot_objective_curve(
         )
     plt.legend(fontsize=14, loc='upper right')
     # plt.yscale('log')
-    plt.ylim([0.04, 0.2])
+    plt.ylim([0.04, 0.2] if y_lim is None else y_lim)
     plt.xlabel("Time [sec]", fontsize=14)
     ylabel = f"{_remove_prefix(obj_col, 'objective_')}: F(x)" if ylabel is None else ylabel
     if percent:
@@ -135,7 +136,7 @@ def plot_objective_curve(
     return fig
 
 if __name__ == "__main__":
-    dataset = 'cifar'
+    dataset = 'svhn'
     results_file = Path("outputs") / f"bench_{dataset}.csv"
     df = pd.read_csv(results_file)
 
@@ -199,13 +200,6 @@ if __name__ == "__main__":
         solvers=solvers,
         title='',
         ylabel='Test error',
+        y_lim=[0.02, 0.1],
     )
     plt.savefig(f'resnet18_sgd_torch_{dataset}.pdf', dpi=300)
-    # ax = fig.axes[0]
-    # fig_leg = plt.figure(figsize=(10, 40))
-    # ax_leg = fig_leg.add_subplot(111)
-    # # add the legend from the previous axes
-    # ax_leg.legend(*ax.get_legend_handles_labels(), loc='center')
-    # # hide the axes frame and the x/y labels
-    # ax_leg.axis('off')
-    # fig_leg.savefig('legend.pdf', dpi=300)
