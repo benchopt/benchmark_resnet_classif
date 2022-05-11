@@ -30,6 +30,7 @@ class Dataset(BaseDataset):
         # as tensorflow takes all the memory and doesn't have a mechanism to
         # release it
         'framework': ['pytorch', 'lightning', 'tensorflow'],
+        'with_validation': [True, False],
     }
 
     # This makes sure that for each solver, we have one simulated dataset that
@@ -60,12 +61,17 @@ class Dataset(BaseDataset):
 
     def get_np_data(self):
         n_train_and_val = int(self.n_samples * self.train_and_val_frac)
-        n_train = int(self.train_frac * n_train_and_val)
+        if self.with_validation:
+            n_train = int(self.train_frac * n_train_and_val)
+            n_val = n_train_and_val - n_train
+        else:
+            n_train = n_train_and_val
+            n_val = 0
 
         # Get data description
         self.ds_description = dict(
             n_samples_train=n_train,
-            n_samples_val=n_train_and_val - n_train,
+            n_samples_val=n_val,
             n_samples_test=self.n_samples - n_train_and_val,
             image_width=self.img_size,
             n_classes=self.n_classes,
@@ -107,10 +113,13 @@ class Dataset(BaseDataset):
             torch.tensor(inps_train),
             torch.tensor(tgts_train),
         )
-        val_dataset = TensorDataset(
-            torch.tensor(inps_val),
-            torch.tensor(tgts_val),
-        )
+        if self.with_validation:
+            val_dataset = TensorDataset(
+                torch.tensor(inps_val),
+                torch.tensor(tgts_val),
+            )
+        else:
+            val_dataset = None
         test_dataset = TensorDataset(
             torch.tensor(inps_test),
             torch.tensor(tgts_test),
@@ -129,9 +138,12 @@ class Dataset(BaseDataset):
         dataset = tf.data.Dataset.from_tensor_slices(
             (make_channels_last(inps_train), tgts_train),
         )
-        val_dataset = tf.data.Dataset.from_tensor_slices(
-            (make_channels_last(inps_val), tgts_val),
-        )
+        if self.with_validation:
+            val_dataset = tf.data.Dataset.from_tensor_slices(
+                (make_channels_last(inps_val), tgts_val),
+            )
+        else:
+            val_dataset = None
         test_dataset = tf.data.Dataset.from_tensor_slices(
             (make_channels_last(inps_test), tgts_test),
         )
