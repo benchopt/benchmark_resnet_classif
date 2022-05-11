@@ -8,9 +8,8 @@ with safe_import_context() as import_ctx:
     from sklearn.model_selection import train_test_split
     import tensorflow as tf
     import tensorflow_datasets as tfds
-    import torch
     from torchvision import transforms
-    from torch.utils.data import random_split, Subset
+    from torch.utils.data import Subset
 
     AugmentedDataset = import_ctx.import_from(
         "lightning_helper", "AugmentedDataset"
