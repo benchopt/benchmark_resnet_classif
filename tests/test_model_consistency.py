@@ -202,6 +202,7 @@ def generate_output_from_rand_image(
     ],
 )
 def test_model_consistency(optimizer, extra_solver_kwargs):
+    np.random.seed(2)
     rand_image = np.random.normal(size=(1, 3, 32, 32)).astype(np.float32)
     torch_output, torch_weights_map = generate_output_from_rand_image(
         'pytorch',
