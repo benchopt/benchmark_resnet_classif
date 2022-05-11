@@ -164,6 +164,7 @@ class Objective(BaseObjective):
     ):
         self.dataset = dataset
         self.val_dataset = val_dataset
+        self.with_validation = val_dataset is not None
         self.test_dataset = test_dataset
         self.n_samples_train = n_samples_train
         self.n_samples_val = n_samples_val
@@ -192,9 +193,12 @@ class Objective(BaseObjective):
         # Set the batch size for the test dataloader
         test_batch_size = 100
         self._datasets = {}
-        for dataset_name, data in [('train', self.dataset),
-                                   ('val', self.val_dataset),
-                                   ('test', self.test_dataset)]:
+        dataset_name = ['train', 'test']
+        datasets = [self.dataset, self.test_dataset]
+        if self.with_validation:
+            dataset_name.append('val')
+            datasets.append(self.val_dataset)
+        for dataset_name, data in zip(dataset_name, datasets):
             if self.framework == 'tensorflow':
                 ds = data.batch(test_batch_size)
                 if dataset_name == 'train':
@@ -236,7 +240,10 @@ class Objective(BaseObjective):
             acc_name = "accuracy" if self.framework == 'tensorflow' else "acc"
             results[dataset_name + "_err"] = 1 - metrics[acc_name]
 
-        results["value"] = results["val_err"]
+        if self.with_validation:
+            results["value"] = results["val_err"]
+        else:
+            results["value"] = results["train_loss"]
         return results
 
     def eval_torch(self, model, dataloader):
