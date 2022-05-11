@@ -242,6 +242,7 @@ if __name__ == "__main__":
             percent=True,
         )
     plt.savefig('resnet18_sgd_torch.pdf', dpi=300)
+    plt.savefig('resnet18_sgd_torch.svg', dpi=300)
 
     ax_example = axs[0]  # we take the cifar axis
     leg_fig, ax2 = plt.subplots(1, 1, figsize=(20, 4))
@@ -257,4 +258,5 @@ if __name__ == "__main__":
     leg_fig.set_size_inches((width / 80,  max(height / 80, 0.5)))
     plt.axis('off')
     leg_fig.savefig("resnet18_sgd_torch_legend.pdf", dpi=300)
+    leg_fig.savefig("resnet18_sgd_torch_legend.svg", dpi=300)
 
