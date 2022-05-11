@@ -21,7 +21,7 @@ class TorchSolver(BaseSolver):
     """Pytorch base solver"""
 
     stopping_criterion = SufficientProgressCriterion(
-        patience=20, strategy='callback'
+        patience=50, strategy='callback'
     )
 
     parameters = {

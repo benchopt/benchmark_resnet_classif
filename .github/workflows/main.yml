@@ -144,7 +144,7 @@ jobs:
 
     - name: install test dependencies
       run: |
-        pip install pytest torch torchvision tensorflow tensorflow-datasets scikit-learn pytorch-lightning
+        pip install pytest torch torchvision tensorflow tensorflow-datasets scikit-learn pytorch-lightning tensorflow-addons
 
     - name: Test
       run: |
