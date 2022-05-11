@@ -27,7 +27,8 @@ class MultiFrameworkDataset(BaseDataset, ABC):
         # as tensorflow takes all the memory and doesn't have a mechanism to
         # release it
         'framework': ['pytorch', 'lightning', 'tensorflow'],
-        'random_state': [42]
+        'random_state': [42, 43, 44, 45, 46],
+        'with_validation': [True, False],
     }
 
     install_cmd = "conda"
@@ -97,13 +98,16 @@ class MultiFrameworkDataset(BaseDataset, ABC):
                 transform=transform,
                 **split_kwarg,
             )
-        train_idx, val_idx = self.get_train_val_indices()
-        train_dataset = Subset(data_dict["dataset"], train_idx)
-        val_dataset = Subset(data_dict["dataset"], val_idx)
-        data_dict["dataset"] = train_dataset
-        data_dict["val_dataset"] = AugmentedDataset(
-            val_dataset, None, normalization_transform
-        )
+        if self.with_validation:
+            train_idx, val_idx = self.get_train_val_indices()
+            train_dataset = Subset(data_dict["dataset"], train_idx)
+            val_dataset = Subset(data_dict["dataset"], val_idx)
+            data_dict["dataset"] = train_dataset
+            data_dict["val_dataset"] = AugmentedDataset(
+                val_dataset, None, normalization_transform
+            )
+        else:
+            data_dict["val_dataset"] = None
 
         return data_dict
 
@@ -143,19 +147,22 @@ class MultiFrameworkDataset(BaseDataset, ABC):
                 )
             data_dict[key] = ds
 
-        train_idx, val_idx = self.get_train_val_indices()
-        data_dict["val_dataset"] = filter_ds_on_indices(
-            data_dict["dataset"], val_idx,
-        ).map(
-            lambda x, y: (
-                image_preprocessing(x),
-                y,
-            ),
-            num_parallel_calls=tf.data.experimental.AUTOTUNE,
-        )
-        data_dict["dataset"] = filter_ds_on_indices(
-            data_dict["dataset"], train_idx
-        )
+        if self.with_validation:
+            train_idx, val_idx = self.get_train_val_indices()
+            data_dict["val_dataset"] = filter_ds_on_indices(
+                data_dict["dataset"], val_idx,
+            ).map(
+                lambda x, y: (
+                    image_preprocessing(x),
+                    y,
+                ),
+                num_parallel_calls=tf.data.experimental.AUTOTUNE,
+            )
+            data_dict["dataset"] = filter_ds_on_indices(
+                data_dict["dataset"], train_idx
+            )
+        else:
+            data_dict["val_dataset"] = None
         return data_dict
 
     def get_data(self):
