@@ -1,12 +1,31 @@
 from pathlib import Path
 
+import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib import rc
 import pandas as pd
+import seaborn as sns
 
 from benchopt.plotting.helpers_compat import get_figure
 from regex import P
 
-CMAP = plt.get_cmap('tab10')
+
+# matplotlib style config
+fontsize = 12
+rc('font', **{'family': 'sans-serif',
+              'sans-serif': ['Computer Modern Roman']})
+usetex = matplotlib.checkdep_usetex(True)
+params = {'axes.labelsize': fontsize,
+          'font.size': fontsize,
+          'legend.fontsize': fontsize,
+          'xtick.labelsize': fontsize - 2,
+          'ytick.labelsize': fontsize - 2,
+          'text.usetex': usetex,
+          'figure.figsize': (8, 6)}
+plt.rcParams.update(params)
+sns.set_palette('colorblind')
+sns.set_style("ticks")
+CMAP = plt.get_cmap('tab20')
 
 
 def _remove_prefix(text, prefix):
@@ -22,7 +41,8 @@ def fill_between_x(fig, x, q_min, q_max, y, color, marker, label,
             color=color,
             marker=marker,
             label=label,
-            linewidth=3,
+            linewidth=2,
+            markersize=6,
             alpha=alpha,
             linestyle=linestyle,
         )
@@ -109,7 +129,7 @@ def plot_objective_curve(
         df_ = df[df['solver_name'] == solver_name]
         curve = df_.groupby('stop_val').median()
         if percent:
-            curve = curve * 100
+            curve[obj_col] = curve[obj_col] * 100
 
         q1 = df_.groupby('stop_val')['time'].quantile(.1)
         q9 = df_.groupby('stop_val')['time'].quantile(.9)
@@ -121,11 +141,14 @@ def plot_objective_curve(
         )
     plt.legend(fontsize=14, loc='upper right')
     # plt.yscale('log')
-    plt.ylim([0.04, 0.2] if y_lim is None else y_lim)
+    y_lim = [0.04, 0.2] if y_lim is None else y_lim
+    if percent:
+        y_lim = [y * 100 for y in y_lim]
+    plt.ylim(y_lim)
     plt.xlabel("Time [sec]", fontsize=14)
     ylabel = f"{_remove_prefix(obj_col, 'objective_')}: F(x)" if ylabel is None else ylabel
     if percent:
-        ylabel += ' [%]'
+        ylabel += ' [\%]'
     plt.ylabel(
         ylabel,
         fontsize=14,
@@ -136,10 +159,6 @@ def plot_objective_curve(
     return fig
 
 if __name__ == "__main__":
-    dataset = 'mnist'
-    results_file = Path("outputs") / f"bench_{dataset}.csv"
-    df = pd.read_csv(results_file)
-
     markers = {i: v for i, v in enumerate(plt.Line2D.markers)}
     solvers = [
         {
@@ -192,19 +211,22 @@ if __name__ == "__main__":
             'label': 'Best SGD (TF/Keras)',
         },
     ]
-
-    ylim = {
-        'svhn': [0.03, 0.1],
-        'cifar': None,
-        'mnist': [0.005, 0.1],
-    }[dataset]
-    fig = plot_objective_curve(
-        df,
-        obj_col='objective_test_err',
-        # solver_filters=["cosine"],
-        solvers=solvers,
-        title='',
-        ylabel='Test error',
-        y_lim=ylim,
-    )
-    plt.savefig(f'resnet18_sgd_torch_{dataset}.pdf', dpi=300)
+    for dataset in ['mnist', 'cifar', 'svhn']:
+        results_file = Path("outputs") / f"bench_{dataset}.csv"
+        df = pd.read_csv(results_file)
+        ylim = {
+            'svhn': [0.03, 0.1],
+            'cifar': None,
+            'mnist': [0.005, 0.1],
+        }[dataset]
+        fig = plot_objective_curve(
+            df,
+            obj_col='objective_test_err',
+            # solver_filters=["cosine"],
+            solvers=solvers,
+            title='',
+            ylabel='Test error',
+            y_lim=ylim,
+            percent=True,
+        )
+        plt.savefig(f'resnet18_sgd_torch_{dataset}.pdf', dpi=300)
