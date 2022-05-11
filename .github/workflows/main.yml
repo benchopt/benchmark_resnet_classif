@@ -107,9 +107,9 @@ jobs:
         path: |
           data
           ~/tensorflow_datasets
-        key: build-${{ env.cache-name }}-${{ github.ref }}
+        key: build-${{ env.cache-name }}
         restore-keys: |
-          build-${{ env.cache-name }}-
+          build-${{ env.cache-name }}
 
     - name: Setup Conda
       uses: conda-incubator/setup-miniconda@v2
