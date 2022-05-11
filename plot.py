@@ -32,10 +32,10 @@ def _remove_prefix(text, prefix):
     return text[len(prefix):] if text.startswith(prefix) else text
 
 
-def fill_between_x(fig, x, q_min, q_max, y, color, marker, label,
+def fill_between_x(ax, x, q_min, q_max, y, color, marker, label,
                    plotly=False, alpha=1.0, linestyle='-'):
     if not plotly:
-        plt.plot(
+        ax.plot(
             x,
             y,
             color=color,
@@ -46,12 +46,12 @@ def fill_between_x(fig, x, q_min, q_max, y, color, marker, label,
             alpha=alpha,
             linestyle=linestyle,
         )
-        plt.fill_betweenx(y, q_min, q_max, color=color, alpha=.3)
-        return fig
+        ax.fill_betweenx(y, q_min, q_max, color=color, alpha=.3)
 
 
 def plot_objective_curve(
     df,
+    ax,
     obj_col='objective_value',
     solver_filters=None,
     solvers=None,
@@ -103,11 +103,9 @@ def plot_objective_curve(
             raise ValueError(f"No solvers after filters '{solver_filters}'")
     solver_names = df['solver_name'].unique()
 
-    fig = plt.figure(figsize=(10, 5))
-
     if df[obj_col].count() == 0:  # missing values
-        plt.text(0.5, 0.5, "Not Available")
-        return fig
+        ax.text(0.5, 0.5, "Not Available")
+        return ax
 
     for i, solver_name in enumerate(solver_names):
         if solvers:
@@ -135,31 +133,32 @@ def plot_objective_curve(
         q9 = df_.groupby('stop_val')['time'].quantile(.9)
 
         fill_between_x(
-            fig, curve['time'], q1, q9, curve[obj_col], color=color,
+            ax, curve['time'], q1, q9, curve[obj_col], color=color,
             marker=marker, label=label, plotly=False, alpha=alpha,
             linestyle=linestyle,
         )
-    plt.legend(fontsize=14, loc='upper right')
+    ax.legend(fontsize=14, loc='upper right')
     # plt.yscale('log')
     y_lim = [0.04, 0.2] if y_lim is None else y_lim
     if percent:
         y_lim = [y * 100 for y in y_lim]
-    plt.ylim(y_lim)
-    plt.xlabel("Time [sec]", fontsize=14)
+    ax.set_ylim(y_lim)
+    ax.set_xlabel("Time [sec]", fontsize=14)
     ylabel = f"{_remove_prefix(obj_col, 'objective_')}: F(x)" if ylabel is None else ylabel
     if percent:
         ylabel += ' [\%]'
-    plt.ylabel(
+    ax.set_ylabel(
         ylabel,
         fontsize=14,
     )
-    plt.title(title, fontsize=14)
+    ax.set_title(title, fontsize=14)
     # plt.tight_layout()
 
-    return fig
+    return ax
+
 
 if __name__ == "__main__":
-    markers = {i: v for i, v in enumerate(plt.Line2D.markers)}
+    markers = {i: v for i, v in enumerate(list(plt.Line2D.markers)[:-4])}
     solvers = [
         {
             'id': 'SGD-torch[batch_size=128,data_aug=False,lr=0.1,lr_schedule=None,momentum=0,nesterov=False,weight_decay=0.0]',
@@ -211,7 +210,15 @@ if __name__ == "__main__":
             'label': 'Best SGD (TF/Keras)',
         },
     ]
-    for dataset in ['mnist', 'cifar', 'svhn']:
+
+    datasets = ['mnist', 'cifar', 'svhn']
+    dataset_repr = {
+        'mnist': 'MNIST',
+        'cifar': 'CIFAR-10',
+        'svhn': 'SVHN',
+    }
+    fig, axs = plt.subplots(1, 3, figsize=[12, 0.8 + 2.5])
+    for i_d, dataset in enumerate(datasets):
         results_file = Path("outputs") / f"bench_{dataset}.csv"
         df = pd.read_csv(results_file)
         ylim = {
@@ -219,14 +226,15 @@ if __name__ == "__main__":
             'cifar': None,
             'mnist': [0.005, 0.1],
         }[dataset]
-        fig = plot_objective_curve(
+        plot_objective_curve(
             df,
+            axs[i_d],
             obj_col='objective_test_err',
             # solver_filters=["cosine"],
             solvers=solvers,
-            title='',
+            title=dataset_repr[dataset],
             ylabel='Test error',
             y_lim=ylim,
             percent=True,
         )
-        plt.savefig(f'resnet18_sgd_torch_{dataset}.pdf', dpi=300)
+    plt.savefig('resnet18_sgd_torch.pdf', dpi=300)
