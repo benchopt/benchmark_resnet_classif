@@ -22,7 +22,7 @@ def find_permutation(X1, X2, tol=1e-5):
     return idx
 
 
-def find_permutation_labels(X1, y1, X2, y2, tol=1e-4):
+def find_permutation_per_labels(X1, y1, X2, y2, tol=1e-4):
     labels = set(y1)
     assert labels == set(y2), "inconsistent labels"
     n, _ = X1.shape
@@ -85,5 +85,5 @@ if __name__ == "__main__":
             if args.force_registration or not filepath.exists():
                 X_torch, y_torch = get_numpy_from_torch(dataset, train)
                 X_tf, y_tf = get_numpy_from_tf(dataset, train)
-                perm = find_permutation_labels(X_torch, y_torch, X_tf, y_tf)
+                perm = find_permutation_per_labels(X_torch, y_torch, X_tf, y_tf)
                 np.save(filepath, perm)
