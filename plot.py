@@ -148,7 +148,7 @@ def plot_objective_curve(
     ax.set_xlabel("Time (s)", fontsize=fontsize - 2)
     if ylabel is not None:
         if percent:
-            ylabel += ' [\%]'
+            ylabel += ' (\%)'
         ax.set_ylabel(
             ylabel,
             fontsize=fontsize - 6,
