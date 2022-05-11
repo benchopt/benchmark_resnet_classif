@@ -87,5 +87,10 @@ if __name__ == "__main__":
             if args.force_registration or not filepath.exists():
                 X_torch, y_torch = get_numpy_from_torch(dataset, train)
                 X_tf, y_tf = get_numpy_from_tf(dataset, train)
-                perm = find_permutation_per_labels(X_torch, y_torch, X_tf, y_tf)
+                perm = find_permutation_per_labels(
+                    X_torch,
+                    y_torch,
+                    X_tf,
+                    y_tf,
+                )
                 np.save(filepath, perm)
