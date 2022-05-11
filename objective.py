@@ -241,9 +241,10 @@ class Objective(BaseObjective):
             results[dataset_name + "_err"] = 1 - metrics[acc_name]
 
         if self.with_validation:
-            results["value"] = results["val_err"]
+            value_key = "val_err"
         else:
-            results["value"] = results["train_loss"]
+            value_key = "train_loss"
+        results["value"] = results[value_key]
         return results
 
     def eval_torch(self, model, dataloader):
