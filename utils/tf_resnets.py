@@ -2,6 +2,7 @@ from benchopt import safe_import_context
 
 with safe_import_context() as import_ctx:
     from keras.applications.resnet import ResNet
+    from keras import initializers
     from keras import layers
     from keras import models
 
@@ -35,6 +36,11 @@ def basic_block(x, filters, stride=1, use_bias=True, conv_shortcut=True,
     """
     bn_axis = 3
     kernel_size = 3
+    torch_init = initializers.VarianceScaling(
+        scale=2.0,
+        mode='fan_out',
+        distribution='untruncated_normal',
+    )
 
     if conv_shortcut:
         shortcut = layers.Conv2D(
@@ -43,6 +49,7 @@ def basic_block(x, filters, stride=1, use_bias=True, conv_shortcut=True,
             strides=stride,
             use_bias=use_bias,
             name=name + '_0_conv',
+            kernel_initializer=torch_init,
         )(x)
         shortcut = layers.BatchNormalization(
             momentum=0.9,
@@ -60,6 +67,7 @@ def basic_block(x, filters, stride=1, use_bias=True, conv_shortcut=True,
         padding_mode = 'same'
     x = layers.Conv2D(
         filters, kernel_size, padding=padding_mode, strides=stride,
+        kernel_initializer=torch_init,
         use_bias=use_bias,
         name=name + '_1_conv')(x)
     x = layers.BatchNormalization(
@@ -72,6 +80,7 @@ def basic_block(x, filters, stride=1, use_bias=True, conv_shortcut=True,
         kernel_size,
         padding='SAME',
         use_bias=use_bias,
+        kernel_initializer=torch_init,
         name=name + '_2_conv',
     )(x)
     x = layers.BatchNormalization(
@@ -100,6 +109,11 @@ def bottleneck_block(x, filters, kernel_size=3, stride=1, conv_shortcut=True,
     Output tensor for the residual block.
     """
     bn_axis = 3
+    torch_init = initializers.VarianceScaling(
+        scale=2.0,
+        mode='fan_out',
+        distribution='untruncated_normal',
+    )
 
     if conv_shortcut:
         shortcut = layers.Conv2D(
@@ -107,6 +121,7 @@ def bottleneck_block(x, filters, kernel_size=3, stride=1, conv_shortcut=True,
             1,
             strides=stride,
             use_bias=use_bias,
+            kernel_initializer=torch_init,
             name=name + '_0_conv',
             )(x)
         shortcut = layers.BatchNormalization(
@@ -120,6 +135,7 @@ def bottleneck_block(x, filters, kernel_size=3, stride=1, conv_shortcut=True,
         1,
         strides=stride,
         use_bias=use_bias,
+        kernel_initializer=torch_init,
         name=name + '_1_conv',
     )(x)
     x = layers.BatchNormalization(
@@ -132,6 +148,7 @@ def bottleneck_block(x, filters, kernel_size=3, stride=1, conv_shortcut=True,
         kernel_size,
         padding='SAME',
         use_bias=use_bias,
+        kernel_initializer=torch_init,
         name=name + '_2_conv',
     )(x)
     x = layers.BatchNormalization(
@@ -143,6 +160,7 @@ def bottleneck_block(x, filters, kernel_size=3, stride=1, conv_shortcut=True,
         4 * filters,
         1,
         use_bias=use_bias,
+        kernel_initializer=torch_init,
         name=name + '_3_conv',
     )(x)
     x = layers.BatchNormalization(
@@ -197,6 +215,11 @@ def stack_block(
 
 
 def remove_initial_downsample(large_model, use_bias=False):
+    torch_init = initializers.VarianceScaling(
+        scale=2.0,
+        mode='fan_out',
+        distribution='untruncated_normal',
+    )
     trimmed_model = models.Model(
         inputs=large_model.get_layer('conv2_block1_1_conv').input,
         outputs=large_model.outputs,
@@ -207,6 +230,7 @@ def remove_initial_downsample(large_model, use_bias=False):
         activation='linear',
         padding='same',
         use_bias=use_bias,
+        kernel_initializer=torch_init,
         name='conv1_conv',
     )
     input_shape = list(large_model.input_shape[1:])
