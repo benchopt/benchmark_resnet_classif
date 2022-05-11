@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from benchopt.plotting.helpers_compat import get_figure
+from regex import P
 
 CMAP = plt.get_cmap('tab10')
 
@@ -36,6 +37,7 @@ def plot_objective_curve(
     solvers=None,
     title=None,
     ylabel=None,
+    percent=False,
 ):
     """Plot objective curve for a given benchmark and dataset.
     Plot the objective value F(x) as a function of the time.
@@ -105,6 +107,8 @@ def plot_objective_curve(
             linestyle = '-'
         df_ = df[df['solver_name'] == solver_name]
         curve = df_.groupby('stop_val').median()
+        if percent:
+            curve = curve * 100
 
         q1 = df_.groupby('stop_val')['time'].quantile(.1)
         q9 = df_.groupby('stop_val')['time'].quantile(.9)
@@ -116,9 +120,11 @@ def plot_objective_curve(
         )
     plt.legend(fontsize=14, loc='upper right')
     # plt.yscale('log')
-    plt.ylim([0.01, 0.2])
+    plt.ylim([0.02, 0.2])
     plt.xlabel("Time [sec]", fontsize=14)
     ylabel = f"{_remove_prefix(obj_col, 'objective_')}: F(x)" if ylabel is None else ylabel
+    if percent:
+        ylabel += ' [%]'
     plt.ylabel(
         ylabel,
         fontsize=14,
@@ -129,7 +135,8 @@ def plot_objective_curve(
     return fig
 
 if __name__ == "__main__":
-    results_file = Path("outputs") / "bench_cifar.csv"
+    dataset = 'cifar'
+    results_file = Path("outputs") / f"bench_{dataset}.csv"
     df = pd.read_csv(results_file)
 
     markers = {i: v for i, v in enumerate(plt.Line2D.markers)}
@@ -193,7 +200,7 @@ if __name__ == "__main__":
         title='',
         ylabel='Test error',
     )
-    plt.savefig('test_plot.pdf', dpi=300)
+    plt.savefig(f'resnet_18_sgd_torch_{dataset}.pdf', dpi=300)
     # ax = fig.axes[0]
     # fig_leg = plt.figure(figsize=(10, 40))
     # ax_leg = fig_leg.add_subplot(111)
