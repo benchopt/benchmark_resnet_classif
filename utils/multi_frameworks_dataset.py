@@ -45,19 +45,20 @@ class MultiFrameworkDataset(BaseDataset, ABC):
     def set_train_val_indices(self):
         """Train/Val split with cross framework compat."""
         registration_indices = self.get_registration_indices()
-        if registration_indices is None:
-            self.train_val_split_spec = False
-        self.tf_train_indices, self.tf_val_indices = train_test_split(
+
+        tf_train_indices, tf_val_indices = train_test_split(
             np.arange(len(registration_indices)),
             test_size=self.ds_description["n_samples_val"],
             train_size=self.ds_description["n_samples_train"],
             random_state=self.random_state,
         )
-        self.tf_train_indices = np.sort(self.tf_train_indices)
-        self.tf_val_indices = np.sort(self.tf_val_indices)
-        self.torch_train_indices = registration_indices[self.tf_train_indices]
-        self.torch_val_indices = registration_indices[self.tf_val_indices]
-        self.train_val_split_spec = True
+        tf_train_indices.sort(), tf_val_indices.sort()
+        if self.framework == "tensorflow" or registration_indices is None:
+            return tf_train_indices, tf_val_indices
+
+        torch_train_indices = registration_indices[tf_train_indices]
+        torch_val_indices = registration_indices[tf_val_indices]
+        return torch_train_indices, torch_val_indices
 
     def get_torch_preprocessing_step(self):
         normalization_transform = transforms.Normalize(
