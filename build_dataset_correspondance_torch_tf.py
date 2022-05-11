@@ -35,6 +35,8 @@ def find_permutation_per_labels(X1, y1, X2, y2, tol=1e-4):
         where2 = np.where(y2 == label)[0]
         label_perm = find_permutation(X1[where1], X2[where2], tol=tol)
         permutation[where2] = where1[label_perm]
+
+    assert len(set(permutation)) == n
     return permutation
 
 
