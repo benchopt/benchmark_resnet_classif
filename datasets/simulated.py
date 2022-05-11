@@ -160,4 +160,4 @@ class Dataset(BaseDataset):
             **self.ds_description,
         )
 
-        return "object", data
+        return data

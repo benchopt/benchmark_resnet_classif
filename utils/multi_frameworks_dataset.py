@@ -42,7 +42,7 @@ class MultiFrameworkDataset(BaseDataset, ABC):
         print('Registration file not found')
         return None
 
-    def set_train_val_indices(self):
+    def get_train_val_indices(self):
         """Train/Val split with cross framework compat."""
         registration_indices = self.get_registration_indices()
 
@@ -126,17 +126,8 @@ class MultiFrameworkDataset(BaseDataset, ABC):
             normalization=image_preprocessing,
             **self.ds_description,
         )
-        splits = ["test"]
-        datasets = ["test_dataset"]
-        if self.train_val_split_spec:
-            splits.append('train')
-            datasets.append('dataset')
-        else:
-            splits += [
-                f'train[:{self.ds_description["n_samples_train"]}]',
-                f'train[{self.ds_description["n_samples_train"]}:]',
-            ]
-            datasets += ["dataset", "val_dataset"]
+        splits = ["test", "train"]
+        datasets = ["test_dataset", "dataset"]
         for key, split in zip(datasets, splits):
             ds = tfds.load(
                 self.tf_ds_name,
@@ -152,7 +143,7 @@ class MultiFrameworkDataset(BaseDataset, ABC):
                     num_parallel_calls=tf.data.experimental.AUTOTUNE,
                 )
             data_dict[key] = ds
-        
+
         train_idx, val_idx = self.get_train_val_indices()
         data_dict["val_dataset"] = filter_ds_on_indices(
             data_dict["dataset"], val_idx,
