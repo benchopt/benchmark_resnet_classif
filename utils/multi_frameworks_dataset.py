@@ -33,9 +33,9 @@ class MultiFrameworkDataset(BaseDataset, ABC):
     install_cmd = "conda"
     requirements = ["pip:tensorflow-datasets", "scikit-learn"]
 
-    def get_registration_indices(self):
+    def get_registration_indices(self, split='train'):
         registration_dir = Path("./torch_tf_datasets_registrations/")
-        filepath = registration_dir / f"{self.tf_ds_name}_train.npy"
+        filepath = registration_dir / f"{self.tf_ds_name}_{split}.npy"
         if filepath.exists():
             return np.load(filepath)
         print('Registration file not found')

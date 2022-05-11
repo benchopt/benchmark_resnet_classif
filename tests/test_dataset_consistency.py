@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+from cv2 import split
 
 import numpy as np
 import pytest
@@ -114,19 +115,7 @@ def test_datasets_consistency(dataset_module_name, dataset_type):
     tf_np_array = tf_dataset_to_np_array(tf_dataset, n_samples)
     torch_np_array = torch_dataset_to_np_array(torch_dataset, n_samples)
     if dataset_type == 'test_dataset' and dataset_module_name != 'simulated':
-        registration_dir = Path("./torch_tf_datasets_registrations/")
-        tf_ds_name = {
-            'cifar': 'cifar10',
-            'mnist': 'mnist',
-            'svhn': 'svhn_cropped',
-        }[dataset_module_name]
-        filepath = registration_dir / f"{tf_ds_name}_test.npy"
-        if filepath.exists():
-            registration_indices = np.load(filepath)
-        else:
-            raise FileNotFoundError(
-                f'Registration file not found for {dataset_module_name}'
-            )
+        registration_indices = d_tf.get_registration_indices(split='test')
         X_torch = torch_np_array[0][registration_indices]
         y_torch = torch_np_array[1][registration_indices]
     else:
