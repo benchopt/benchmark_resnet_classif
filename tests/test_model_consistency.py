@@ -222,6 +222,6 @@ def test_model_consistency(optimizer, extra_solver_kwargs):
     np.testing.assert_allclose(
         torch_output,
         tf_output,
-        rtol=0,
+        rtol=1e-3,
         atol=5e-5,
     )
