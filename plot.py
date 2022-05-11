@@ -27,6 +27,9 @@ sns.set_palette('colorblind')
 sns.set_style("ticks")
 CMAP = plt.get_cmap('tab20')
 
+fontsize = 20
+labelsize = 20
+
 
 def _remove_prefix(text, prefix):
     return text[len(prefix):] if text.startswith(prefix) else text
@@ -41,8 +44,8 @@ def fill_between_x(ax, x, q_min, q_max, y, color, marker, label,
             color=color,
             marker=marker,
             label=label,
-            linewidth=2,
-            markersize=6,
+            linewidth=1,
+            markersize=1,
             alpha=alpha,
             linestyle=linestyle,
         )
@@ -137,21 +140,21 @@ def plot_objective_curve(
             marker=marker, label=label, plotly=False, alpha=alpha,
             linestyle=linestyle,
         )
-    ax.legend(fontsize=14, loc='upper right')
+    # ax.legend(fontsize=14, loc='upper right')
     # plt.yscale('log')
     y_lim = [0.04, 0.2] if y_lim is None else y_lim
     if percent:
         y_lim = [y * 100 for y in y_lim]
     ax.set_ylim(y_lim)
-    ax.set_xlabel("Time [sec]", fontsize=14)
-    ylabel = f"{_remove_prefix(obj_col, 'objective_')}: F(x)" if ylabel is None else ylabel
-    if percent:
-        ylabel += ' [\%]'
-    ax.set_ylabel(
-        ylabel,
-        fontsize=14,
-    )
-    ax.set_title(title, fontsize=14)
+    ax.set_xlabel("Time [sec]", fontsize=fontsize - 2)
+    if ylabel is not None:
+        if percent:
+            ylabel += ' [\%]'
+        ax.set_ylabel(
+            ylabel,
+            fontsize=fontsize - 6,
+        )
+    ax.set_title(title, fontsize=fontsize - 2)
     # plt.tight_layout()
 
     return ax
@@ -217,7 +220,7 @@ if __name__ == "__main__":
         'cifar': 'CIFAR-10',
         'svhn': 'SVHN',
     }
-    fig, axs = plt.subplots(1, 3, figsize=[12, 0.8 + 2.5])
+    fig, axs = plt.subplots(1, 3, figsize=[12, 3.3], constrained_layout=True)
     for i_d, dataset in enumerate(datasets):
         results_file = Path("outputs") / f"bench_{dataset}.csv"
         df = pd.read_csv(results_file)
@@ -226,14 +229,16 @@ if __name__ == "__main__":
             'cifar': None,
             'mnist': [0.005, 0.1],
         }[dataset]
+        ax = axs[i_d]
+        ax.tick_params(axis='both', which='major', labelsize=labelsize)
         plot_objective_curve(
             df,
-            axs[i_d],
+            ax,
             obj_col='objective_test_err',
             # solver_filters=["cosine"],
             solvers=solvers,
             title=dataset_repr[dataset],
-            ylabel='Test error',
+            ylabel='Test error' if i_d == 0 else None,
             y_lim=ylim,
             percent=True,
         )
