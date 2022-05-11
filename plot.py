@@ -1,3 +1,5 @@
+
+import itertools
 from pathlib import Path
 
 import matplotlib
@@ -5,9 +7,6 @@ import matplotlib.pyplot as plt
 from matplotlib import rc
 import pandas as pd
 import seaborn as sns
-
-from benchopt.plotting.helpers_compat import get_figure
-from regex import P
 
 
 # matplotlib style config
@@ -45,7 +44,7 @@ def fill_between_x(ax, x, q_min, q_max, y, color, marker, label,
             marker=marker,
             label=label,
             linewidth=1,
-            markersize=1,
+            markersize=2,
             alpha=alpha,
             linestyle=linestyle,
         )
@@ -214,7 +213,7 @@ if __name__ == "__main__":
         },
     ]
 
-    datasets = ['mnist', 'cifar', 'svhn']
+    datasets = ['cifar', 'svhn', 'mnist']
     dataset_repr = {
         'mnist': 'MNIST',
         'cifar': 'CIFAR-10',
@@ -243,3 +242,19 @@ if __name__ == "__main__":
             percent=True,
         )
     plt.savefig('resnet18_sgd_torch.pdf', dpi=300)
+
+    ax_example = axs[0]  # we take the cifar axis
+    leg_fig, ax2 = plt.subplots(1, 1, figsize=(20, 4))
+    n_col = 3
+    lines_ordered = list(itertools.chain(*[ax_example.lines[i::n_col] for i in range(n_col)]))
+    legend = ax2.legend(
+        lines_ordered, [line.get_label() for line in lines_ordered], ncol=n_col,
+        loc="upper center")
+    leg_fig.canvas.draw()
+    leg_fig.tight_layout()
+    width = legend.get_window_extent().width
+    height = legend.get_window_extent().height
+    leg_fig.set_size_inches((width / 80,  max(height / 80, 0.5)))
+    plt.axis('off')
+    leg_fig.savefig("resnet18_sgd_torch_legend.pdf", dpi=300)
+
