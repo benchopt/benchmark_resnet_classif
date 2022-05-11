@@ -120,7 +120,7 @@ def plot_objective_curve(
         )
     plt.legend(fontsize=14, loc='upper right')
     # plt.yscale('log')
-    plt.ylim([0.02, 0.2])
+    plt.ylim([0.04, 0.2])
     plt.xlabel("Time [sec]", fontsize=14)
     ylabel = f"{_remove_prefix(obj_col, 'objective_')}: F(x)" if ylabel is None else ylabel
     if percent:
@@ -145,7 +145,7 @@ if __name__ == "__main__":
             'id': 'SGD-torch[batch_size=128,data_aug=False,lr=0.1,lr_schedule=None,momentum=0,nesterov=False,weight_decay=0.0]',
             'color': CMAP(0),
             'marker': markers[0],
-            'alpha': 0.2,
+            'alpha': 0.3,
             'label': 'Vanilla SGD',
         },
         {
@@ -200,7 +200,7 @@ if __name__ == "__main__":
         title='',
         ylabel='Test error',
     )
-    plt.savefig(f'resnet_18_sgd_torch_{dataset}.pdf', dpi=300)
+    plt.savefig(f'resnet18_sgd_torch_{dataset}.pdf', dpi=300)
     # ax = fig.axes[0]
     # fig_leg = plt.figure(figsize=(10, 40))
     # ax_leg = fig_leg.add_subplot(111)
