@@ -136,7 +136,7 @@ def plot_objective_curve(
     return fig
 
 if __name__ == "__main__":
-    dataset = 'svhn'
+    dataset = 'mnist'
     results_file = Path("outputs") / f"bench_{dataset}.csv"
     df = pd.read_csv(results_file)
 
@@ -193,6 +193,11 @@ if __name__ == "__main__":
         },
     ]
 
+    ylim = {
+        'svhn': [0.03, 0.1],
+        'cifar': None,
+        'mnist': [0.005, 0.1],
+    }[dataset]
     fig = plot_objective_curve(
         df,
         obj_col='objective_test_err',
@@ -200,6 +205,6 @@ if __name__ == "__main__":
         solvers=solvers,
         title='',
         ylabel='Test error',
-        y_lim=[0.02, 0.1],
+        y_lim=ylim,
     )
     plt.savefig(f'resnet18_sgd_torch_{dataset}.pdf', dpi=300)
