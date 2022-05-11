@@ -48,6 +48,7 @@ class Dataset(BaseDataset):
         train_frac=0.8,
         framework="pytorch",
         random_state=27,
+        with_validation=True,
     ):
         # Store the parameters of the dataset
         self.n_samples = n_samples
@@ -58,6 +59,7 @@ class Dataset(BaseDataset):
         self.framework = framework
         self.random_state = random_state
         self.rng = np.random.default_rng(self.random_state)
+        self.with_validation = with_validation
 
     def get_np_data(self):
         n_train_and_val = int(self.n_samples * self.train_and_val_frac)
