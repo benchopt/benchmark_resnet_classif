@@ -28,13 +28,14 @@ class MultiFrameworkDataset(BaseDataset, ABC):
         # as tensorflow takes all the memory and doesn't have a mechanism to
         # release it
         'framework': ['pytorch', 'lightning', 'tensorflow'],
+        'random_state': [42]
     }
 
     install_cmd = "conda"
     requirements = ["pip:tensorflow-datasets", "scikit-learn"]
 
     def get_registration_indices(self, split='train'):
-        registration_dir = Path("./torch_tf_datasets_registrations/")
+        registration_dir = Path() / "torch_tf_datasets_registrations"
         filepath = registration_dir / f"{self.tf_ds_name}_{split}.npy"
         if filepath.exists():
             return np.load(filepath)
@@ -42,6 +43,7 @@ class MultiFrameworkDataset(BaseDataset, ABC):
         return None
 
     def set_train_val_indices(self):
+        """Train/Val split with cross framework compat."""
         registration_indices = self.get_registration_indices()
         if registration_indices is None:
             self.train_val_split_spec = False
@@ -95,27 +97,15 @@ class MultiFrameworkDataset(BaseDataset, ABC):
                 transform=transform,
                 **split_kwarg,
             )
-        if self.train_val_split_spec:
-            train_dataset = Subset(
-                data_dict["dataset"],
-                self.torch_train_indices,
-            )
-            val_dataset = Subset(data_dict["dataset"], self.torch_val_indices)
-        else:
-            train_dataset, val_dataset = random_split(
-                data_dict["dataset"],
-                [
-                    self.ds_description["n_samples_train"],
-                    self.ds_description["n_samples_val"],
-                ],
-                generator=torch.Generator().manual_seed(self.random_state),
-            )
+        train_idx, val_idx = self.get_train_val_indices()
+        train_dataset = Subset(data_dict["dataset"], train_idx)
+        val_dataset = Subset(data_dict["dataset"], val_idx)
         data_dict["dataset"] = train_dataset
         data_dict["val_dataset"] = AugmentedDataset(
             val_dataset, None, normalization_transform
         )
 
-        return "object", data_dict
+        return data_dict
 
     def get_tf_preprocessing_step(self):
 
@@ -161,27 +151,24 @@ class MultiFrameworkDataset(BaseDataset, ABC):
                     num_parallel_calls=tf.data.experimental.AUTOTUNE,
                 )
             data_dict[key] = ds
-        if self.train_val_split_spec:
-            data_dict["val_dataset"] = filter_ds_on_indices(
-                data_dict["dataset"],
-                self.tf_val_indices,
-            ).map(
-                lambda x, y: (
-                    image_preprocessing(x),
-                    y,
-                ),
-                num_parallel_calls=tf.data.experimental.AUTOTUNE,
-            )
-            data_dict["dataset"] = filter_ds_on_indices(
-                data_dict["dataset"],
-                self.tf_train_indices,
-            )
-        return "object", data_dict
+        
+        train_idx, val_idx = self.get_train_val_indices()
+        data_dict["val_dataset"] = filter_ds_on_indices(
+            data_dict["dataset"], val_idx,
+        ).map(
+            lambda x, y: (
+                image_preprocessing(x),
+                y,
+            ),
+            num_parallel_calls=tf.data.experimental.AUTOTUNE,
+        )
+        data_dict["dataset"] = filter_ds_on_indices(
+            data_dict["dataset"], train_idx
+        )
+        return data_dict
 
     def get_data(self):
         """Switch to select the data from the right framework."""
-        self.random_state = 42  # Hackish
-        self.set_train_val_indices()
         if self.framework in ['pytorch', 'lightning']:
             return self.get_torch_data()
         elif self.framework == "tensorflow":
