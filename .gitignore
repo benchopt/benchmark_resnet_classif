@@ -5,6 +5,7 @@ __cache__
 *.egg-info
 .coverage
 **/outputs
+**/old_outputs
 joblib/
 
 # IDE specific folders
@@ -21,3 +22,6 @@ data/
 
 # PL logs
 lightning_logs/
+
+# figures
+*.pdf
