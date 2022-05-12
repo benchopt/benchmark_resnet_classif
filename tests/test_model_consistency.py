@@ -148,9 +148,6 @@ def generate_output_from_rand_image(
                 model.eval()
             output = model(x)
             output = torch.softmax(output, dim=1)
-            # x = model.conv1(x)
-            # x = model.bn1(x)
-            # output = x
             return output.detach().numpy()
         if torch.cuda.is_available():
             model = model.cuda()
@@ -164,9 +161,6 @@ def generate_output_from_rand_image(
 
         def model_fn(x):
             output = model(x, training=inference_mode == 'train')
-            # intermediary_model = tf.keras.models.Model(inputs=model.inputs, outputs=model.get_layer('conv1_conv').output)
-            # output = intermediary_model(x, training=inference_mode == 'train')
-            # output = tf.transpose(output, [0, 3, 1, 2])
             return output.numpy()
         if torch_weights_map:
             apply_torch_weights_to_tf(model, torch_weights_map)
