@@ -213,10 +213,10 @@ if __name__ == "__main__":
         },
     ]
 
-    datasets = ['cifar', 'svhn', 'mnist']
+    datasets = ['cifar_no_val', 'svhn', 'mnist']
     dataset_repr = {
         'mnist': 'MNIST',
-        'cifar': 'CIFAR-10',
+        'cifar_no_val': 'CIFAR-10',
         'svhn': 'SVHN',
     }
     fig, axs = plt.subplots(1, 3, figsize=[12, 3.3], constrained_layout=True)
@@ -225,7 +225,7 @@ if __name__ == "__main__":
         df = pd.read_csv(results_file)
         ylim = {
             'svhn': [0.03, 0.1],
-            'cifar': None,
+            'cifar_no_val': None,
             'mnist': [0.005, 0.1],
         }[dataset]
         ax = axs[i_d]
