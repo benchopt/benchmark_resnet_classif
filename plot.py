@@ -219,14 +219,19 @@ if __name__ == "__main__":
         'cifar_no_val': 'CIFAR-10',
         'svhn': 'SVHN',
     }
+    sota_resnet = {
+        'mnist': 0.09,  # from papers with code
+        'cifar_no_val': 100 - 93.27,  # from lookahead
+        'svhn': 2.95,  # from AMP, with pre act
+    }
     fig, axs = plt.subplots(1, 3, figsize=[12, 3.3], constrained_layout=True)
     for i_d, dataset in enumerate(datasets):
         results_file = Path("outputs") / f"bench_{dataset}.csv"
         df = pd.read_csv(results_file)
         ylim = {
-            'svhn': [0.03, 0.1],
-            'cifar_no_val': None,
-            'mnist': [0.005, 0.1],
+            'svhn': [0.028, 0.1],
+            'cifar_no_val': [0.04, 0.2],
+            'mnist': [0., 0.1],
         }[dataset]
         ax = axs[i_d]
         ax.tick_params(axis='both', which='major', labelsize=labelsize)
@@ -241,6 +246,9 @@ if __name__ == "__main__":
             y_lim=ylim,
             percent=True,
         )
+        sota = sota_resnet[dataset]
+        if sota is not None:
+            ax.axhline(sota, color='k', linestyle='--')
     plt.savefig('resnet18_sgd_torch.pdf', dpi=300)
     plt.savefig('resnet18_sgd_torch.svg', dpi=300)
 
