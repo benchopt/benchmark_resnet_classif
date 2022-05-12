@@ -44,9 +44,10 @@ def fill_between_x(ax, x, q_min, q_max, y, color, marker, label,
             marker=marker,
             label=label,
             linewidth=1,
-            markersize=2,
+            markersize=3,
             alpha=alpha,
             linestyle=linestyle,
+            markevery=10,
         )
         ax.fill_betweenx(y, q_min, q_max, color=color, alpha=.3)
 
