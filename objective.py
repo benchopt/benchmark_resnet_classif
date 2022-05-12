@@ -58,7 +58,10 @@ class Objective(BaseObjective):
 
     install_cmd = 'conda'
     requirements = [
-        'pip:pytorch', 'pip:torchvision', 'pip:pytorch-lightning ',
+        'pip:torch', 'pip:torchvision', 'pip:pytorch-lightning ',
+        # TODO: rm below, and fix tests
+        'pip:tensorflow-datasets', 'pip:tensorflow-addons',
+        "scikit-learn",
         'pip:tensorflow',
     ]
 
@@ -74,8 +77,10 @@ class Objective(BaseObjective):
     def skip(
         self,
         dataset,
+        val_dataset,
         test_dataset,
         n_samples_train,
+        n_samples_val,
         n_samples_test,
         image_width,
         n_classes,
@@ -147,8 +152,10 @@ class Objective(BaseObjective):
     def set_data(
         self,
         dataset,
+        val_dataset,
         test_dataset,
         n_samples_train,
+        n_samples_val,
         n_samples_test,
         image_width,
         n_classes,
@@ -156,8 +163,11 @@ class Objective(BaseObjective):
         normalization,
     ):
         self.dataset = dataset
+        self.val_dataset = val_dataset
+        self.with_validation = val_dataset is not None
         self.test_dataset = test_dataset
         self.n_samples_train = n_samples_train
+        self.n_samples_val = n_samples_val
         self.n_samples_test = n_samples_test
         self.width = image_width
         self.n_classes = n_classes
@@ -165,7 +175,7 @@ class Objective(BaseObjective):
         self.normalization = normalization
 
         # Get the model initializer
-        self.get_one_beta = self.get_model_init_fn(framework)
+        self.get_one_solution = self.get_model_init_fn(framework)
 
         # seeding for the models
         # XXX: This should be changed once benchopt/benchopt#342 is merged
@@ -183,8 +193,12 @@ class Objective(BaseObjective):
         # Set the batch size for the test dataloader
         test_batch_size = 100
         self._datasets = {}
-        for dataset_name, data in [('train', self.dataset),
-                                   ('test', self.test_dataset)]:
+        dataset_name = ['train', 'test']
+        datasets = [self.dataset, self.test_dataset]
+        if self.with_validation:
+            dataset_name.append('val')
+            datasets.append(self.val_dataset)
+        for dataset_name, data in zip(dataset_name, datasets):
             if self.framework == 'tensorflow':
                 ds = data.batch(test_batch_size)
                 if dataset_name == 'train':
@@ -200,13 +214,14 @@ class Objective(BaseObjective):
                 system = os.environ.get('RUNNER_OS', sys.platform)
                 is_mac = system in ['darwin', 'macOS']
                 num_workers = min(10, joblib.cpu_count()) if not is_mac else 0
+                persistent_workers = num_workers > 0
 
                 if dataset_name == 'train':
                     data = AugmentedDataset(data, None, self.normalization)
-
                 self._datasets[dataset_name] = DataLoader(
                     data, batch_size=test_batch_size,
-                    num_workers=num_workers, persistent_workers=True,
+                    num_workers=num_workers,
+                    persistent_workers=persistent_workers,
                     pin_memory=True
                 )
 
@@ -225,7 +240,11 @@ class Objective(BaseObjective):
             acc_name = "accuracy" if self.framework == 'tensorflow' else "acc"
             results[dataset_name + "_err"] = 1 - metrics[acc_name]
 
-        results["value"] = results["train_loss"]
+        if self.with_validation:
+            value_key = "val_err"
+        else:
+            value_key = "train_loss"
+        results["value"] = results[value_key]
         return results
 
     def eval_torch(self, model, dataloader):
@@ -249,7 +268,8 @@ class Objective(BaseObjective):
 
     def to_dict(self):
         return dict(
-            model_init_fn=self.get_one_beta,
+            model_init_fn=self.get_one_solution,
             dataset=self.dataset,
             normalization=self.normalization,
+            framework=self.framework,
         )

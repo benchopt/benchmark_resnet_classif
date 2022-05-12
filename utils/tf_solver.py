@@ -18,7 +18,7 @@ class TFSolver(BaseSolver):
     """TF base solver"""
 
     stopping_criterion = SufficientProgressCriterion(
-        patience=20, strategy='callback'
+        patience=50, strategy='callback'
     )
 
     parameters = {
@@ -30,9 +30,9 @@ class TFSolver(BaseSolver):
     install_cmd = 'conda'
     requirements = ['pip:tensorflow-addons']
 
-    def skip(self, model_init_fn, dataset, normalization):
-        if not isinstance(dataset, tf.data.Dataset):
-            return True, 'Not a TF dataset'
+    def skip(self, model_init_fn, dataset, normalization, framework):
+        if framework != 'tensorflow':
+            return True, 'Not a TF dataset/objective'
         coupled_wd = getattr(self, 'coupled_weight_decay', 0.0)
         decoupled_wd = getattr(self, 'decoupled_weight_decay', 0.0)
         if coupled_wd and decoupled_wd:
@@ -43,9 +43,9 @@ class TFSolver(BaseSolver):
         # NOTE: in the following, we need to multiply by the weight decay
         # by the learning rate to have a comparable setting with PyTorch
         self.coupled_wd = getattr(self, 'coupled_weight_decay', 0.0)
-        if self.coupled_wd == 0.0:
-            self.coupled_wd = getattr(self, 'weight_decay', 0.0)
         self.decoupled_wd = getattr(self, 'decoupled_weight_decay', 0.0)
+        if self.decoupled_wd == 0.0:
+            self.decoupled_wd = getattr(self, 'weight_decay', 0.0)
         if self.lr_schedule == 'step':
             self.lr_scheduler, self.wd_scheduler = [
                 tf.keras.optimizers.schedules.PiecewiseConstantDecay(
@@ -73,12 +73,13 @@ class TFSolver(BaseSolver):
         )
         return lr_wd_cback
 
-    def set_objective(self, model_init_fn, dataset, normalization):
+    def set_objective(self, model_init_fn, dataset, normalization, framework):
         self.optimizer_klass = extend_with_decoupled_weight_decay(
             self.optimizer_klass,
         )
         self.dataset = dataset
         self.model_init_fn = model_init_fn
+        self.framework = framework
 
         if self.data_aug:
             data_aug_layer = tf.keras.models.Sequential([
@@ -154,14 +155,23 @@ class TFSolver(BaseSolver):
             # each batch.
             metrics='accuracy',
         )
+
+        cback_list = tf.keras.callbacks.CallbackList(
+            [BenchoptCallback(callback), lr_wd_cback],
+            model=self.model,
+        )
+        # It's important to create the callback list ourselves in order
+        # to avoid the overhead of having to store a history of the
+        # training and using a progressbar
+
         # Initial evaluation
         callback(self.model)
-
         # Launch training
         self.model.fit(
             self.dataset,
-            callbacks=[BenchoptCallback(callback), lr_wd_cback],
+            callbacks=cback_list,
             epochs=MAX_EPOCHS,
+            verbose=0,
         )
 
     def get_result(self):

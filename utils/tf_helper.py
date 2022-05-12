@@ -60,3 +60,27 @@ with safe_import_context() as import_ctx:
         def on_epoch_end(self, epoch, logs=None):
             super().on_epoch_end(epoch, logs)
             logs['wd'] = backend.get_value(self.model.optimizer.weight_decay)
+
+
+def filter_ds_on_indices(ds, indices):
+    """Filter a tensorflow dataset on a list of indices
+    using a tf.lookup.StaticHashTable"""
+    # from https://stackoverflow.com/a/66411957/4332585
+    table = tf.lookup.StaticHashTable(
+        tf.lookup.KeyValueTensorInitializer(
+            keys=tf.constant(indices),
+            values=tf.ones_like(indices),  # Ones will be casted to True.
+        ),
+        default_value=0,  # If index not in table, return 0.
+    )
+
+    def hash_table_filter(index, value):
+        table_value = table.lookup(index)  # 1 if index in arr, else 0.
+        index_in_arr = tf.cast(table_value, tf.bool)  # 1 -> True, 0 -> False
+        return index_in_arr
+
+    ds = ds.enumerate().filter(hash_table_filter).map(
+        lambda id, value: value,
+        num_parallel_calls=tf.data.experimental.AUTOTUNE,
+    )
+    return ds
