@@ -15,9 +15,9 @@ class Solver(TFSolver):
     parameters = {
         'nesterov, momentum': [(False, 0), (False, 0.9), (True, 0.9)],
         'lr': [1e-1],
-        # 'decoupled_weight_decay': [0.0, 5e-4],
-        # 'coupled_weight_decay': [0.0, 5e-4],
-        'weight_decay': [0.0, 5e-4],
+        'decoupled_weight_decay': [0.0, 5e-4],
+        'coupled_weight_decay': [0.0, 5e-4],
+        # 'weight_decay': [0.0, 5e-4],
         **TFSolver.parameters,
     }
 
