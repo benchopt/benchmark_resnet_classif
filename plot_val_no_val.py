@@ -192,7 +192,7 @@ if __name__ == "__main__":
     ]
 
     # datasets = ['cifar_no_val', 'svhn', 'mnist']
-    datasets = ['cifar']
+    datasets = ['cifar', 'svhn', 'mnist']
     dataset_repr = {
         'mnist': 'MNIST',
         'cifar': 'CIFAR-10',
@@ -240,7 +240,7 @@ if __name__ == "__main__":
             ylim = {
                 'svhn': [0.028, 0.1],
                 'cifar': [0.04, 0.1],
-                'mnist': [0., 0.1],
+                'mnist': [0., 0.05],
             }[dataset]
             xlim_left = {
                 'svhn': 700,

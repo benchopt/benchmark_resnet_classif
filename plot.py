@@ -214,25 +214,25 @@ if __name__ == "__main__":
         },
     ]
 
-    datasets = ['cifar_no_val', 'svhn', 'mnist']
+    datasets = ['cifar_no_val', 'svhn_no_val', 'mnist_no_val']
     dataset_repr = {
-        'mnist': 'MNIST',
+        'mnist_no_val': 'MNIST',
         'cifar_no_val': 'CIFAR-10',
-        'svhn': 'SVHN',
+        'svhn_no_val': 'SVHN',
     }
     sota_resnet = {
-        'mnist': 0.09,  # from papers with code
+        'mnist_no_val': 0.09,  # from papers with code
         'cifar_no_val': 100 - 93.27,  # from lookahead
-        'svhn': 2.95,  # from AMP, with pre act
+        'svhn_no_val': 2.95,  # from AMP, with pre act
     }
     fig, axs = plt.subplots(1, 3, figsize=[12, 3.3], constrained_layout=True)
     for i_d, dataset in enumerate(datasets):
         results_file = Path("outputs") / f"bench_{dataset}.csv"
         df = pd.read_csv(results_file)
         ylim = {
-            'svhn': [0.028, 0.1],
+            'svhn_no_val': [0.028, 0.1],
             'cifar_no_val': [0.04, 0.2],
-            'mnist': [0., 0.1],
+            'mnist_no_val': [0., 0.1],
         }[dataset]
         ax = axs[i_d]
         ax.tick_params(axis='both', which='major', labelsize=labelsize)
