@@ -30,7 +30,15 @@ class TFSolver(BaseSolver):
     install_cmd = 'conda'
     requirements = ['pip:tensorflow-addons']
 
-    def skip(self, model_init_fn, dataset, normalization, framework, symmetry):
+    def skip(
+        self,
+        model_init_fn,
+        dataset,
+        normalization,
+        framework,
+        symmetry,
+        image_width,
+    ):
         if framework != 'tensorflow':
             return True, 'Not a TF dataset/objective'
         coupled_wd = getattr(self, 'coupled_weight_decay', 0.0)

@@ -30,7 +30,15 @@ class TorchSolver(BaseSolver):
         'lr_schedule': [None, 'step', 'cosine'],
     }
 
-    def skip(self, model_init_fn, dataset, normalization, framework, symmetry):
+    def skip(
+        self,
+        model_init_fn,
+        dataset,
+        normalization,
+        framework,
+        symmetry,
+        image_width,
+    ):
         if framework != 'pytorch':
             return True, 'Not a torch dataset/objective'
         coupled_wd = getattr(self, 'coupled_weight_decay', 0.0)
