@@ -96,6 +96,7 @@ def generate_output_from_rand_image(
     optimizer=None,
     n_train_steps=1,
     inference_mode='train',
+    batch_size=1,
     **extra_solver_kwargs,
 ):
     from datasets.cifar import Dataset
@@ -135,7 +136,7 @@ def generate_output_from_rand_image(
                     optimizer.zero_grad()
                     loss = criterion(
                         model(rand_image),
-                        torch.ones(1, dtype=torch.int64),
+                        torch.ones(batch_size, dtype=torch.int64),
                     )
                     loss.backward()
 
@@ -188,8 +189,9 @@ def generate_output_from_rand_image(
                 )
                 model.fit(
                     rand_image,
-                    tf.ones([1], dtype=tf.int64),
+                    tf.ones([batch_size], dtype=tf.int64),
                     epochs=n_steps,
+                    batch_size=batch_size,
                 )
     if optimizer is not None:
         train_step(n_train_steps)
@@ -211,7 +213,10 @@ def generate_output_from_rand_image(
 )
 def test_model_consistency(optimizer, extra_solver_kwargs, inference_mode):
     np.random.seed(2)
-    rand_image = np.random.normal(size=(1, 3, 32, 32)).astype(np.float32)
+    batch_size = 128
+    rand_image = np.random.normal(
+        size=(batch_size, 3, 32, 32),
+    ).astype(np.float32)
     torch_output, torch_weights_map = generate_output_from_rand_image(
         'pytorch',
         rand_image,
@@ -219,6 +224,7 @@ def test_model_consistency(optimizer, extra_solver_kwargs, inference_mode):
         **extra_solver_kwargs,
         n_train_steps=2,
         inference_mode=inference_mode,
+        batch_size=batch_size,
     )
     rand_image = np.transpose(rand_image, (0, 2, 3, 1))
     if 'weight_decay' in extra_solver_kwargs:
@@ -233,6 +239,7 @@ def test_model_consistency(optimizer, extra_solver_kwargs, inference_mode):
         **extra_solver_kwargs,
         n_train_steps=2,
         inference_mode=inference_mode,
+        batch_size=batch_size,
     )
     np.testing.assert_allclose(
         torch_output,
