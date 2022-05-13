@@ -238,7 +238,7 @@ if __name__ == "__main__":
             results_file = Path("outputs") / results_name
             df = pd.read_csv(results_file)
             ylim = {
-                'svhn': [0.028, 0.1],
+                'svhn': [0.026, 0.1],
                 'cifar': [0.04, 0.1],
                 'mnist': [0., 0.05],
             }[dataset]

@@ -230,7 +230,7 @@ if __name__ == "__main__":
         results_file = Path("outputs") / f"bench_{dataset}.csv"
         df = pd.read_csv(results_file)
         ylim = {
-            'svhn_no_val': [0.028, 0.1],
+            'svhn_no_val': [0.026, 0.1],
             'cifar_no_val': [0.04, 0.2],
             'mnist_no_val': [0., 0.1],
         }[dataset]
