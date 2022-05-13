@@ -44,6 +44,8 @@ class TFSolver(BaseSolver):
         # by the learning rate to have a comparable setting with PyTorch
         self.coupled_wd = getattr(self, 'coupled_weight_decay', 0.0)
         self.decoupled_wd = getattr(self, 'decoupled_weight_decay', 0.0)
+        if self.decoupled_wd == 0.0:
+            self.decoupled_wd = getattr(self, 'weight_decay', 0.0)
         if self.lr_schedule == 'step':
             self.lr_scheduler, self.wd_scheduler = [
                 tf.keras.optimizers.schedules.PiecewiseConstantDecay(
