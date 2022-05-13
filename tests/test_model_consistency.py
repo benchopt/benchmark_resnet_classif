@@ -221,6 +221,10 @@ def test_model_consistency(optimizer, extra_solver_kwargs, inference_mode):
         inference_mode=inference_mode,
     )
     rand_image = np.transpose(rand_image, (0, 2, 3, 1))
+    if 'weight_decay' in extra_solver_kwargs:
+        extra_solver_kwargs['coupled_weight_decay'] = extra_solver_kwargs.pop(
+            'weight_decay',
+        )
     tf_output, _ = generate_output_from_rand_image(
         'tensorflow',
         rand_image,
