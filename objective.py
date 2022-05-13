@@ -276,4 +276,5 @@ class Objective(BaseObjective):
             normalization=self.normalization,
             framework=self.framework,
             symmetry=self.symmetry,
+            image_width=self.width,
         )

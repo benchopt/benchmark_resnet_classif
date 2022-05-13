@@ -46,16 +46,18 @@ class TorchSolver(BaseSolver):
         normalization,
         framework,
         symmetry,
+        image_width,
     ):
         self.dataset = dataset
         self.model_init_fn = model_init_fn
         self.normalization = normalization
         self.framework = framework
         self.symmetry = symmetry
+        self.image_width = image_width
 
         if self.data_aug:
             data_aug_list = [
-                transforms.RandomCrop(32, padding=4),
+                transforms.RandomCrop(self.image_width, padding=4),
             ]
             if self.symmetry is not None and 'horizontal' in self.symmetry:
                 data_aug_list.append(transforms.RandomHorizontalFlip())

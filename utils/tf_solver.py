@@ -80,6 +80,7 @@ class TFSolver(BaseSolver):
         normalization,
         framework,
         symmetry,
+        image_width,
     ):
         self.optimizer_klass = extend_with_decoupled_weight_decay(
             self.optimizer_klass,
@@ -88,11 +89,15 @@ class TFSolver(BaseSolver):
         self.model_init_fn = model_init_fn
         self.framework = framework
         self.symmetry = symmetry
+        self.image_width = image_width
 
         if self.data_aug:
             data_aug_list = [
                 tf.keras.layers.ZeroPadding2D(padding=4),
-                tf.keras.layers.RandomCrop(height=32, width=32),
+                tf.keras.layers.RandomCrop(
+                    height=self.image_width,
+                    width=self.image_width,
+                ),
             ]
             if self.symmetry is not None and 'horizontal' in self.symmetry:
                 data_aug_list.append(tf.keras.layers.RandomFlip('horizontal'))
