@@ -30,7 +30,7 @@ class TFSolver(BaseSolver):
     install_cmd = 'conda'
     requirements = ['pip:tensorflow-addons']
 
-    def skip(self, model_init_fn, dataset, normalization, framework):
+    def skip(self, model_init_fn, dataset, normalization, framework, symmetry):
         if framework != 'tensorflow':
             return True, 'Not a TF dataset/objective'
         coupled_wd = getattr(self, 'coupled_weight_decay', 0.0)
@@ -73,20 +73,30 @@ class TFSolver(BaseSolver):
         )
         return lr_wd_cback
 
-    def set_objective(self, model_init_fn, dataset, normalization, framework):
+    def set_objective(
+        self,
+        model_init_fn,
+        dataset,
+        normalization,
+        framework,
+        symmetry,
+    ):
         self.optimizer_klass = extend_with_decoupled_weight_decay(
             self.optimizer_klass,
         )
         self.dataset = dataset
         self.model_init_fn = model_init_fn
         self.framework = framework
+        self.symmetry = symmetry
 
         if self.data_aug:
-            data_aug_layer = tf.keras.models.Sequential([
+            data_aug_list = [
                 tf.keras.layers.ZeroPadding2D(padding=4),
                 tf.keras.layers.RandomCrop(height=32, width=32),
-                tf.keras.layers.RandomFlip('horizontal'),
-            ])
+            ]
+            if self.symmetry is not None and 'horizontal' in self.symmetry:
+                data_aug_list.append(tf.keras.layers.RandomFlip('horizontal'))
+            data_aug_layer = tf.keras.models.Sequential(data_aug_list)
 
             # XXX: unfortunately we need to do this before
             # batching since the random crop layer does not

@@ -24,6 +24,7 @@ class Dataset(MultiFrameworkDataset):
         n_samples_test=10_000,
         image_width=32,
         n_classes=10,
+        symmetry='horizontal',
     )
 
     torch_ds_klass = datasets.CIFAR10
