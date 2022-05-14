@@ -192,14 +192,14 @@ if __name__ == "__main__":
     ]
 
     # datasets = ['cifar_no_val', 'svhn', 'mnist']
-    datasets = ['cifar', 'svhn', 'mnist']
+    datasets = ['cifar', 'svhn', 'mnist_restricted']
     dataset_repr = {
-        'mnist': 'MNIST',
+        'mnist_restricted': 'MNIST',
         'cifar': 'CIFAR-10',
         'svhn': 'SVHN',
     }
     sota_resnet = {
-        'mnist': 0.09,  # from papers with code
+        'mnist_restricted': 0.09,  # from papers with code
         'cifar': 100 - 93.27,  # from lookahead
         'svhn': 2.95,  # from AMP, with pre act
     }
@@ -238,14 +238,14 @@ if __name__ == "__main__":
             results_file = Path("outputs") / results_name
             df = pd.read_csv(results_file)
             ylim = {
-                'svhn': [0.026, 0.1],
+                'svhn': [0.023, 0.1],
                 'cifar': [0.04, 0.1],
-                'mnist': [0., 0.05],
+                'mnist_restricted': [0., 0.03],
             }[dataset]
             xlim_left = {
                 'svhn': 700,
                 'cifar': 700,
-                'mnist': 700,
+                'mnist_restricted': 700,
             }[dataset]
             ax = axs[i_d]
             ax.tick_params(axis='both', which='major', labelsize=labelsize)
