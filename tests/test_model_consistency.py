@@ -213,7 +213,7 @@ def generate_output_from_rand_image(
 )
 def test_model_consistency(optimizer, extra_solver_kwargs, inference_mode):
     np.random.seed(2)
-    batch_size = 128
+    batch_size = 16
     rand_image = np.random.normal(
         size=(batch_size, 3, 32, 32),
     ).astype(np.float32)
@@ -244,6 +244,6 @@ def test_model_consistency(optimizer, extra_solver_kwargs, inference_mode):
     np.testing.assert_allclose(
         torch_output,
         tf_output,
-        rtol=1e-3,
-        atol=5e-5,
+        rtol=1e-4,
+        atol=5e-6,
     )
