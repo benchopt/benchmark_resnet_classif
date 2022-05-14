@@ -232,7 +232,7 @@ if __name__ == "__main__":
         ylim = {
             'svhn_no_val': [0.026, 0.1],
             'cifar_no_val': [0.04, 0.2],
-            'mnist_no_val': [0., 0.1],
+            'mnist_no_val': [0., 0.05],
         }[dataset]
         ax = axs[i_d]
         ax.tick_params(axis='both', which='major', labelsize=labelsize)
