@@ -10,6 +10,9 @@ with safe_import_context() as import_ctx:
     LRWDSchedulerCallback = import_ctx.import_from(
         'tf_helper', 'LRWDSchedulerCallback'
     )
+    apply_coupled_weight_decay = import_ctx.import_from(
+        'tf_helper', 'apply_coupled_weight_decay'
+    )
 
 MAX_EPOCHS = int(1e9)
 
@@ -52,8 +55,6 @@ class TFSolver(BaseSolver):
         # by the learning rate to have a comparable setting with PyTorch
         self.coupled_wd = getattr(self, 'coupled_weight_decay', 0.0)
         self.decoupled_wd = getattr(self, 'decoupled_weight_decay', 0.0)
-        if self.decoupled_wd == 0.0:
-            self.decoupled_wd = getattr(self, 'weight_decay', 0.0)
         if self.lr_schedule == 'step':
             self.lr_scheduler, self.wd_scheduler = [
                 tf.keras.optimizers.schedules.PiecewiseConstantDecay(
@@ -154,20 +155,10 @@ class TFSolver(BaseSolver):
             # the weights and biases of the model (even if adding
             # weight decay to the biases is not recommended), of a factor
             # halved
-            l2_reg_factor = self.coupled_wd / 2
-            # taken from
-            # https://sthalles.github.io/keras-regularizer/
-            regularizer = tf.keras.regularizers.l2(l2_reg_factor)
-            target_regularizers = [
-                'kernel_regularizer',
-                'bias_regularizer',
-                'beta_regularizer',
-                'gamma_regularizer',
-            ]
-            for layer in self.model.layers:
-                for attr in target_regularizers:
-                    if hasattr(layer, attr):
-                        setattr(layer, attr, regularizer)
+            self.model = apply_coupled_weight_decay(
+                self.model,
+                self.coupled_wd,
+            )
         self.model.compile(
             optimizer=self.optimizer,
             loss='sparse_categorical_crossentropy',

@@ -251,6 +251,19 @@ def remove_initial_downsample(large_model, use_bias=False):
     return small_model
 
 
+def change_dense_init(model):
+    torch_init = initializers.VarianceScaling(
+        scale=1.0,
+        mode='fan_in',
+        distribution='uniform',
+    )
+    for layer in model.layers:
+        if isinstance(layer, layers.Dense):
+            layer.kernel_initializer = torch_init
+            layer.bias_initializer = torch_init
+            layer.build(layer.input_spec.shape)
+
+
 def ResNet18(include_top=True,
              weights='imagenet',
              input_tensor=None,
@@ -259,6 +272,7 @@ def ResNet18(include_top=True,
              classes=1000,
              use_bias=True,
              no_initial_downsample=False,
+             dense_init='tf',
              **kwargs):
     """Instantiates the ResNet18 architecture."""
 
@@ -313,6 +327,8 @@ def ResNet18(include_top=True,
     )
     if no_initial_downsample:
         model = remove_initial_downsample(model, use_bias=use_bias)
+    if dense_init == 'torch':
+        change_dense_init(model)
     return model
 
 
@@ -324,6 +340,7 @@ def ResNet34(include_top=True,
              classes=1000,
              use_bias=True,
              no_initial_downsample=False,
+             dense_init='tf',
              **kwargs):
     """Instantiates the ResNet34 architecture."""
 
@@ -378,6 +395,8 @@ def ResNet34(include_top=True,
     )
     if no_initial_downsample:
         model = remove_initial_downsample(model, use_bias=use_bias)
+    if dense_init == 'torch':
+        change_dense_init(model)
     return model
 
 
@@ -389,6 +408,7 @@ def ResNet50(include_top=True,
              classes=1000,
              use_bias=True,
              no_initial_downsample=False,
+             dense_init='tf',
              **kwargs):
     """Instantiates the ResNet50 architecture."""
 
@@ -442,4 +462,6 @@ def ResNet50(include_top=True,
     )
     if no_initial_downsample:
         model = remove_initial_downsample(model, use_bias=use_bias)
+    if dense_init == 'torch':
+        change_dense_init(model)
     return model
