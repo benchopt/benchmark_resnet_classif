@@ -119,6 +119,7 @@ def generate_output_from_rand_image(
     bench_objective.set_dataset(bench_dataset)
     obj_dict = bench_objective.to_dict()
     model = obj_dict['model_init_fn']()
+    lr = extra_solver_kwargs.pop('lr', 1e-3)
     if framework == 'pytorch':
         rand_image = torch.tensor(rand_image)
 
@@ -131,7 +132,7 @@ def generate_output_from_rand_image(
             def train_step(n_steps, model):
                 model.train()
                 solver = solver_klass.get_instance(
-                    lr=1e-3,
+                    lr=lr,
                     **extra_solver_kwargs,
                 )
                 solver._set_objective(bench_objective)
@@ -180,7 +181,7 @@ def generate_output_from_rand_image(
 
             def train_step(n_steps, model):
                 solver = solver_klass.get_instance(
-                    lr=1e-3,
+                    lr=lr,
                     **extra_solver_kwargs,
                 )
                 solver._set_objective(bench_objective)
@@ -219,6 +220,7 @@ def generate_output_from_rand_image(
         ('sgd', dict(momentum=0.9)),
         ('sgd', dict(weight_decay=5e-1)),
         ('sgd', dict(momentum=0.9, weight_decay=5e-1)),
+        ('sgd', dict(momentum=0.9, weight_decay=5e-4, lr=1e-1)),
     ],
 )
 @pytest.mark.parametrize(
