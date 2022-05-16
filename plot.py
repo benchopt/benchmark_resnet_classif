@@ -44,7 +44,7 @@ def fill_between_x(ax, x, q_min, q_max, y, color, marker, label,
             marker=marker,
             label=label,
             linewidth=1,
-            markersize=3,
+            markersize=4,
             alpha=alpha,
             linestyle=linestyle,
             markevery=10,
@@ -214,15 +214,15 @@ if __name__ == "__main__":
         },
     ]
 
-    datasets = ['cifar_no_val', 'svhn_no_val', 'mnist_restricted_no_val']
+    datasets = ['cifar_no_val', 'svhn_no_val', 'mnist_no_val']
     dataset_repr = {
-        'mnist_restricted_no_val': 'MNIST',
+        'mnist_no_val': 'MNIST',
         'cifar_no_val': 'CIFAR-10',
         'svhn_no_val': 'SVHN',
     }
     sota_resnet = {
-        'mnist_restricted_no_val': 0.09,  # from papers with code
-        'cifar_no_val': 100 - 93.27,  # from lookahead
+        'mnist_no_val': 0.09,  # from papers with code
+        'cifar_no_val': 100 - 95.27,  # from lookahead
         'svhn_no_val': 2.95,  # from AMP, with pre act
     }
     fig, axs = plt.subplots(1, 3, figsize=[12, 3.3], constrained_layout=True)
@@ -232,7 +232,7 @@ if __name__ == "__main__":
         ylim = {
             'svhn_no_val': [0.023, 0.1],
             'cifar_no_val': [0.04, 0.2],
-            'mnist_restricted_no_val': [0., 0.05],
+            'mnist_no_val': [0., 0.05],
         }[dataset]
         ax = axs[i_d]
         ax.tick_params(axis='both', which='major', labelsize=labelsize)

@@ -45,7 +45,7 @@ def fill_between_x(ax, x, q_min, q_max, y, color, marker, label,
             marker=marker,
             label=label,
             linewidth=1,
-            markersize=3,
+            markersize=4,
             alpha=alpha,
             linestyle=linestyle,
             markevery=10,
@@ -192,15 +192,15 @@ if __name__ == "__main__":
     ]
 
     # datasets = ['cifar_no_val', 'svhn', 'mnist']
-    datasets = ['cifar', 'svhn', 'mnist_restricted']
+    datasets = ['cifar', 'svhn', 'mnist']
     dataset_repr = {
-        'mnist_restricted': 'MNIST',
+        'mnist': 'MNIST',
         'cifar': 'CIFAR-10',
         'svhn': 'SVHN',
     }
     sota_resnet = {
-        'mnist_restricted': 0.09,  # from papers with code
-        'cifar': 100 - 93.27,  # from lookahead
+        'mnist': 0.09,  # from papers with code
+        'cifar': 100 - 95.27,  # from lookahead
         'svhn': 2.95,  # from AMP, with pre act
     }
     curve_types = {
@@ -231,7 +231,7 @@ if __name__ == "__main__":
         for curve_type, (with_val, objective) in curve_types.items():
             results_name = f"bench_{dataset}"
             if with_val:
-                results_name += '_val'
+                results_name += '_restricted_val'
             else:
                 results_name += '_no_val'
             results_name += '.csv'
@@ -240,12 +240,12 @@ if __name__ == "__main__":
             ylim = {
                 'svhn': [0.023, 0.1],
                 'cifar': [0.04, 0.1],
-                'mnist_restricted': [0., 0.03],
+                'mnist': [0., 0.03],
             }[dataset]
             xlim_left = {
                 'svhn': 700,
                 'cifar': 700,
-                'mnist_restricted': 700,
+                'mnist': 700,
             }[dataset]
             ax = axs[i_d]
             ax.tick_params(axis='both', which='major', labelsize=labelsize)
@@ -286,7 +286,7 @@ if __name__ == "__main__":
                 test_err = solver_dict['obj']
                 xy = (solver_dict['time'], test_err)
                 color = CMAP(n_markers_color[(solver_name, curve_type)])
-                ax.scatter(*xy, marker='x', color=color, s=100, zorder=4)
+                ax.scatter(*xy, marker='s', color=color, s=80, zorder=4)
                 # ax.text(
                 #     *xy,
                 #     f"{test_err:.2f}",
