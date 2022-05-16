@@ -105,6 +105,11 @@ def generate_output_from_rand_image(
     from solvers.sgd_tf import Solver as TFSGDSolver
     from solvers.adam_torch import Solver as TorchAdamSolver
     from solvers.sgd_torch import Solver as TorchSGDSolver
+    from benchopt import safe_import_context
+    with safe_import_context() as import_ctx:
+        apply_coupled_weight_decay = import_ctx.import_from(
+            'tf_helper', 'apply_coupled_weight_decay'
+        )
 
     bench_dataset = Dataset.get_instance(framework=framework)
     bench_objective = Objective.get_instance(
@@ -123,7 +128,7 @@ def generate_output_from_rand_image(
             elif optimizer == 'sgd':
                 solver_klass = TorchSGDSolver
 
-            def train_step(n_steps):
+            def train_step(n_steps, model):
                 model.train()
                 solver = solver_klass.get_instance(
                     lr=1e-3,
@@ -141,6 +146,7 @@ def generate_output_from_rand_image(
                     loss.backward()
 
                     optimizer.step()
+                return model
 
         def model_fn(x):
             if inference_mode == 'train':
@@ -172,7 +178,7 @@ def generate_output_from_rand_image(
             elif optimizer == 'sgd':
                 solver_klass = TFSGDSolver
 
-            def train_step(n_steps):
+            def train_step(n_steps, model):
                 solver = solver_klass.get_instance(
                     lr=1e-3,
                     **extra_solver_kwargs,
@@ -183,6 +189,11 @@ def generate_output_from_rand_image(
                     weight_decay=solver.decoupled_wd*solver.lr,
                     **solver.optimizer_kwargs,
                 )
+                if solver.coupled_wd:
+                    model = apply_coupled_weight_decay(
+                        model,
+                        solver.coupled_wd,
+                    )
                 model.compile(
                     optimizer=optimizer,
                     loss='sparse_categorical_crossentropy',
@@ -193,8 +204,9 @@ def generate_output_from_rand_image(
                     epochs=n_steps,
                     batch_size=batch_size,
                 )
+                return model
     if optimizer is not None:
-        train_step(n_train_steps)
+        model = train_step(n_train_steps, model)
     output = model_fn(rand_image)
     return output, torch_weights_map
 
@@ -244,6 +256,6 @@ def test_model_consistency(optimizer, extra_solver_kwargs, inference_mode):
     np.testing.assert_allclose(
         torch_output,
         tf_output,
-        rtol=1e-4,
-        atol=5e-6,
+        rtol=1e-5,
+        atol=1e-5,
     )
