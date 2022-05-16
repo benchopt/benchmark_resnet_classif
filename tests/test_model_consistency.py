@@ -216,6 +216,7 @@ def generate_output_from_rand_image(
         (None, {}),
         ('adam', {}),
         ('sgd', {}),
+        ('sgd', dict(momentum=0.9)),
         ('sgd', dict(weight_decay=5e-1)),
         ('sgd', dict(momentum=0.9, weight_decay=5e-1)),
     ],
@@ -256,6 +257,6 @@ def test_model_consistency(optimizer, extra_solver_kwargs, inference_mode):
     np.testing.assert_allclose(
         torch_output,
         tf_output,
-        rtol=1e-5,
-        atol=1e-6,
+        rtol=1e-4,
+        atol=1e-5,
     )
