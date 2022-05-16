@@ -89,11 +89,7 @@ def filter_ds_on_indices(ds, indices):
     return ds
 
 
-def apply_coupled_weight_decay(model, wd):
-    l2_reg_factor = wd / 2
-    # taken from
-    # https://sthalles.github.io/keras-regularizer/
-    regularizer = tf.keras.regularizers.l2(l2_reg_factor)
+def set_regularizer_model(model, regularizer):
     target_regularizers = [
         'kernel_regularizer',
         'bias_regularizer',
@@ -101,9 +97,20 @@ def apply_coupled_weight_decay(model, wd):
         'gamma_regularizer',
     ]
     for layer in model.layers:
-        for attr in target_regularizers:
-            if hasattr(layer, attr):
-                setattr(layer, attr, regularizer)
+        if isinstance(layer, tf.keras.models.Model):
+            set_regularizer_model(layer, regularizer)
+        else:
+            for attr in target_regularizers:
+                if hasattr(layer, attr):
+                    setattr(layer, attr, regularizer)
+
+
+def apply_coupled_weight_decay(model, wd):
+    l2_reg_factor = wd / 2
+    # taken from
+    # https://sthalles.github.io/keras-regularizer/
+    regularizer = tf.keras.regularizers.l2(l2_reg_factor)
+    set_regularizer_model(model, regularizer)
     # When we change the layers attributes, the change only happens
     #  in the model config file
     model_json = model.to_json()
