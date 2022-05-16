@@ -104,7 +104,8 @@ def apply_coupled_weight_decay(model, wd):
         for attr in target_regularizers:
             if hasattr(layer, attr):
                 setattr(layer, attr, regularizer)
-    # When we change the layers attributes, the change only happens in the model config file
+    # When we change the layers attributes, the change only happens
+    #  in the model config file
     model_json = model.to_json()
 
     # Save the weights before reloading the model.
