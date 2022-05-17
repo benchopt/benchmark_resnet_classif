@@ -15,6 +15,7 @@ def change_classification_head(large_model):
     )
     classes = large_model.output_shape[-1]
     small_dense = layers.Dense(512, activation='relu', name='fc1')
+    dropout = layers.Dropout(0.5, name='dropout')
     classification_dense = layers.Dense(
         classes,
         activation='softmax',
@@ -23,6 +24,7 @@ def change_classification_head(large_model):
     small_model = models.Sequential([
         trimmed_model,
         small_dense,
+        dropout,
         classification_dense,
     ])
     return small_model
