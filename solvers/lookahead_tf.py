@@ -29,11 +29,11 @@ class Solver(TFSolver):
     }
 
     def set_objective(self, **kwargs):
-        def optimizer_init(model_parameters, lr, weight_decay, **kwargs):
+        def optimizer_init(lr, weight_decay, **kwargs):
             base_optimizer_klass = self.base_optimizers_map[
                 self.base_optimizer
             ]
-            base_optimizer = base_optimizer_klass(model_parameters, lr=lr)
+            base_optimizer = base_optimizer_klass(lr=lr)
             la_optimizer = Lookahead(base_optimizer, **kwargs)
             return la_optimizer
 
@@ -45,4 +45,3 @@ class Solver(TFSolver):
         )
 
         super().set_objective(**kwargs)
-
