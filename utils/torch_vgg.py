@@ -16,4 +16,5 @@ def change_classification_head(large_model):
         torch.nn.Dropout(p=dropout),
         torch.nn.Linear(512, num_classes),
     )
+    large_model.avgpool = torch.nn.Identity()
     return large_model
