@@ -16,6 +16,8 @@ class Solver(TorchSolver):
         'lr': [1e-3],
         'coupled_weight_decay': [0.0, 0.02],
         'decoupled_weight_decay': [0.0, 0.02],
+        'steps': [1/2, 3/4],
+        'gamma': [0.1],
         **TorchSolver.parameters
     }
 

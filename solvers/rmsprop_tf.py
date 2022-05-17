@@ -18,6 +18,8 @@ class Solver(TFSolver):
         'momentum': [0, 0.9],
         'decoupled_weight_decay': [0.0, 1e-4, 0.02],
         'coupled_weight_decay': [0.0, 1e-4, 0.02],
+        'steps': [1/2, 3/4],
+        'gamma': [0.1],
         **TFSolver.parameters
     }
 

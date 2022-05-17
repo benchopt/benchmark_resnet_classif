@@ -17,6 +17,8 @@ class Solver(TFSolver):
         'lr': [1e-1],
         'decoupled_weight_decay': [0.0, 5e-4],
         'coupled_weight_decay': [0.0, 5e-4],
+        'steps': [1/2, 3/4],
+        'gamma': [0.1],
         # 'weight_decay': [0.0, 5e-4],
         **TFSolver.parameters,
     }
