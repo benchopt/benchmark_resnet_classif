@@ -1,5 +1,6 @@
 from benchopt import BaseSolver, safe_import_context
 from benchopt.stopping_criterion import SufficientProgressCriterion
+import warnings
 
 with safe_import_context() as import_ctx:
     import tensorflow as tf
@@ -91,9 +92,14 @@ class TFSolver(BaseSolver):
         symmetry,
         image_width,
     ):
-        self.optimizer_klass = extend_with_decoupled_weight_decay(
-            self.optimizer_klass,
-        )
+        try:
+            self.optimizer_klass = extend_with_decoupled_weight_decay(
+                self.optimizer_klass,
+            )
+        except TypeError:
+            warnings.warn(
+                'Could not extend optimizer with decoupled weight decay'
+            )
         self.dataset = dataset
         self.model_init_fn = model_init_fn
         self.framework = framework

@@ -29,7 +29,7 @@ class Solver(TFSolver):
     }
 
     def set_objective(self, **kwargs):
-        def optimizer_init(model_parameters, lr, **kwargs):
+        def optimizer_init(model_parameters, lr, weight_decay, **kwargs):
             base_optimizer_klass = self.base_optimizers_map[
                 self.base_optimizer
             ]
