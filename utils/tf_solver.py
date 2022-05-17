@@ -29,6 +29,8 @@ class TFSolver(BaseSolver):
         'batch_size': [128],
         'data_aug': [False, True],
         'lr_schedule': [None, 'step', 'cosine'],
+        'steps': [1/2, 3/4],
+        'gamma': [0.1],
     }
 
     install_cmd = 'conda'
@@ -59,8 +61,11 @@ class TFSolver(BaseSolver):
         if self.lr_schedule == 'step':
             self.lr_scheduler, self.wd_scheduler = [
                 tf.keras.optimizers.schedules.PiecewiseConstantDecay(
-                    [max_epochs//2, max_epochs*3//4],
-                    [value, value*1e-1, value*1e-2],
+                    [int(max_epochs*s) for s in self.steps],
+                    [
+                        value*self.gamma**i_step
+                        for i_step, _ in enumerate(self.steps)
+                    ],
                 ) for value in [self.lr, self.decoupled_wd*self.lr]
             ]
         elif self.lr_schedule == 'cosine':
