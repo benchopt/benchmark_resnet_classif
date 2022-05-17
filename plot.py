@@ -131,6 +131,7 @@ def plot_objective_curve(
         curve = df_.groupby('stop_val').median()
         if percent:
             curve[obj_col] = curve[obj_col] * 100
+            print(f"{solver_name} {curve[obj_col].min()}%")
 
         q1 = df_.groupby('stop_val')['time'].quantile(.1)
         q9 = df_.groupby('stop_val')['time'].quantile(.9)
@@ -227,6 +228,8 @@ if __name__ == "__main__":
     }
     fig, axs = plt.subplots(1, 3, figsize=[12, 3.3], constrained_layout=True)
     for i_d, dataset in enumerate(datasets):
+        print('='*20)
+        print(dataset)
         for tf in [False, True]:
             if tf:
                 if dataset == 'mnist':
