@@ -144,7 +144,7 @@ class Solver(TorchSolver):
         # parameters are taken from the appendix C.1 from the paper
         # https://arxiv.org/abs/1907.08610
         'weight_decay': [0.0, 5e-4],
-        'steps': [[1/2, 3/4]],
+        'steps': [[3/10, 6/10, 8/10]],
         'gamma': [0.2],
         'la_steps': [5],
         'la_alpha': [0.8],
@@ -199,6 +199,7 @@ class Solver(TorchSolver):
             max_epochs,
         )
         # Initial evaluation
+        optimizer._backup_and_load_cache()
         while callback(model):
             optimizer._clear_and_load_backup()
             for X, y in tqdm(self.dataloader):
