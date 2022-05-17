@@ -18,7 +18,7 @@ class Solver(TFSolver):
         # parameters are taken from the appendix C.1 from the paper
         # https://arxiv.org/abs/1907.08610
         'coupled_weight_decay': [0.0, 5e-4],
-        'steps': [3/10, 6/10, 8/10],
+        'steps': [[3/10, 6/10, 8/10]],
         'gamma': [0.2],
         'la_steps': [5],
         'la_alpha': [0.8],
