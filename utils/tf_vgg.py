@@ -11,7 +11,7 @@ def change_classification_head(large_model):
     """
     trimmed_model = models.Model(
         inputs=large_model.inputs,
-        outputs=large_model.get_layer('flatten').outputs
+        outputs=large_model.get_layer('flatten').output,
     )
     classes = large_model.output_shape[-1]
     small_dense = layers.Dense(512, activation='relu', name='fc1')
