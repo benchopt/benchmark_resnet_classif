@@ -206,7 +206,7 @@ if __name__ == "__main__":
             'label': 'Best Adam',
         },
         {
-            'id': 'SGD-tf[batch_size=128,data_aug=True,lr=0.1,lr_schedule=cosine,momentum=0.9,nesterov=False,weight_decay=0.0005]',
+            'id': 'SGD-tf[batch_size=128,coupled_weight_decay=0.0005,data_aug=True,decoupled_weight_decay=0.0,lr=0.1,lr_schedule=cosine,momentum=0.9,nesterov=True]',
             'color': CMAP(6),
             'marker': markers[6],
             'alpha': 1.0,
@@ -214,42 +214,49 @@ if __name__ == "__main__":
         },
     ]
 
-    datasets = ['cifar_no_val', 'svhn_no_val', 'mnist_no_val']
+    datasets = ['cifar', 'svhn', 'mnist']
     dataset_repr = {
-        'mnist_no_val': 'MNIST',
-        'cifar_no_val': 'CIFAR-10',
-        'svhn_no_val': 'SVHN',
+        'mnist': 'MNIST',
+        'cifar': 'CIFAR-10',
+        'svhn': 'SVHN',
     }
     sota_resnet = {
-        'mnist_no_val': 0.09,  # from papers with code
-        'cifar_no_val': 100 - 95.27,  # from lookahead
-        'svhn_no_val': 2.95,  # from AMP, with pre act
+        'mnist': 0.09,  # from papers with code
+        'cifar': 100 - 95.27,  # from lookahead
+        'svhn': 2.95,  # from AMP, with pre act
     }
     fig, axs = plt.subplots(1, 3, figsize=[12, 3.3], constrained_layout=True)
     for i_d, dataset in enumerate(datasets):
-        results_file = Path("outputs") / f"bench_{dataset}.csv"
-        df = pd.read_csv(results_file)
-        ylim = {
-            'svhn_no_val': [0.023, 0.1],
-            'cifar_no_val': [0.04, 0.2],
-            'mnist_no_val': [0., 0.05],
-        }[dataset]
-        ax = axs[i_d]
-        ax.tick_params(axis='both', which='major', labelsize=labelsize)
-        plot_objective_curve(
-            df,
-            ax,
-            obj_col='objective_test_err',
-            # solver_filters=["cosine"],
-            solvers=solvers,
-            title=dataset_repr[dataset],
-            ylabel='Test error' if i_d == 0 else None,
-            y_lim=ylim,
-            percent=True,
-        )
-        sota = sota_resnet[dataset]
-        if sota is not None:
-            ax.axhline(sota, color='k', linestyle='--')
+        for tf in [False, True]:
+            if tf:
+                if dataset == 'mnist':
+                    continue
+                results_file = Path("outputs") / f"bench_{dataset}_tf.csv"
+            else:
+                results_file = Path("outputs") / f"bench_{dataset}_no_val.csv"
+            df = pd.read_csv(results_file)
+            ylim = {
+                'svhn': [0.023, 0.1],
+                'cifar': [0.04, 0.2],
+                'mnist': [0., 0.05],
+            }[dataset]
+            ax = axs[i_d]
+            ax.tick_params(axis='both', which='major', labelsize=labelsize)
+            plot_objective_curve(
+                df,
+                ax,
+                obj_col='objective_test_err',
+                # solver_filters=["cosine"],
+                solvers=solvers,
+                title=dataset_repr[dataset],
+                ylabel='Test error' if i_d == 0 else None,
+                y_lim=ylim,
+                percent=True,
+            )
+            if not tf:
+                sota = sota_resnet[dataset]
+                if sota is not None:
+                    ax.axhline(sota, color='k', linestyle='--')
     plt.savefig('resnet18_sgd_torch.pdf', dpi=300)
     plt.savefig('resnet18_sgd_torch.svg', dpi=300)
 
