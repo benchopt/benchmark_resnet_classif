@@ -62,7 +62,10 @@ with safe_import_context() as import_ctx:
 
         def on_epoch_end(self, epoch, logs=None):
             super().on_epoch_end(epoch, logs)
-            logs['wd'] = backend.get_value(self.model.optimizer.weight_decay)
+            if hasattr(self.model.optimizer, 'weight_decay'):
+                logs['wd'] = backend.get_value(
+                    self.model.optimizer.weight_decay,
+                )
 
 
 def filter_ds_on_indices(ds, indices):
