@@ -62,7 +62,7 @@ class TFSolver(BaseSolver):
                     [int(max_epochs*s) for s in self.steps],
                     [
                         value*self.gamma**i_step
-                        for i_step, _ in enumerate(self.steps)
+                        for i_step in range(len(self.steps) + 1)
                     ],
                 ) for value in [self.lr, self.decoupled_wd*self.lr]
             ]
