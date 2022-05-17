@@ -142,6 +142,7 @@ class Solver(TorchSolver):
         'lr': [1e-1],
         # parameters are taken from the appendix C.1 from the paper
         # https://arxiv.org/abs/1907.08610
+        'weight_decay': [0.0, 5e-4],
         'la_steps': [5],
         'la_alpha': [0.8],
         'pullback_momentum': ['reset'],
@@ -157,17 +158,27 @@ class Solver(TorchSolver):
     def set_objective(self, **kwargs):
         super().set_objective(**kwargs)
 
-        def optimizer_init(model_parameters, lr, **kwargs):
+        def optimizer_init(
+            model_parameters,
+            lr,
+            weight_decay,
+            **kwargs,
+        ):
             base_optimizer_klass = self.base_optimizers_map[
                 self.base_optimizer
             ]
-            base_optimizer = base_optimizer_klass(model_parameters, lr=lr)
+            base_optimizer = base_optimizer_klass(
+                model_parameters,
+                lr=lr,
+                weight_decay=weight_decay,
+            )
             la_optimizer = Lookahead(base_optimizer, **kwargs)
             return la_optimizer
 
         self.optimizer_klass = optimizer_init
         self.optimizer_kwargs = dict(
             lr=self.lr,
+            weight_decay=self.weight_decay,
             la_steps=self.la_steps,
             la_alpha=self.la_alpha,
             pullback_momentum=self.pullback_momentum,
