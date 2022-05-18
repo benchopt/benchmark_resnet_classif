@@ -144,6 +144,7 @@ class Solver(TorchSolver):
         # parameters are taken from the appendix C.1 from the paper
         # https://arxiv.org/abs/1907.08610
         'weight_decay': [0.0, 5e-4],
+        'momentum': [0.0, 0.9],
         'steps': [[3/10, 6/10, 8/10]],
         'gamma': [0.2],
         'la_steps': [5],
@@ -165,15 +166,22 @@ class Solver(TorchSolver):
             model_parameters,
             lr,
             weight_decay,
+            momentum,
             **kwargs,
         ):
             base_optimizer_klass = self.base_optimizers_map[
                 self.base_optimizer
             ]
+            base_optimizer_kwargs = dict(lr=lr)
+            if self.base_optimizer == 'sgd':
+                base_optimizer_kwargs = dict(
+                    **base_optimizer_kwargs,
+                    weight_decay=weight_decay,
+                    momentum=momentum,
+                )
             base_optimizer = base_optimizer_klass(
                 model_parameters,
-                lr=lr,
-                weight_decay=weight_decay,
+                **base_optimizer_kwargs,
             )
             la_optimizer = Lookahead(base_optimizer, **kwargs)
             return la_optimizer
@@ -181,6 +189,7 @@ class Solver(TorchSolver):
         self.optimizer_klass = optimizer_init
         self.optimizer_kwargs = dict(
             lr=self.lr,
+            momentum=self.momentum,
             weight_decay=self.weight_decay,
             la_steps=self.la_steps,
             la_alpha=self.la_alpha,
