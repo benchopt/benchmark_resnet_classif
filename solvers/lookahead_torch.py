@@ -148,7 +148,7 @@ class Solver(TorchSolver):
         'gamma': [0.2],
         'la_steps': [5],
         'la_alpha': [0.8],
-        'pullback_momentum': ['reset'],
+        'pullback_momentum': ['none'],
         'base_optimizer': ['sgd'],
         **TorchSolver.parameters
     }
