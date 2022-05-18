@@ -213,6 +213,13 @@ if __name__ == "__main__":
             'alpha': 1.0,
             'label': 'Best SGD (TF/Keras)',
         },
+        {
+            'id': 'Lookahead-torch[base_optimizer=sgd,batch_size=128,data_aug=True,gamma=0.2,la_alpha=0.8,la_steps=5,lr=0.1,lr_schedule=cosine,momentum=0.9,pullback_momentum=none,steps=[0.3, 0.6, 0.8],weight_decay=0.0005]',
+            'color': CMAP(7),
+            'marker': markers[7],
+            'alpha': 1.0,
+            'label': 'Lookahead',
+        },
     ]
 
     datasets = ['cifar', 'svhn', 'mnist']
@@ -238,6 +245,8 @@ if __name__ == "__main__":
             else:
                 results_file = Path("outputs") / f"bench_{dataset}_no_val.csv"
             df = pd.read_csv(results_file)
+            if dataset == 'cifar':
+                df = df.append(pd.read_csv(Path("outputs") / "bench_lookahead_cosine.csv"))
             ylim = {
                 'svhn': [0.023, 0.1],
                 'cifar': [0.04, 0.2],
@@ -249,7 +258,6 @@ if __name__ == "__main__":
                 df,
                 ax,
                 obj_col='objective_test_err',
-                # solver_filters=["cosine"],
                 solvers=solvers,
                 title=dataset_repr[dataset],
                 ylabel='Test error' if i_d == 0 else None,
