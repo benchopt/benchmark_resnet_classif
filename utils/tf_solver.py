@@ -22,7 +22,7 @@ class TFSolver(BaseSolver):
     """TF base solver"""
 
     stopping_criterion = SufficientProgressCriterion(
-        patience=50, strategy='callback'
+        patience=60, strategy='callback'
     )
 
     parameters = {
