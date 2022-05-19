@@ -1,6 +1,6 @@
-
 import enum
 import itertools
+import os
 from pathlib import Path
 
 import matplotlib
@@ -27,7 +27,8 @@ sns.set_palette('colorblind')
 sns.set_style("ticks")
 CMAP = plt.get_cmap('tab20')
 
-fontsize = 20
+titlesize = 22
+ticksize = 16
 labelsize = 20
 
 
@@ -164,15 +165,16 @@ def plot_objective_curve(
         if percent:
             y_lim = [y * 100 for y in y_lim]
         ax.set_ylim(y_lim)
-        ax.set_xlabel("Time (s)", fontsize=fontsize - 2)
+        ax.set_xlabel("Time (s)", fontsize=labelsize)
         if ylabel is not None:
             if percent:
                 ylabel += ' (\%)'
             ax.set_ylabel(
                 ylabel,
-                fontsize=fontsize - 6,
+                fontsize=labelsize,
             )
-        ax.set_title(title, fontsize=fontsize - 2)
+        ax.set_title(title, fontsize=labelsize)
+        ax.tick_params(axis='both', which='major', labelsize=ticksize)
     if compute_best:
         return ax, best_dict
     return ax
@@ -225,7 +227,7 @@ if __name__ == "__main__":
             curve_types,
         ))
     }
-    fig, axs = plt.subplots(1, 3, figsize=[12, 3.3], constrained_layout=True)
+    fig, axs = plt.subplots(1, 3, figsize=[11, 1+2*1], constrained_layout=True)
     for i_d, dataset in enumerate(datasets):
         best_dict = {}
         for curve_type, (with_val, objective) in curve_types.items():
@@ -309,6 +311,8 @@ if __name__ == "__main__":
     height = legend.get_window_extent().height
     leg_fig.set_size_inches((width / 80,  max(height / 80, 0.5)))
     plt.axis('off')
-    leg_fig.savefig("resnet18_sgd_torch_legend_val.pdf", dpi=300)
+    fig2_name = "resnet18_sgd_torch_legend_val.pdf"
+    leg_fig.savefig(fig2_name, dpi=300)
+    os.system(f"pdfcrop {fig2_name} {fig2_name}")
     leg_fig.savefig("resnet18_sgd_torch_legend_val.svg", dpi=300)
 
