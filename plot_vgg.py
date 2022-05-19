@@ -45,13 +45,13 @@ def fill_between_x(ax, x, q_min, q_max, y, color, marker, label,
             color=color,
             marker=marker,
             label=label,
-            linewidth=1,
-            markersize=4,
+            linewidth=2,
+            markersize=6,
             alpha=alpha,
             linestyle=linestyle,
-            markevery=10,
+            markevery=20,
         )
-        ax.fill_betweenx(y, q_min, q_max, color=color, alpha=.3)
+        # ax.fill_betweenx(y, q_min, q_max, color=color, alpha=.3)
 
 
 def plot_objective_curve(
@@ -130,7 +130,7 @@ def plot_objective_curve(
             alpha = 1.0
             linestyle = '-'
         df_ = df[df['solver_name'] == solver_name]
-        curve = df_.groupby('stop_val').median()
+        curve = df_.groupby('stop_val').median().ewm(span=20).mean()
         if percent:
             curve[obj_col] = curve[obj_col] * 100
             print(f"{solver_name} {curve[obj_col].min()}%")
