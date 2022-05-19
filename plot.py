@@ -245,8 +245,8 @@ if __name__ == "__main__":
             else:
                 results_file = Path("outputs") / f"bench_{dataset}_no_val.csv"
             df = pd.read_csv(results_file)
-            if dataset == 'cifar':
-                df = df.append(pd.read_csv(Path("outputs") / "bench_lookahead_cosine.csv"))
+            if not tf:
+                df = df.append(pd.read_csv(Path("outputs") / f"bench_lookahead_{dataset}.csv"))
             ylim = {
                 'svhn': [0.023, 0.1],
                 'cifar': [0.04, 0.2],
