@@ -1,6 +1,6 @@
 Benchmark repository for ResNet fitting on classification
 =====================
-|Build Status| |Python 3.6+|
+|Build Status| |Python 3.6+| |TensorFlow 2.8+| |PyTorch 1.10+| |PyTorch-Lightning 1.6+|
 
 BenchOpt is a package to simplify and make more transparent and
 reproducible the comparisons of optimization algorithms.
@@ -40,3 +40,9 @@ Use `benchopt run -h` for more details about these options, or visit https://ben
    :target: https://github.com/benchopt/benchmark_resnet_classif/actions
 .. |Python 3.6+| image:: https://img.shields.io/badge/python-3.6%2B-blue
    :target: https://www.python.org/downloads/release/python-360/
+.. |TensorFlow 2.8+| image:: https://img.shields.io/badge/TensorFlow-2.8%2B-orange
+   :target: https://www.tensorflow.org/?hl=fr
+.. |PyTorch 1.10+| image:: https://img.shields.io/badge/PyTorch-1.10%2B-red
+   :target: https://pytorch.org/
+.. |PyTorch-Lightning 1.6+| image:: https://img.shields.io/badge/PyTorch--Lightning-1.6%2B-blueviolet
+   :target: https://pytorch-lightning.readthedocs.io/en/latest/
