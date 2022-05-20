@@ -13,7 +13,7 @@ This benchmark is dedicated to solver of the ResNet classification fitting probl
 where :math:`i` is the sample index, :math:`x_i` is the input image, :math:`y_i` is the sample label, and :math:`L` is the cross-entropy loss function.
 
 
-Install
+Use
 --------
 
 This benchmark can be run using the following commands:
@@ -21,29 +21,22 @@ This benchmark can be run using the following commands:
 .. code-block::
 
    $ pip install -U benchopt
-   $ git clone https://github.com/zaccharieramzi/benchmark_resnet_classif
+   $ git clone https://github.com/benchopt/benchmark_resnet_classif
    $ benchopt run benchmark_resnet_classif
 
-Apart from the problem, options can be passed to `benchopt run`, to restrict the benchmarks to some solvers or datasets, e.g.:
+While this command would run the entire benchmark, which includes several models, datasets and solvers, sequentially,
+you can restrict the run to a specific model, dataset and/or solver by passing the corresponding arguments.
+For example if I want to run the benchmark for the ResNet18 model on CIFAR10 dataset with the Adam solver, without a validation set, and for a single random seed:
 
 .. code-block::
 
-	$ benchopt run benchmark_resnet_classif -s solver1 -d dataset2 --max-runs 10 --n-repetitions 10
-
-Current workaround for https://github.com/benchopt/benchopt/issues/306:
-
-..code-block::
-
-   $ benchopt install -e .
-   $ conda activate benchopt_benchmark_resnet_classif
-   $ conda install pytorch torchvision cpuonly -c pytorch
-   $ conda install -c conda-forge pytorch-lightning
+	$ benchopt run benchmark_resnet_classif -o "*18" -d "cifar[*random_state=42*with_validation=False]" -s "adam-torch[batch_size=128,coupled_weight_decay=0.0,data_aug=True,decoupled_weight_decay=0.02,*,lr_schedule=cosine]"  --max-runs 200 --n-repetitions 1
 
 
 
 Use `benchopt run -h` for more details about these options, or visit https://benchopt.github.io/api.html.
 
-.. |Build Status| image:: https://github.com/zaccharieramzi/benchmark_resnet_classif/workflows/Tests/badge.svg
-   :target: https://github.com/zaccharieramzi/benchmark_resnet_classif/actions
+.. |Build Status| image:: https://github.com/benchopt/benchmark_resnet_classif/workflows/Tests/badge.svg
+   :target: https://github.com/benchopt/benchmark_resnet_classif/actions
 .. |Python 3.6+| image:: https://img.shields.io/badge/python-3.6%2B-blue
    :target: https://www.python.org/downloads/release/python-360/
