@@ -32,6 +32,25 @@ For example if I want to run the benchmark for the ResNet18 model on CIFAR10 dat
 
 	$ benchopt run benchmark_resnet_classif -o "*18" -d "cifar[*random_state=42*with_validation=False]" -s "adam-torch[batch_size=128,coupled_weight_decay=0.0,data_aug=True,decoupled_weight_decay=0.02,*,lr_schedule=cosine]"  --max-runs 200 --n-repetitions 1
 
+Extension
+---------
+
+If you want to add a new solver, you will need probably need to inherit one of the base solver classes from PyTorch, TensorFlow or PyTorch-Lightning.
+For example, to implement a new PyTorch-based solver, you will need at the beginning of your solver class to add the following:
+
+.. code-block::
+.. highlight:: python
+   from benchopt import safe_import_context
+
+
+   with safe_import_context() as import_ctx:
+      from torch.optim import ...
+
+   TorchSolver = import_ctx.import_from('torch_solver', 'TorchSolver')
+
+   class Solver(TorchSolver):
+      ...
+
 
 
 Use `benchopt run -h` for more details about these options, or visit https://benchopt.github.io/api.html.
