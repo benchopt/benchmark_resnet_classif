@@ -168,6 +168,34 @@ if __name__ == "__main__":
     markers = {i: v for i, v in enumerate(list(plt.Line2D.markers)[:-4])}
     solvers = [
         {
+            'id': 'SGD-torch[batch_size=128,data_aug=False,lr=0.1,lr_schedule=None,momentum=0,nesterov=False,weight_decay=0.0]',
+            'color': CMAP(0),
+            'marker': markers[0],
+            'alpha': 0.3,
+            'label': 'Vanilla SGD',
+        },
+        {
+            'id': 'SGD-torch[batch_size=128,data_aug=True,lr=0.1,lr_schedule=None,momentum=0,nesterov=False,weight_decay=0.0]',
+            'color': CMAP(1),
+            'marker': markers[1],
+            'alpha': 0.4,
+            'label': 'SGD + data aug.',
+        },
+        {
+            'id': 'SGD-torch[batch_size=128,data_aug=True,lr=0.1,lr_schedule=None,momentum=0.9,nesterov=False,weight_decay=0.0]',
+            'color': CMAP(2),
+            'marker': markers[2],
+            'alpha': 0.6,
+            'label': 'SGD + data aug. + momentum',
+        },
+                {
+            'id': 'SGD-torch[batch_size=128,data_aug=True,lr=0.1,lr_schedule=step,momentum=0.9,nesterov=False,weight_decay=0.0]',
+            'color': CMAP(3),
+            'marker': markers[3],
+            'alpha': 0.8,
+            'label': 'SGD + data aug. + momentum + step LR sched.',
+        },
+        {
             'id': 'SGD-torch[batch_size=128,data_aug=True,lr=0.1,lr_schedule=step,momentum=0.9,nesterov=False,weight_decay=0.0005]',
             'color': CMAP(4),
             'marker': markers[4],
@@ -200,11 +228,13 @@ if __name__ == "__main__":
     for i_d, dataset in enumerate(datasets):
         print('='*20)
         print(dataset)
-        results_files = Path("outputs").glob('bench_vgg*.csv')
-        df = pd.concat([pd.read_csv(f) for f in results_files])
+        # results_files = Path("outputs").glob('bench_vgg*.csv')
+        # df = pd.concat([pd.read_csv(f) for f in results_files])
+        result_file = Path("outputs") / 'bench_vgg.csv'
+        df = pd.read_csv(result_file)
         ylim = {
             'svhn': [0.023, 0.1],
-            'cifar': [0.04, 0.3],
+            'cifar': [0.04, 1.0],
             'mnist': [0., 0.05],
         }[dataset]
         try:
