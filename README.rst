@@ -40,8 +40,8 @@ Extension
 If you want to add a new solver, you will need probably need to inherit one of the base solver classes from PyTorch, TensorFlow or PyTorch-Lightning.
 For example, to implement a new PyTorch-based solver, you will need at the beginning of your solver class to add the following:
 
-.. code-block::
-.. highlight:: python
+.. code-block:: python
+   :caption: solvers/my_new_solver.py
    from benchopt import safe_import_context
 
 
