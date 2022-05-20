@@ -32,6 +32,8 @@ For example if I want to run the benchmark for the ResNet18 model on CIFAR10 dat
 
 	$ benchopt run benchmark_resnet_classif -o "*18" -d "cifar[*random_state=42*with_validation=False]" -s "adam-torch[batch_size=128,coupled_weight_decay=0.0,data_aug=True,decoupled_weight_decay=0.02,*,lr_schedule=cosine]"  --max-runs 200 --n-repetitions 1
 
+Use `benchopt run -h` for more details about these options, or visit https://benchopt.github.io/api.html.
+
 Extension
 ---------
 
@@ -53,7 +55,7 @@ For example, to implement a new PyTorch-based solver, you will need at the begin
 
 
 
-Use `benchopt run -h` for more details about these options, or visit https://benchopt.github.io/api.html.
+
 
 .. |Build Status| image:: https://github.com/benchopt/benchmark_resnet_classif/workflows/Tests/badge.svg
    :target: https://github.com/benchopt/benchmark_resnet_classif/actions
