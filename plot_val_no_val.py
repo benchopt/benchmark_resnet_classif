@@ -45,13 +45,13 @@ def fill_between_x(ax, x, q_min, q_max, y, color, marker, label,
             color=color,
             marker=marker,
             label=label,
-            linewidth=1,
-            markersize=4,
+            linewidth=2,
+            markersize=6,
             alpha=alpha,
             linestyle=linestyle,
-            markevery=10,
+            markevery=20,
         )
-        ax.fill_betweenx(y, q_min, q_max, color=color, alpha=.3)
+        # ax.fill_betweenx(y, q_min, q_max, color=color, alpha=.3)
 
 
 def plot_objective_curve(
@@ -156,7 +156,7 @@ def plot_objective_curve(
 
         if plot:
             fill_between_x(
-                ax, curve['time'], q1, q9, curve[obj_col], color=color,
+                ax, curve['time'], q1, q9, curve[obj_col].ewm(span=10).mean(), color=color,
                 marker=marker, label=label, plotly=False, alpha=alpha,
                 linestyle=linestyle,
             )
@@ -240,9 +240,9 @@ if __name__ == "__main__":
             results_file = Path("outputs") / results_name
             df = pd.read_csv(results_file)
             ylim = {
-                'svhn': [0.023, 0.1],
+                'svhn': [0.023, 0.082],
                 'cifar': [0.04, 0.1],
-                'mnist': [0., 0.03],
+                'mnist': [0., 0.021],
             }[dataset]
             xlim_left = {
                 'svhn': 700,
@@ -303,7 +303,9 @@ if __name__ == "__main__":
     n_col = 2
     lines_ordered = list(itertools.chain(*[ax_example.lines[i::n_col] for i in range(n_col)]))
     legend = ax2.legend(
-        lines_ordered, [line.get_label() for line in lines_ordered], ncol=n_col,
+        lines_ordered,
+        [line.get_label() for line in lines_ordered],
+        ncol=n_col,
         loc="upper center")
     leg_fig.canvas.draw()
     leg_fig.tight_layout()
