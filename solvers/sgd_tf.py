@@ -13,12 +13,12 @@ class Solver(TFSolver):
 
     # any parameter defined here is accessible as a class attribute
     parameters = {
+        **TFSolver.parameters,
         'nesterov, momentum': [(False, 0), (False, 0.9), (True, 0.9)],
         'lr': [1e-1],
         'decoupled_weight_decay': [0.0, 5e-4],
         'coupled_weight_decay': [0.0, 5e-4],
         # 'weight_decay': [0.0, 5e-4],
-        **TFSolver.parameters,
     }
 
     def set_objective(self, **kwargs):

@@ -12,10 +12,10 @@ class Solver(LightningSolver):
 
     # any parameter defined here is accessible as a class attribute
     parameters = {
+        **LightningSolver.parameters,
         'nesterov, momentum': [(False, 0), (False, 0.9), (True, 0.9)],
         'lr': [1e-1],
         'weight_decay': [0.0, 5e-4],
-        **LightningSolver.parameters
     }
 
     def set_objective(self, **kwargs):

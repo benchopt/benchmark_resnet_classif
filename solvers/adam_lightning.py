@@ -13,10 +13,10 @@ class Solver(LightningSolver):
 
     # any parameter defined here is accessible as a class attribute
     parameters = {
+        **LightningSolver.parameters,
         'lr': [1e-3],
         'coupled_weight_decay': [0.0, 0.02],
         'decoupled_weight_decay': [0.0, 0.02],
-        **LightningSolver.parameters
     }
 
     def set_objective(self, **kwargs):
