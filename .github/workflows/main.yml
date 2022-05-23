@@ -148,11 +148,8 @@ jobs:
 
     - name: install test dependencies
       run: |
-        conda create -n test_env
-        conda activate test_env
         mamba install -c conda-forge --file=test_requirements.txt
 
     - name: Test
       run: |
-        conda activate test_env
         pytest
