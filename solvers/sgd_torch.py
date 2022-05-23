@@ -12,12 +12,12 @@ class Solver(TorchSolver):
 
     # any parameter defined here is accessible as a class attribute
     parameters = {
+        **TorchSolver.parameters,
         'nesterov, momentum': [(False, 0), (False, 0.9), (True, 0.9)],
         'lr': [1e-1],
         'weight_decay': [0.0, 5e-4],
         'steps': [[1/2, 3/4]],
         'gamma': [0.1],
-        **TorchSolver.parameters
     }
 
     def set_objective(self, **kwargs):

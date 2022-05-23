@@ -13,12 +13,10 @@ class Solver(TFSolver):
 
     # any parameter defined here is accessible as a class attribute
     parameters = {
+        **TFSolver.parameters,
         'lr': [1e-3],
         'decoupled_weight_decay': [0.0, 0.02],
         'coupled_weight_decay': [0.0, 0.02],
-        'steps': [[1/2, 3/4]],
-        'gamma': [0.1],
-        **TFSolver.parameters,
     }
 
     def set_objective(self, **kwargs):

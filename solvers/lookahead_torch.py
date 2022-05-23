@@ -140,6 +140,7 @@ class Solver(TorchSolver):
 
     # any parameter defined here is accessible as a class attribute
     parameters = {
+        **TorchSolver.parameters
         'lr': [1e-1],
         # parameters are taken from the appendix C.1 from the paper
         # https://arxiv.org/abs/1907.08610
@@ -151,7 +152,6 @@ class Solver(TorchSolver):
         'la_alpha': [0.8],
         'pullback_momentum': ['none'],
         'base_optimizer': ['sgd'],
-        **TorchSolver.parameters
     }
 
     base_optimizers_map = {

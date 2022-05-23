@@ -29,6 +29,8 @@ class TFSolver(BaseSolver):
         'batch_size': [128],
         'data_aug': [False, True],
         'lr_schedule': [None, 'step', 'cosine'],
+        'steps': [[1/2, 3/4]],
+        'gamma': [0.1],
     }
 
     install_cmd = 'conda'

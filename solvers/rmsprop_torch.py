@@ -13,13 +13,11 @@ class Solver(TorchSolver):
 
     # any parameter defined here is accessible as a class attribute
     parameters = {
+        **TorchSolver.parameters,
         'lr': [1e-3],
         'rho': [0.99, 0.9],
         'momentum': [0, 0.9],
         'coupled_weight_decay': [0.0, 1e-4, 0.02],
-        'steps': [[1/2, 3/4]],
-        'gamma': [0.1],
-        **TorchSolver.parameters
     }
 
     def set_objective(self, **kwargs):
