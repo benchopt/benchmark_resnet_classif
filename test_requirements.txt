@@ -1,6 +1,8 @@
 pytest
+pytorch-lightning
+scikit-learn
 torch
 torchvision
+tensorflow-addons
 tensorflow
 tensorflow-datasets
-scikit-learn

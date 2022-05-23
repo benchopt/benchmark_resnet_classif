@@ -21,7 +21,7 @@ class TorchSolver(BaseSolver):
     """Pytorch base solver"""
 
     stopping_criterion = SufficientProgressCriterion(
-        patience=20, strategy='callback'
+        patience=50, strategy='callback'
     )
 
     parameters = {
@@ -30,7 +30,15 @@ class TorchSolver(BaseSolver):
         'lr_schedule': [None, 'step', 'cosine'],
     }
 
-    def skip(self, model_init_fn, dataset, normalization, framework):
+    def skip(
+        self,
+        model_init_fn,
+        dataset,
+        normalization,
+        framework,
+        symmetry,
+        image_width,
+    ):
         if framework != 'pytorch':
             return True, 'Not a torch dataset/objective'
         coupled_wd = getattr(self, 'coupled_weight_decay', 0.0)
@@ -39,17 +47,29 @@ class TorchSolver(BaseSolver):
             return True, 'Cannot use both decoupled and coupled weight decay'
         return False, None
 
-    def set_objective(self, model_init_fn, dataset, normalization, framework):
+    def set_objective(
+        self,
+        model_init_fn,
+        dataset,
+        normalization,
+        framework,
+        symmetry,
+        image_width,
+    ):
         self.dataset = dataset
         self.model_init_fn = model_init_fn
         self.normalization = normalization
         self.framework = framework
+        self.symmetry = symmetry
+        self.image_width = image_width
 
         if self.data_aug:
-            data_aug_transform = transforms.Compose([
-                transforms.RandomCrop(32, padding=4),
-                transforms.RandomHorizontalFlip(),
-            ])
+            data_aug_list = [
+                transforms.RandomCrop(self.image_width, padding=4),
+            ]
+            if self.symmetry is not None and 'horizontal' in self.symmetry:
+                data_aug_list.append(transforms.RandomHorizontalFlip())
+            data_aug_transform = transforms.Compose(data_aug_list)
         else:
             data_aug_transform = None
         self.dataset = AugmentedDataset(

@@ -21,5 +21,5 @@ class Solver(TFSolver):
 
     def set_objective(self, **kwargs):
         self.optimizer_klass = Adam
-        self.optimizer_kwargs = dict(learning_rate=self.lr)
+        self.optimizer_kwargs = dict(learning_rate=self.lr, epsilon=1e-8)
         super().set_objective(**kwargs)

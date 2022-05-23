@@ -30,10 +30,12 @@ class Dataset(MultiFrameworkDataset):
     normalization_std = (0.3081,)
 
     ds_description = dict(
-        n_samples_train=60_000,
+        n_samples_train=50_000,
+        n_samples_val=10_000,
         n_samples_test=10_000,
         image_width=28,
         n_classes=10,
+        symmetry=None,
     )
 
     torch_ds_klass = datasets.MNIST

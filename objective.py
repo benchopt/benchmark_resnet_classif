@@ -61,6 +61,7 @@ class Objective(BaseObjective):
         'pip:torch', 'pip:torchvision', 'pip:pytorch-lightning ',
         # TODO: rm below, and fix tests
         'pip:tensorflow-datasets', 'pip:tensorflow-addons',
+        "scikit-learn",
         'pip:tensorflow',
     ]
 
@@ -76,13 +77,16 @@ class Objective(BaseObjective):
     def skip(
         self,
         dataset,
+        val_dataset,
         test_dataset,
         n_samples_train,
+        n_samples_val,
         n_samples_test,
         image_width,
         n_classes,
         framework,
         normalization,
+        symmetry,
     ):
         if framework == 'tensorflow' and image_width < 32:
             return True, 'images too small for TF networks'
@@ -94,6 +98,7 @@ class Objective(BaseObjective):
         input_width = self.width
         if self.model_type == 'resnet':
             add_kwargs['use_bias'] = False
+            add_kwargs['dense_init'] = 'torch'
 
             # For now 128 is an arbitrary number
             # to differentiate big and small images
@@ -149,22 +154,29 @@ class Objective(BaseObjective):
     def set_data(
         self,
         dataset,
+        val_dataset,
         test_dataset,
         n_samples_train,
+        n_samples_val,
         n_samples_test,
         image_width,
         n_classes,
         framework,
         normalization,
+        symmetry,
     ):
         self.dataset = dataset
+        self.val_dataset = val_dataset
+        self.with_validation = val_dataset is not None
         self.test_dataset = test_dataset
         self.n_samples_train = n_samples_train
+        self.n_samples_val = n_samples_val
         self.n_samples_test = n_samples_test
         self.width = image_width
         self.n_classes = n_classes
         self.framework = framework
         self.normalization = normalization
+        self.symmetry = symmetry
 
         # Get the model initializer
         self.get_one_solution = self.get_model_init_fn(framework)
@@ -185,8 +197,12 @@ class Objective(BaseObjective):
         # Set the batch size for the test dataloader
         test_batch_size = 100
         self._datasets = {}
-        for dataset_name, data in [('train', self.dataset),
-                                   ('test', self.test_dataset)]:
+        dataset_name = ['train', 'test']
+        datasets = [self.dataset, self.test_dataset]
+        if self.with_validation:
+            dataset_name.append('val')
+            datasets.append(self.val_dataset)
+        for dataset_name, data in zip(dataset_name, datasets):
             if self.framework == 'tensorflow':
                 ds = data.batch(test_batch_size)
                 if dataset_name == 'train':
@@ -206,7 +222,6 @@ class Objective(BaseObjective):
 
                 if dataset_name == 'train':
                     data = AugmentedDataset(data, None, self.normalization)
-
                 self._datasets[dataset_name] = DataLoader(
                     data, batch_size=test_batch_size,
                     num_workers=num_workers,
@@ -229,7 +244,11 @@ class Objective(BaseObjective):
             acc_name = "accuracy" if self.framework == 'tensorflow' else "acc"
             results[dataset_name + "_err"] = 1 - metrics[acc_name]
 
-        results["value"] = results["train_loss"]
+        if self.with_validation:
+            value_key = "val_err"
+        else:
+            value_key = "train_loss"
+        results["value"] = results[value_key]
         return results
 
     def eval_torch(self, model, dataloader):
@@ -257,4 +276,6 @@ class Objective(BaseObjective):
             dataset=self.dataset,
             normalization=self.normalization,
             framework=self.framework,
+            symmetry=self.symmetry,
+            image_width=self.width,
         )

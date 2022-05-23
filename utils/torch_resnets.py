@@ -10,7 +10,7 @@ def remove_initial_downsample(large_model):
         64,
         kernel_size=3,
         stride=1,
-        padding=3,
+        padding=1,
         bias=False,
     )
     large_model.maxpool = torch.nn.Identity()
