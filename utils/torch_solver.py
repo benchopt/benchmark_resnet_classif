@@ -21,13 +21,15 @@ class TorchSolver(BaseSolver):
     """Pytorch base solver"""
 
     stopping_criterion = SufficientProgressCriterion(
-        patience=50, strategy='callback'
+        patience=60, strategy='callback'
     )
 
     parameters = {
         'batch_size': [128],
         'data_aug': [False, True],
         'lr_schedule': [None, 'step', 'cosine'],
+        'steps': [[1/2, 3/4]],
+        'gamma': [0.1],
     }
 
     def skip(
@@ -99,8 +101,8 @@ class TorchSolver(BaseSolver):
         if self.lr_schedule == 'step':
             scheduler = torch.optim.lr_scheduler.MultiStepLR(
                 optimizer,
-                milestones=[max_epochs//2, max_epochs*3//4],
-                gamma=0.1,
+                milestones=[int(max_epochs*s) for s in self.steps],
+                gamma=self.gamma,
             )
         elif self.lr_schedule == 'cosine':
             scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(

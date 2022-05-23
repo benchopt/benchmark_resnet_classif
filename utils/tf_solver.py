@@ -1,5 +1,6 @@
 from benchopt import BaseSolver, safe_import_context
 from benchopt.stopping_criterion import SufficientProgressCriterion
+import warnings
 
 with safe_import_context() as import_ctx:
     import tensorflow as tf
@@ -21,13 +22,15 @@ class TFSolver(BaseSolver):
     """TF base solver"""
 
     stopping_criterion = SufficientProgressCriterion(
-        patience=50, strategy='callback'
+        patience=60, strategy='callback'
     )
 
     parameters = {
         'batch_size': [128],
         'data_aug': [False, True],
         'lr_schedule': [None, 'step', 'cosine'],
+        'steps': [[1/2, 3/4]],
+        'gamma': [0.1],
     }
 
     install_cmd = 'conda'
@@ -58,8 +61,11 @@ class TFSolver(BaseSolver):
         if self.lr_schedule == 'step':
             self.lr_scheduler, self.wd_scheduler = [
                 tf.keras.optimizers.schedules.PiecewiseConstantDecay(
-                    [max_epochs//2, max_epochs*3//4],
-                    [value, value*1e-1, value*1e-2],
+                    [int(max_epochs*s) for s in self.steps],
+                    [
+                        value*self.gamma**i_step
+                        for i_step in range(len(self.steps) + 1)
+                    ],
                 ) for value in [self.lr, self.decoupled_wd*self.lr]
             ]
         elif self.lr_schedule == 'cosine':
@@ -91,9 +97,14 @@ class TFSolver(BaseSolver):
         symmetry,
         image_width,
     ):
-        self.optimizer_klass = extend_with_decoupled_weight_decay(
-            self.optimizer_klass,
-        )
+        try:
+            self.optimizer_klass = extend_with_decoupled_weight_decay(
+                self.optimizer_klass,
+            )
+        except TypeError:
+            warnings.warn(
+                'Could not extend optimizer with decoupled weight decay'
+            )
         self.dataset = dataset
         self.model_init_fn = model_init_fn
         self.framework = framework

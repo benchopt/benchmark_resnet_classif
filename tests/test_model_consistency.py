@@ -106,8 +106,10 @@ def generate_output_from_rand_image(
     from datasets.cifar import Dataset
     from objective import Objective
     from solvers.adam_tf import Solver as TFAdamSolver
+    from solvers.lookahead_tf import Solver as TFLookaheadSolver
     from solvers.sgd_tf import Solver as TFSGDSolver
     from solvers.adam_torch import Solver as TorchAdamSolver
+    from solvers.lookahead_torch import Solver as TorchLookaheadSolver
     from solvers.sgd_torch import Solver as TorchSGDSolver
     from benchopt import safe_import_context
     with safe_import_context() as import_ctx:
@@ -130,6 +132,8 @@ def generate_output_from_rand_image(
         if optimizer is not None:
             if optimizer == 'adam':
                 solver_klass = TorchAdamSolver
+            elif optimizer == 'lookahead':
+                solver_klass = TorchLookaheadSolver
             elif optimizer == 'sgd':
                 solver_klass = TorchSGDSolver
 
@@ -180,6 +184,8 @@ def generate_output_from_rand_image(
         if optimizer is not None:
             if optimizer == 'adam':
                 solver_klass = TFAdamSolver
+            elif optimizer == 'lookahead':
+                solver_klass = TFLookaheadSolver
             elif optimizer == 'sgd':
                 solver_klass = TFSGDSolver
 
@@ -220,6 +226,7 @@ def generate_output_from_rand_image(
     'optimizer, extra_solver_kwargs', [
         (None, {}),
         ('adam', {}),
+        ('lookahead', {}),
         ('sgd', {}),
         ('sgd', dict(momentum=0.9)),
         ('sgd', dict(weight_decay=5e-1)),
