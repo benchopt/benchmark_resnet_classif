@@ -18,8 +18,14 @@ with safe_import_context() as import_ctx:
     AugmentedDataset = import_ctx.import_from(
         'lightning_helper', 'AugmentedDataset'
     )
+    change_classification_head_tf = import_ctx.import_from(
+        'tf_vgg', 'change_classification_head'
+    )
     remove_initial_downsample = import_ctx.import_from(
         'torch_resnets', 'remove_initial_downsample'
+    )
+    change_classification_head_torch = import_ctx.import_from(
+        'torch_vgg', 'change_classification_head'
     )
     TFResNet18 = import_ctx.import_from('tf_resnets', 'ResNet18')
     TFResNet34 = import_ctx.import_from('tf_resnets', 'ResNet34')
@@ -109,6 +115,8 @@ class Objective(BaseObjective):
                 add_kwargs['no_initial_downsample'] = False
 
         def _model_init_fn():
+            is_vgg = self.model_type == 'vgg'
+            is_small_images = self.width < self.image_width_cutout
             model = model_klass(
                 weights=None,
                 classes=self.n_classes,
@@ -116,6 +124,8 @@ class Objective(BaseObjective):
                 input_shape=(input_width, input_width, 3),
                 **add_kwargs,
             )
+            if is_vgg and is_small_images:
+                model = change_classification_head_tf(model)
             return model
         return _model_init_fn
 
@@ -125,9 +135,12 @@ class Objective(BaseObjective):
         def _model_init_fn():
             model = model_klass(num_classes=self.n_classes)
             is_resnet = self.model_type == 'resnet'
+            is_vgg = self.model_type == 'vgg'
             is_small_images = self.width < self.image_width_cutout
             if is_resnet and is_small_images:
                 model = remove_initial_downsample(model)
+            if is_vgg and is_small_images:
+                model = change_classification_head_torch(model)
             if torch.cuda.is_available():
                 model = model.cuda()
             return model
