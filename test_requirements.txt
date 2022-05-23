@@ -1,7 +1,7 @@
 pytest
+pytorch
 pytorch-lightning
 scikit-learn
-torch
 torchvision
 tensorflow-addons
 tensorflow
