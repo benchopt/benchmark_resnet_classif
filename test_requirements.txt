@@ -4,5 +4,5 @@ pytorch-lightning
 scikit-learn
 torchvision
 tensorflow-addons
-tensorflow
+tensorflow>=2.8.0
 tensorflow-datasets
