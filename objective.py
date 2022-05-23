@@ -86,6 +86,7 @@ class Objective(BaseObjective):
         n_classes,
         framework,
         normalization,
+        symmetry,
     ):
         if framework == 'tensorflow' and image_width < 32:
             return True, 'images too small for TF networks'
@@ -97,6 +98,7 @@ class Objective(BaseObjective):
         input_width = self.width
         if self.model_type == 'resnet':
             add_kwargs['use_bias'] = False
+            add_kwargs['dense_init'] = 'torch'
 
             # For now 128 is an arbitrary number
             # to differentiate big and small images
@@ -161,6 +163,7 @@ class Objective(BaseObjective):
         n_classes,
         framework,
         normalization,
+        symmetry,
     ):
         self.dataset = dataset
         self.val_dataset = val_dataset
@@ -173,6 +176,7 @@ class Objective(BaseObjective):
         self.n_classes = n_classes
         self.framework = framework
         self.normalization = normalization
+        self.symmetry = symmetry
 
         # Get the model initializer
         self.get_one_solution = self.get_model_init_fn(framework)
@@ -272,4 +276,6 @@ class Objective(BaseObjective):
             dataset=self.dataset,
             normalization=self.normalization,
             framework=self.framework,
+            symmetry=self.symmetry,
+            image_width=self.width,
         )

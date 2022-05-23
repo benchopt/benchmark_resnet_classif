@@ -2,6 +2,7 @@ from benchopt import safe_import_context
 
 with safe_import_context() as import_ctx:
     from keras.applications.resnet import ResNet
+    from keras import initializers
     from keras import layers
     from keras import models
 
@@ -35,6 +36,11 @@ def basic_block(x, filters, stride=1, use_bias=True, conv_shortcut=True,
     """
     bn_axis = 3
     kernel_size = 3
+    torch_init = initializers.VarianceScaling(
+        scale=2.0,
+        mode='fan_out',
+        distribution='untruncated_normal',
+    )
 
     if conv_shortcut:
         shortcut = layers.Conv2D(
@@ -43,8 +49,10 @@ def basic_block(x, filters, stride=1, use_bias=True, conv_shortcut=True,
             strides=stride,
             use_bias=use_bias,
             name=name + '_0_conv',
+            kernel_initializer=torch_init,
         )(x)
         shortcut = layers.BatchNormalization(
+            momentum=0.9,
             axis=bn_axis, epsilon=1.001e-5, name=name + '_0_bn')(shortcut)
     else:
         shortcut = x
@@ -59,9 +67,11 @@ def basic_block(x, filters, stride=1, use_bias=True, conv_shortcut=True,
         padding_mode = 'same'
     x = layers.Conv2D(
         filters, kernel_size, padding=padding_mode, strides=stride,
+        kernel_initializer=torch_init,
         use_bias=use_bias,
         name=name + '_1_conv')(x)
     x = layers.BatchNormalization(
+        momentum=0.9,
         axis=bn_axis, epsilon=1.001e-5, name=name + '_1_bn')(x)
     x = layers.Activation('relu', name=name + '_1_relu')(x)
 
@@ -70,9 +80,11 @@ def basic_block(x, filters, stride=1, use_bias=True, conv_shortcut=True,
         kernel_size,
         padding='SAME',
         use_bias=use_bias,
+        kernel_initializer=torch_init,
         name=name + '_2_conv',
     )(x)
     x = layers.BatchNormalization(
+        momentum=0.9,
         axis=bn_axis, epsilon=1.001e-5, name=name + '_2_bn')(x)
 
     x = layers.Add(name=name + '_add')([shortcut, x])
@@ -97,6 +109,11 @@ def bottleneck_block(x, filters, kernel_size=3, stride=1, conv_shortcut=True,
     Output tensor for the residual block.
     """
     bn_axis = 3
+    torch_init = initializers.VarianceScaling(
+        scale=2.0,
+        mode='fan_out',
+        distribution='untruncated_normal',
+    )
 
     if conv_shortcut:
         shortcut = layers.Conv2D(
@@ -104,9 +121,11 @@ def bottleneck_block(x, filters, kernel_size=3, stride=1, conv_shortcut=True,
             1,
             strides=stride,
             use_bias=use_bias,
+            kernel_initializer=torch_init,
             name=name + '_0_conv',
             )(x)
         shortcut = layers.BatchNormalization(
+            momentum=0.9,
             axis=bn_axis, epsilon=1.001e-5, name=name + '_0_bn')(shortcut)
     else:
         shortcut = x
@@ -116,9 +135,11 @@ def bottleneck_block(x, filters, kernel_size=3, stride=1, conv_shortcut=True,
         1,
         strides=stride,
         use_bias=use_bias,
+        kernel_initializer=torch_init,
         name=name + '_1_conv',
     )(x)
     x = layers.BatchNormalization(
+        momentum=0.9,
         axis=bn_axis, epsilon=1.001e-5, name=name + '_1_bn')(x)
     x = layers.Activation('relu', name=name + '_1_relu')(x)
 
@@ -127,9 +148,11 @@ def bottleneck_block(x, filters, kernel_size=3, stride=1, conv_shortcut=True,
         kernel_size,
         padding='SAME',
         use_bias=use_bias,
+        kernel_initializer=torch_init,
         name=name + '_2_conv',
     )(x)
     x = layers.BatchNormalization(
+        momentum=0.9,
         axis=bn_axis, epsilon=1.001e-5, name=name + '_2_bn')(x)
     x = layers.Activation('relu', name=name + '_2_relu')(x)
 
@@ -137,9 +160,11 @@ def bottleneck_block(x, filters, kernel_size=3, stride=1, conv_shortcut=True,
         4 * filters,
         1,
         use_bias=use_bias,
+        kernel_initializer=torch_init,
         name=name + '_3_conv',
     )(x)
     x = layers.BatchNormalization(
+        momentum=0.9,
         axis=bn_axis, epsilon=1.001e-5, name=name + '_3_bn')(x)
 
     x = layers.Add(name=name + '_add')([shortcut, x])
@@ -190,6 +215,11 @@ def stack_block(
 
 
 def remove_initial_downsample(large_model, use_bias=False):
+    torch_init = initializers.VarianceScaling(
+        scale=2.0,
+        mode='fan_out',
+        distribution='untruncated_normal',
+    )
     trimmed_model = models.Model(
         inputs=large_model.get_layer('conv2_block1_1_conv').input,
         outputs=large_model.outputs,
@@ -200,6 +230,7 @@ def remove_initial_downsample(large_model, use_bias=False):
         activation='linear',
         padding='same',
         use_bias=use_bias,
+        kernel_initializer=torch_init,
         name='conv1_conv',
     )
     input_shape = list(large_model.input_shape[1:])
@@ -208,11 +239,29 @@ def remove_initial_downsample(large_model, use_bias=False):
     small_model = models.Sequential([
         layers.Input(input_shape),
         first_conv,
-        layers.BatchNormalization(axis=-1, epsilon=1.001e-5, name='conv1_bn'),
+        layers.BatchNormalization(
+            momentum=0.9,
+            axis=-1,
+            epsilon=1.001e-5,
+            name='conv1_bn',
+        ),
         layers.Activation('relu', name='conv1_relu'),
         trimmed_model,
     ])
     return small_model
+
+
+def change_dense_init(model):
+    torch_init = initializers.VarianceScaling(
+        scale=1.0,
+        mode='fan_in',
+        distribution='uniform',
+    )
+    for layer in model.layers:
+        if isinstance(layer, layers.Dense):
+            layer.kernel_initializer = torch_init
+            layer.bias_initializer = torch_init
+            layer.build(layer.input_spec.shape)
 
 
 def ResNet18(include_top=True,
@@ -223,6 +272,7 @@ def ResNet18(include_top=True,
              classes=1000,
              use_bias=True,
              no_initial_downsample=False,
+             dense_init='tf',
              **kwargs):
     """Instantiates the ResNet18 architecture."""
 
@@ -277,6 +327,8 @@ def ResNet18(include_top=True,
     )
     if no_initial_downsample:
         model = remove_initial_downsample(model, use_bias=use_bias)
+    if dense_init == 'torch':
+        change_dense_init(model)
     return model
 
 
@@ -288,6 +340,7 @@ def ResNet34(include_top=True,
              classes=1000,
              use_bias=True,
              no_initial_downsample=False,
+             dense_init='tf',
              **kwargs):
     """Instantiates the ResNet34 architecture."""
 
@@ -342,6 +395,8 @@ def ResNet34(include_top=True,
     )
     if no_initial_downsample:
         model = remove_initial_downsample(model, use_bias=use_bias)
+    if dense_init == 'torch':
+        change_dense_init(model)
     return model
 
 
@@ -353,6 +408,7 @@ def ResNet50(include_top=True,
              classes=1000,
              use_bias=True,
              no_initial_downsample=False,
+             dense_init='tf',
              **kwargs):
     """Instantiates the ResNet50 architecture."""
 
@@ -406,4 +462,6 @@ def ResNet50(include_top=True,
     )
     if no_initial_downsample:
         model = remove_initial_downsample(model, use_bias=use_bias)
+    if dense_init == 'torch':
+        change_dense_init(model)
     return model

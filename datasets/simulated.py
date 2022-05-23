@@ -77,6 +77,7 @@ class Dataset(BaseDataset):
             n_samples_test=self.n_samples - n_train_and_val,
             image_width=self.img_size,
             n_classes=self.n_classes,
+            symmetry=None,
         )
 
         # inputs are channel first
