@@ -35,6 +35,7 @@ class Dataset(MultiFrameworkDataset):
         n_samples_test=10_000,
         image_width=28,
         n_classes=10,
+        symmetry=None,
     )
 
     torch_ds_klass = datasets.MNIST

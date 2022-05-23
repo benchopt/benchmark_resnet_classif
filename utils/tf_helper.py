@@ -1,3 +1,6 @@
+from pathlib import Path
+import tempfile
+
 from benchopt import safe_import_context
 
 with safe_import_context() as import_ctx:
@@ -59,7 +62,10 @@ with safe_import_context() as import_ctx:
 
         def on_epoch_end(self, epoch, logs=None):
             super().on_epoch_end(epoch, logs)
-            logs['wd'] = backend.get_value(self.model.optimizer.weight_decay)
+            if hasattr(self.model.optimizer, 'weight_decay'):
+                logs['wd'] = backend.get_value(
+                    self.model.optimizer.weight_decay,
+                )
 
 
 def filter_ds_on_indices(ds, indices):
@@ -84,3 +90,41 @@ def filter_ds_on_indices(ds, indices):
         num_parallel_calls=tf.data.experimental.AUTOTUNE,
     )
     return ds
+
+
+def set_regularizer_model(model, regularizer):
+    target_regularizers = [
+        'kernel_regularizer',
+        'bias_regularizer',
+        'beta_regularizer',
+        'gamma_regularizer',
+    ]
+    for layer in model.layers:
+        if isinstance(layer, tf.keras.models.Model):
+            set_regularizer_model(layer, regularizer)
+        else:
+            for attr in target_regularizers:
+                if hasattr(layer, attr):
+                    setattr(layer, attr, regularizer)
+
+
+def apply_coupled_weight_decay(model, wd):
+    l2_reg_factor = wd / 2
+    # taken from
+    # https://sthalles.github.io/keras-regularizer/
+    regularizer = tf.keras.regularizers.l2(l2_reg_factor)
+    set_regularizer_model(model, regularizer)
+    # When we change the layers attributes, the change only happens
+    #  in the model config file
+    model_json = model.to_json()
+
+    # Save the weights before reloading the model.
+    tmp_weights_path = Path(tempfile.gettempdir()) / 'tmp_weights.h5'
+    model.save_weights(tmp_weights_path)
+
+    # load the model from the config
+    model = tf.keras.models.model_from_json(model_json)
+
+    # Reload the model weights
+    model.load_weights(tmp_weights_path, by_name=True)
+    return model

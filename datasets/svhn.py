@@ -24,6 +24,7 @@ class Dataset(MultiFrameworkDataset):
         n_samples_test=26_032,
         image_width=32,
         n_classes=10,
+        symmetry=None,
     )
 
     torch_ds_klass = datasets.SVHN

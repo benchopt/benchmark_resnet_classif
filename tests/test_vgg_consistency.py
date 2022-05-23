@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 import pytest
 import tensorflow as tf
@@ -9,7 +7,21 @@ from benchopt.utils.safe_import import set_benchmark
 
 set_benchmark('./')
 
-CI = os.environ.get('CI', False)
+tf_to_torch_vgg_conv_map = {
+    (1, 1): 0,
+    (1, 2): 2,
+    (2, 1): 5,
+    (2, 2): 7,
+    (3, 1): 10,
+    (3, 2): 12,
+    (3, 3): 14,
+    (4, 1): 17,
+    (4, 2): 19,
+    (4, 3): 21,
+    (5, 1): 24,
+    (5, 2): 26,
+    (5, 3): 28,
+}
 
 
 def apply_torch_weights_to_tf(model, torch_weights_map):
@@ -21,68 +33,56 @@ def apply_torch_weights_to_tf(model, torch_weights_map):
         used_weights,
     ):
         weights_name = f'{torch_layer_name}.weight'
+        bias_name = f'{torch_layer_name}.bias'
         torch_weights = torch_weights_map[weights_name]
+        torch_bias = torch_weights_map[bias_name]
         used_weights.append(weights_name)
+        used_weights.append(bias_name)
         reshaped_torch_weights = np.transpose(
             torch_weights.detach().numpy(),
             (2, 3, 1, 0),
         )
-        tf_layer.set_weights([reshaped_torch_weights])
+        tf_layer.set_weights([
+            reshaped_torch_weights,
+            torch_bias.detach().numpy(),
+        ])
         return used_weights
-    for layer in model.layers + model.layers[-1].layers:
+    for layer in model.layers[1:] + model.layers[0].layers:
         weights = layer.get_weights()
         if weights:
             layer_ids = layer.name.split('_')
-            layer_type = layer_ids[-1]
-            if 'block' in layer.name:
-                i_layer = str(int(layer_ids[0][4:]) - 1)
-                i_block = str(int(layer_ids[1][5:]) - 1)
-                i_conv = layer_ids[2]
-                torch_layer_name = f'layer{i_layer}.{i_block}'
-                if layer_type == 'conv':
-                    if int(i_conv) > 0:
-                        torch_layer_name += f'.conv{i_conv}'
-                    else:
-                        # downsampling layer
-                        torch_layer_name += '.downsample.0'
-                    used_weights = apply_conv_torch_weights_to_tf(
-                        layer,
-                        torch_layer_name,
-                        used_weights,
-                    )
-                elif layer_type == 'bn':
-                    continue
-                else:
-                    raise ValueError(f'Unknown layer type: {layer_type}')
+            layer_type = layer_ids[-1][:-1]
+            if layer_type == 'conv':
+                block_id = int(layer_ids[0][-1])
+                conv_id = int(layer_ids[1][-1])
+                torch_conv_id = tf_to_torch_vgg_conv_map[(block_id, conv_id)]
+                torch_layer_name = f'features.{torch_conv_id}'
+                used_weights = apply_conv_torch_weights_to_tf(
+                    layer,
+                    torch_layer_name,
+                    used_weights,
+                )
+            elif layer_type == 'bn':
+                continue
+            elif layer_type in ['fc', 'prediction']:
+                fc_id = 1 if layer_type == 'fc' else 2
+                torch_layer_name = f'classifier.{3*(fc_id-1)}'
+                torch_weights = torch_weights_map[f'{torch_layer_name}.weight']
+                reshaped_torch_weights = np.transpose(
+                    torch_weights.detach().numpy(),
+                    (1, 0),
+                )
+                torch_bias = torch_weights_map[f'{torch_layer_name}.bias']
+                layer.set_weights([
+                    reshaped_torch_weights,
+                    torch_bias.detach().numpy(),
+                ])
+                used_weights = used_weights + [
+                    f'{torch_layer_name}.weight',
+                    f'{torch_layer_name}.bias',
+                ]
             else:
-                if layer_type == 'conv':
-                    used_weights = apply_conv_torch_weights_to_tf(
-                        layer,
-                        'conv1',
-                        used_weights,
-                    )
-                elif layer_type == 'bn' or layer_type == 'model':
-                    continue
-                elif layer_type == 'predictions':
-                    torch_weights = torch_weights_map['fc.weight']
-                    reshaped_torch_weights = np.transpose(
-                        torch_weights.detach().numpy(),
-                        (1, 0),
-                    )
-                    torch_bias = torch_weights_map['fc.bias']
-                    layer.set_weights([
-                        reshaped_torch_weights,
-                        torch_bias.detach().numpy(),
-                    ])
-                    used_weights = used_weights + [
-                        'fc.weight',
-                        'fc.bias',
-                    ]
-                else:
-                    try:
-                        int(layer_type)
-                    except ValueError:
-                        raise ValueError(f'Unknown layer type: {layer_type}')
+                raise ValueError(f'Unknown layer type: {layer_type}')
     weights_to_be_assigned = [
         w for w in torch_weights_map
         if 'tracked' not in w
@@ -106,10 +106,8 @@ def generate_output_from_rand_image(
     from datasets.cifar import Dataset
     from objective import Objective
     from solvers.adam_tf import Solver as TFAdamSolver
-    from solvers.lookahead_tf import Solver as TFLookaheadSolver
     from solvers.sgd_tf import Solver as TFSGDSolver
     from solvers.adam_torch import Solver as TorchAdamSolver
-    from solvers.lookahead_torch import Solver as TorchLookaheadSolver
     from solvers.sgd_torch import Solver as TorchSGDSolver
     from benchopt import safe_import_context
     with safe_import_context() as import_ctx:
@@ -119,8 +117,8 @@ def generate_output_from_rand_image(
 
     bench_dataset = Dataset.get_instance(framework=framework)
     bench_objective = Objective.get_instance(
-        model_type='resnet',
-        model_size='18',
+        model_type='vgg',
+        model_size='16',
     )
     bench_objective.set_dataset(bench_dataset)
     obj_dict = bench_objective.to_dict()
@@ -132,8 +130,6 @@ def generate_output_from_rand_image(
         if optimizer is not None:
             if optimizer == 'adam':
                 solver_klass = TorchAdamSolver
-            elif optimizer == 'lookahead':
-                solver_klass = TorchLookaheadSolver
             elif optimizer == 'sgd':
                 solver_klass = TorchSGDSolver
 
@@ -184,8 +180,6 @@ def generate_output_from_rand_image(
         if optimizer is not None:
             if optimizer == 'adam':
                 solver_klass = TFAdamSolver
-            elif optimizer == 'lookahead':
-                solver_klass = TFLookaheadSolver
             elif optimizer == 'sgd':
                 solver_klass = TFSGDSolver
 
@@ -226,22 +220,18 @@ def generate_output_from_rand_image(
     'optimizer, extra_solver_kwargs', [
         (None, {}),
         ('adam', {}),
-        ('lookahead', {}),
         ('sgd', {}),
         ('sgd', dict(momentum=0.9)),
         ('sgd', dict(weight_decay=5e-1)),
         ('sgd', dict(momentum=0.9, weight_decay=5e-1)),
-        ('sgd', dict(momentum=0.9, weight_decay=5e-4, lr=1e-1)),
     ],
 )
 @pytest.mark.parametrize(
-    'inference_mode', ['train', 'eval'],
+    'inference_mode', ['eval'],
+    # because we have dropout, train mode does not make sense to eval
+    # there is also no batch norm, so eval should not be a pblm
 )
 def test_model_consistency(optimizer, extra_solver_kwargs, inference_mode):
-    if optimizer == 'adam' and CI:
-        pytest.skip('Adam is not yet aligned')
-    if optimizer is not None and CI:
-        pytest.skip('eval tests not working because of batch norm discrepancy')
     np.random.seed(2)
     batch_size = 16
     rand_image = np.random.normal(
@@ -274,6 +264,7 @@ def test_model_consistency(optimizer, extra_solver_kwargs, inference_mode):
     np.testing.assert_allclose(
         torch_output,
         tf_output,
-        rtol=1e-4,
-        atol=1e-5,
+        # because of dropout, the training will differ
+        rtol=1e-1,
+        atol=1e-4,
     )
