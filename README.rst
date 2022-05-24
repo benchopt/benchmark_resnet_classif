@@ -38,23 +38,103 @@ Extension
 ---------
 
 If you want to add a new solver, you need to inherit one of the base solver classes from PyTorch, TensorFlow or PyTorch-Lightning.
-For example, to implement a new PyTorch-based solver, you can add the following at the beginning of your solver class:
+For example, to implement a new PyTorch-based solver with the Adam optimizer, you can add the following python file in the `solvers` folder:
 
-::
+.. code:: python
+   :caption: solvers/my_adam_torch.py
 
+   from benchopt import BaseSolver, safe_import_context
+
+   with safe_import_context() as import_ctx:
+      import torch
+
+
+   class Solver:
+
+      parameters = {
+         'lr': [1e-3],
+         'batch_size': [128],
+      }
+
+      def skip(self, framework, **_kwargs,):
+         if framework != 'pytorch':
+            return True, 'Not a torch dataset/objective'
+         return False, None
+
+      def set_objective(self, dataset, **_kwargs,):
+         self.dataloader = torch.utils.data.DataLoader(
+            dataset,
+            batch_size=self.batch_size,
+            num_workers=10,
+            persistent_workers=True,
+            pin_memory=True,
+            shuffle=True,
+         )
+
+      @staticmethod
+      def get_next(stop_val):
+         return stop_val + 1
+
+      def run(self, callback):
+         # model weight initialization
+         model = self.model_init_fn()
+         criterion = torch.nn.CrossEntropyLoss()
+
+         max_epochs = callback.stopping_criterion.max_runs
+         optimizer = torch.optim.Adam(model.parameters(), lr=self.lr)
+         # Initial evaluation
+         while callback(model):
+            for X, y in self.dataloader:
+                  if torch.cuda.is_available():
+                     X, y = X.cuda(), y.cuda()
+                  optimizer.zero_grad()
+                  loss = criterion(model(X), y)
+                  loss.backward()
+
+                  optimizer.step()
+
+         self.model = model
+
+      def get_result(self):
+         return self.model
+
+If you want to use a more complex solver, using a learning rate scheduler, as well as data augmentation,
+you can subclass the `TorchSolver` class we provide:
+
+.. code:: python
+   :caption: solvers/my_adam_torch.py
 
    from benchopt import safe_import_context
 
 
    with safe_import_context() as import_ctx:
-      from torch.optim import ...
+      from torch.optim import Adam, AdamW
 
    TorchSolver = import_ctx.import_from('torch_solver', 'TorchSolver')
 
+
    class Solver(TorchSolver):
-      ...
+      """Adam solver"""
+      name = 'Adam-torch'
 
+      # any parameter defined here is accessible as a class attribute
+      parameters = {
+         **TorchSolver.parameters,
+         'lr': [1e-3],
+         'weight_decay': [0.0, 5e-4],
+      }
 
+      def set_objective(self, **kwargs):
+         super().set_objective(**kwargs)
+         self.optimizer_klass = Adam
+         self.optimizer_kwargs = dict(
+               lr=self.lr,
+               weight_decay=self.weight_decay,
+         )
+
+If you want to modify the data augmentation policy you will have to override the `set_objective` function.
+If you want to use a different learning rate scheduler, you will have to override the `set_lr_schedule_and_optimizer` function.
+We are in the process of making these functions more modular to enable easier customization.
 
 
 
