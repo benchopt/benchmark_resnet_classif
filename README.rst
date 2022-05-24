@@ -38,7 +38,7 @@ Extension
 ---------
 
 If you want to add a new solver, you need to inherit one of the base solver classes from PyTorch, TensorFlow or PyTorch-Lightning.
-For example, to implement a new PyTorch-based solver with the Adam optimizer, you can add the following python file in the `solvers`_ folder:
+For example, to implement a new PyTorch-based solver with the Adam optimizer, you can add the following python file in the `solvers <solvers>`_ folder:
 
 .. code:: python
 
@@ -146,5 +146,3 @@ We are in the process of making these functions more modular to enable easier cu
    :target: https://pytorch.org/
 .. |PyTorch-Lightning 1.6+| image:: https://img.shields.io/badge/PyTorch--Lightning-1.6%2B-blueviolet
    :target: https://pytorch-lightning.readthedocs.io/en/latest/
-
-.. solvers: solvers
