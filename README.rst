@@ -98,7 +98,7 @@ For example, to implement a new PyTorch-based solver with the Adam optimizer, yo
          return self.model
 
 If you want to use a more complex solver, using a learning rate scheduler, as well as data augmentation,
-you can subclass the :code:`TorchSolver` class we provide:
+you can subclass the `TorchSolver <utils/torch_solver.py>`_ class we provide:
 
 .. code:: python
 
