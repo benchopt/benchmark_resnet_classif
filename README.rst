@@ -41,7 +41,6 @@ If you want to add a new solver, you need to inherit one of the base solver clas
 For example, to implement a new PyTorch-based solver with the Adam optimizer, you can add the following python file in the `solvers` folder:
 
 .. code:: python
-   :caption: solvers/my_adam_torch.py
 
    from benchopt import BaseSolver, safe_import_context
 
@@ -102,7 +101,6 @@ If you want to use a more complex solver, using a learning rate scheduler, as we
 you can subclass the `TorchSolver` class we provide:
 
 .. code:: python
-   :caption: solvers/my_adam_torch.py
 
    from benchopt import safe_import_context
 
