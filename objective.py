@@ -99,7 +99,7 @@ class Objective(BaseObjective):
         return False, None
 
     def get_tf_model_init_fn(self):
-        model_klass = TF_MODEL_MAP[self.model_type][self.model_size]
+        model_klass = TF_MODEL_MAP[self.model_type][str(self.model_size)]
         add_kwargs = {}
         input_width = self.width
         if self.model_type == 'resnet':
@@ -130,7 +130,7 @@ class Objective(BaseObjective):
         return _model_init_fn
 
     def get_torch_model_init_fn(self):
-        model_klass = TORCH_MODEL_MAP[self.model_type][self.model_size]
+        model_klass = TORCH_MODEL_MAP[self.model_type][str(self.model_size)]
 
         def _model_init_fn():
             model = model_klass(num_classes=self.n_classes)
