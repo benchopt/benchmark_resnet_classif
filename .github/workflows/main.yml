@@ -27,6 +27,7 @@ jobs:
       VERSION_PYTHON: ${{ matrix.version_python }}
       BENCHOPT_BRANCH: benchopt:main
       BENCHOPT_DEBUG: 1
+      BENCHOPT_CONDA_CMD: mamba
 
     defaults:
       run:
@@ -66,6 +67,7 @@ jobs:
         user=${BENCHOPT_BRANCH%:*}
         branch=${BENCHOPT_BRANCH##*:}
         pip install -U git+https://github.com/$user/benchopt@$branch
+        conda install -c conda-forge mamba
 
     - name: Test
       run: |
@@ -100,6 +102,7 @@ jobs:
       VERSION_PYTHON: ${{ matrix.version_python }}
       BENCHOPT_BRANCH: benchopt:main
       BENCHOPT_DEBUG: 1
+      BENCHOPT_CONDA_CMD: mamba
 
     defaults:
       run:
@@ -141,10 +144,12 @@ jobs:
         user=${BENCHOPT_BRANCH%:*}
         branch=${BENCHOPT_BRANCH##*:}
         pip install -U git+https://github.com/$user/benchopt@$branch
+        conda install -c conda-forge mamba
 
     - name: install test dependencies
       run: |
-        pip install pytest torch torchvision tensorflow tensorflow-datasets scikit-learn pytorch-lightning tensorflow-addons
+        mamba install -c conda-forge --file=test_torch_requirements.txt
+        pip install -r test_tf_requirements.txt
 
     - name: Test
       run: |
