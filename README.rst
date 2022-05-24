@@ -30,7 +30,7 @@ For example if I want to run the benchmark for the ResNet18 model on CIFAR10 dat
 
 .. code-block::
 
-	$ benchopt run benchmark_resnet_classif -o "*18" -d "cifar[*random_state=42*with_validation=False]" -s "adam-torch[batch_size=128,coupled_weight_decay=0.0,data_aug=True,decoupled_weight_decay=0.02,*,lr_schedule=cosine]"  --max-runs 200 --n-repetitions 1
+	$ benchopt run benchmark_resnet_classif -o "*[model_size=18]" -d "cifar[*random_state=42*with_validation=False]" -s "adam-torch[batch_size=128,coupled_weight_decay=0.0,data_aug=True,decoupled_weight_decay=0.02,*,lr_schedule=cosine]"  --max-runs 200 --n-repetitions 1
 
 Use `benchopt run -h` for more details about these options, or visit https://benchopt.github.io/api.html.
 
