@@ -240,7 +240,7 @@ def generate_output_from_rand_image(
 def test_model_consistency(optimizer, extra_solver_kwargs, inference_mode):
     if optimizer == 'adam' and CI:
         pytest.skip('Adam is not yet aligned')
-    if optimizer is not None and CI:
+    if optimizer is not None and CI and inference_mode == 'eval':
         pytest.skip('eval tests not working because of batch norm discrepancy')
     np.random.seed(2)
     batch_size = 16
