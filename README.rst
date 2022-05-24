@@ -38,7 +38,7 @@ Extension
 ---------
 
 If you want to add a new solver, you need to inherit one of the base solver classes from PyTorch, TensorFlow or PyTorch-Lightning.
-For example, to implement a new PyTorch-based solver with the Adam optimizer, you can add the following python file in the `solvers` folder:
+For example, to implement a new PyTorch-based solver with the Adam optimizer, you can add the following python file in the `solvers`_ folder:
 
 .. code:: python
 
@@ -98,7 +98,7 @@ For example, to implement a new PyTorch-based solver with the Adam optimizer, yo
          return self.model
 
 If you want to use a more complex solver, using a learning rate scheduler, as well as data augmentation,
-you can subclass the `TorchSolver` class we provide:
+you can subclass the :code:`TorchSolver` class we provide:
 
 .. code:: python
 
@@ -130,8 +130,8 @@ you can subclass the `TorchSolver` class we provide:
                weight_decay=self.weight_decay,
          )
 
-If you want to modify the data augmentation policy you will have to override the `set_objective` function.
-If you want to use a different learning rate scheduler, you will have to override the `set_lr_schedule_and_optimizer` function.
+If you want to modify the data augmentation policy you will have to override the :code:`set_objective` function.
+If you want to use a different learning rate scheduler, you will have to override the :code:`set_lr_schedule_and_optimizer` function.
 We are in the process of making these functions more modular to enable easier customization.
 
 
@@ -146,3 +146,5 @@ We are in the process of making these functions more modular to enable easier cu
    :target: https://pytorch.org/
 .. |PyTorch-Lightning 1.6+| image:: https://img.shields.io/badge/PyTorch--Lightning-1.6%2B-blueviolet
    :target: https://pytorch-lightning.readthedocs.io/en/latest/
+
+.. solvers: solvers
