@@ -148,7 +148,8 @@ jobs:
 
     - name: install test dependencies
       run: |
-        CONDA_CUDA_OVERRIDE="11.2" mamba install -c conda-forge -c esri --file=test_requirements.txt cudatoolkit>=11.2
+        mamba install -c conda-forge--file=test_torch_requirements.txt
+        pip install -r test_tf_requirements.txt
 
     - name: Test
       run: |
