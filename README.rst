@@ -38,7 +38,7 @@ Extension
 ---------
 
 If you want to add a new solver, you need to inherit one of the base solver classes from PyTorch, TensorFlow or PyTorch-Lightning.
-For example, to implement a new PyTorch-based solver, you will need at the beginning of your solver class to add the following:
+For example, to implement a new PyTorch-based solver, you can add the following at the beginning of your solver class:
 
 ::
 
