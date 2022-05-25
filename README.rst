@@ -30,7 +30,7 @@ For example if I want to run the benchmark for the ResNet18 model on CIFAR10 dat
 
 .. code-block::
 
-	$ benchopt run benchmark_resnet_classif -o "*[model_size=18]" -d "cifar[*random_state=42*with_validation=False]" -s "adam-torch[batch_size=128,coupled_weight_decay=0.0,data_aug=True,decoupled_weight_decay=0.02,*,lr_schedule=cosine]"  --max-runs 200 --n-repetitions 1
+	$ benchopt run . -o "*[model_size=18]" -d "cifar[random_state=42,with_validation=False]" -s "adam-torch[batch_size=128,coupled_weight_decay=0.0,data_aug=True,decoupled_weight_decay=0.02,lr_schedule=cosine]"  --max-runs 200 --n-repetitions 1
 
 Use `benchopt run -h` for more details about these options, or visit https://benchopt.github.io/api.html.
 
@@ -48,7 +48,7 @@ For example, to implement a new PyTorch-based solver with the Adam optimizer, yo
       import torch
 
 
-   class Solver:
+   class Solver(BaseSolver):
 
       parameters = {
          'lr': [1e-3],
@@ -60,7 +60,8 @@ For example, to implement a new PyTorch-based solver with the Adam optimizer, yo
             return True, 'Not a torch dataset/objective'
          return False, None
 
-      def set_objective(self, dataset, **_kwargs,):
+      def set_objective(self, dataset, model_init_fn, **_kwargs):
+         self.model_init_fn = model_init_fn
          self.dataloader = torch.utils.data.DataLoader(
             dataset,
             batch_size=self.batch_size,
@@ -72,6 +73,7 @@ For example, to implement a new PyTorch-based solver with the Adam optimizer, yo
 
       @staticmethod
       def get_next(stop_val):
+         # evaluate the model at every epoch.
          return stop_val + 1
 
       def run(self, callback):
