@@ -77,7 +77,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--force_registration")
     args = parser.parse_args()
-    datasets = ["cifar10", "mnist", "svhn_cropped"]
+    datasets = ["cifar10", "mnist", "svhn_cropped", "cifar100"]
     for dataset in datasets:
         for train in [True, False]:
             print(f"Registration for {dataset}, train = {train}")
