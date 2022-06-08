@@ -14,9 +14,9 @@ class Dataset(MultiFrameworkDataset):
     name = "CIFAR-100"
 
     # from
-    # https://github.com/kuangliu/pytorch-cifar/blob/master/main.py#L34
-    normalization_mean = (0.4914, 0.4822, 0.4465)
-    normalization_std = (0.2023, 0.1994, 0.2010)
+    # https://jovian.ai/kumar-shailesh1597/cifar100-resnet18
+    normalization_mean = (0.5071, 0.4867, 0.4408)
+    normalization_std = (0.2675, 0.2565, 0.2761)
 
     ds_description = dict(
         n_samples_train=40_000,
