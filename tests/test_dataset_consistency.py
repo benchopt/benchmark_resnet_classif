@@ -62,6 +62,7 @@ class AugmentedDataset(Dataset):
 
 @pytest.mark.parametrize('dataset_module_name', [
     'cifar',
+    'cifar_100',
     'mnist',
     'simulated',
     'svhn',
@@ -76,6 +77,7 @@ def test_datasets_consistency(dataset_module_name, dataset_type):
         pytest.skip('SVHN dataset is too heavy for CI')
     from datasets import (  # noqa: F401
         cifar,
+        cifar_100,
         mnist,
         simulated,
         svhn,

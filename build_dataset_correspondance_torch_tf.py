@@ -1,4 +1,5 @@
 import argparse
+from collections import Counter
 from pathlib import Path
 
 import numpy as np
@@ -13,13 +14,33 @@ def find_permutation(X1, X2, tol=1e-5):
     """
     Find the matching permutation between two arrays X1 and X2
     """
-    nn = NearestNeighbors(n_neighbors=1, algorithm='brute')
+    nn = NearestNeighbors(n_neighbors=2, algorithm='brute')
     nn.fit(X1)
-    dists, idx = nn.kneighbors(X2)
-    idx = idx[:, 0]
-    assert (dists < tol).all(), "Unmatched pairs"
-    assert len(idx) == len(set(idx)), "points assigned twice !"
-    return idx
+    dists, idx = nn.kneighbors(X2, 2)
+    primary_idx = idx[:, 0]
+    assert (dists[:, 0] < tol).all(), "Unmatched pairs"
+    if len(primary_idx) != len(set(primary_idx)):
+        # this means there are duplicates in the arrays
+        count = Counter(primary_idx)
+        assert max(count.values()) == 2, "More than 3 points are the same"
+        duplicate_indices_1 = [
+            i for i, v in count.items() if v > 1
+        ]
+        duplicate_indices_2 = np.where(np.isin(
+            primary_idx,
+            duplicate_indices_1,
+        ))[0]
+        for i_2 in sorted(duplicate_indices_2):
+            i_1 = primary_idx[i_2]
+            potential_i_2 = sorted(np.where(primary_idx == i_1)[0])
+            if i_2 > potential_i_2[0]:
+                potential_i_1 = idx[i_2]
+                alternate_i_1 = [
+                    i for i in potential_i_1 if i != i_1
+                ][0]
+                primary_idx[i_2] = alternate_i_1
+    assert len(primary_idx) == len(set(primary_idx)), "Points assigned twice"
+    return primary_idx
 
 
 def find_permutation_per_labels(X1, y1, X2, y2, tol=1e-4):
@@ -44,12 +65,17 @@ def get_numpy_from_torch(dataset_name, train=True):
     if dataset_name == "cifar10":
         dataset_klass = torchvision.datasets.CIFAR10
         split_kwarg = dict(train=train)
+    elif dataset_name == "cifar100":
+        dataset_klass = torchvision.datasets.CIFAR100
+        split_kwarg = dict(train=train)
     elif dataset_name == "mnist":
         dataset_klass = torchvision.datasets.MNIST
         split_kwarg = dict(train=train)
     elif dataset_name == "svhn_cropped":
         dataset_klass = torchvision.datasets.SVHN
         split_kwarg = dict(split="train" if train else "test")
+    else:
+        raise ValueError(f"Unknown dataset {dataset_name}")
     dataset = dataset_klass(
             root="./data",
             download=True,
@@ -77,7 +103,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--force_registration")
     args = parser.parse_args()
-    datasets = ["cifar10", "mnist", "svhn_cropped"]
+    datasets = ["cifar10", "mnist", "svhn_cropped", "cifar100"]
     for dataset in datasets:
         for train in [True, False]:
             print(f"Registration for {dataset}, train = {train}")
