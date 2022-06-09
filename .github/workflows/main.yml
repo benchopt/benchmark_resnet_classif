@@ -40,7 +40,7 @@ jobs:
     - name: Cache datasets
       uses: actions/cache@v3
       env:
-        cache-name: cache-datasets
+        cache-name: cache-datasets-v2
       with:
         path: |
           data
