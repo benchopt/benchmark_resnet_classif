@@ -3,6 +3,7 @@ from benchopt import safe_import_context
 with safe_import_context() as import_ctx:
     import torch
 
+
 def remove_initial_downsample(large_model):
     large_model.conv1 = torch.nn.Conv2d(
         3,
