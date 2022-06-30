@@ -151,7 +151,7 @@ class Objective(BaseObjective):
 
         def _model_init_fn():
             model = model_klass(num_classes=self.n_classes)
-            is_resnet = 'resnet' in self.model_type
+            is_resnet = self.model_type == 'resnet'
             is_vgg = self.model_type == 'vgg'
             is_small_images = self.width < self.image_width_cutout
             if is_resnet and is_small_images:
