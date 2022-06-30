@@ -27,6 +27,9 @@ with safe_import_context() as import_ctx:
     change_classification_head_torch = import_ctx.import_from(
         'torch_vgg', 'change_classification_head'
     )
+    get_wrn_klass_torch = import_ctx.import_from(
+        'torch_wide_resnets', 'get_wrn_klass'
+    )
     TFResNet18 = import_ctx.import_from('tf_resnets', 'ResNet18')
     TFResNet34 = import_ctx.import_from('tf_resnets', 'ResNet34')
     TFResNet50 = import_ctx.import_from('tf_resnets', 'ResNet50')
@@ -57,9 +60,9 @@ with safe_import_context() as import_ctx:
             '50': models.resnet50,
         },
         'wide-resnet': {
-            '40-8': None,
-            '28-10': None,
-            '16-10': None,
+            '40-8': get_wrn_klass_torch('40-8'),
+            '28-10': get_wrn_klass_torch('28-10'),
+            '16-10': get_wrn_klass_torch('16-10'),
         },
         'vgg': {
             '16': models.vgg16,
