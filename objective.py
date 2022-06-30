@@ -48,6 +48,11 @@ with safe_import_context() as import_ctx:
             '34': models.resnet34,
             '50': models.resnet50,
         },
+        'wide-resnet': {
+            '40-4': None,
+            '28-10': None,
+            '16-8': None,
+        },
         'vgg': {
             '16': models.vgg16,
         }
@@ -76,6 +81,9 @@ class Objective(BaseObjective):
             ('resnet', '18'),
             ('resnet', '34'),
             ('resnet', '50'),
+            ('wide-resnet', '40-4'),
+            ('wide-resnet', '28-10'),
+            ('wide-resnet', '16-8'),
             ('vgg', '16'),
         ]
     }
@@ -134,7 +142,7 @@ class Objective(BaseObjective):
 
         def _model_init_fn():
             model = model_klass(num_classes=self.n_classes)
-            is_resnet = self.model_type == 'resnet'
+            is_resnet = 'resnet' in self.model_type
             is_vgg = self.model_type == 'vgg'
             is_small_images = self.width < self.image_width_cutout
             if is_resnet and is_small_images:
