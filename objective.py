@@ -30,12 +30,20 @@ with safe_import_context() as import_ctx:
     TFResNet18 = import_ctx.import_from('tf_resnets', 'ResNet18')
     TFResNet34 = import_ctx.import_from('tf_resnets', 'ResNet34')
     TFResNet50 = import_ctx.import_from('tf_resnets', 'ResNet50')
+    get_wrn_klass_tf = import_ctx.import_from(
+        'tf_wide_resnets', 'get_wrn_klass'
+    )
 
     TF_MODEL_MAP = {
         'resnet': {
             '18': TFResNet18,
             '34': TFResNet34,
             '50': TFResNet50,
+        },
+        'wide-resnet': {
+            '40-8': get_wrn_klass_tf('40-8'),
+            '28-10': get_wrn_klass_tf('28-10'),
+            '16-10': get_wrn_klass_tf('16-10'),
         },
         'vgg': {
             '16': tf.keras.applications.vgg16.VGG16,
@@ -49,9 +57,9 @@ with safe_import_context() as import_ctx:
             '50': models.resnet50,
         },
         'wide-resnet': {
-            '40-4': None,
+            '40-8': None,
             '28-10': None,
-            '16-8': None,
+            '16-10': None,
         },
         'vgg': {
             '16': models.vgg16,
@@ -70,6 +78,7 @@ class Objective(BaseObjective):
     install_cmd = 'conda'
     requirements = [
         'pip:torch', 'pip:torchvision', 'pip:pytorch-lightning ',
+        'pip:tf2cv', 'pip:pytorchcv',
         # TODO: rm below, and fix tests
         'pip:tensorflow-datasets', 'pip:tensorflow-addons',
         "scikit-learn",
@@ -81,9 +90,9 @@ class Objective(BaseObjective):
             ('resnet', '18'),
             ('resnet', '34'),
             ('resnet', '50'),
-            ('wide-resnet', '40-4'),
+            ('wide-resnet', '40-8'),
             ('wide-resnet', '28-10'),
-            ('wide-resnet', '16-8'),
+            ('wide-resnet', '16-10'),
             ('vgg', '16'),
         ]
     }
