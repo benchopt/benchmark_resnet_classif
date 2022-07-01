@@ -13,6 +13,12 @@ class Dataset(MultiFrameworkDataset):
 
     name = "Imagenet"
 
+    parameters = {
+        'framework': ['pytorch', 'lightning', 'tensorflow'],
+        'random_state': [42],
+        'with_validation': [False],
+    }
+
     # from
     # https://github.com/pytorch/examples/blob/main/imagenet/main.py#L211-L212
     normalization_mean = (0.485, 0.456, 0.406)
