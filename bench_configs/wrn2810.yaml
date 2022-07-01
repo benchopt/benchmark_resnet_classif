@@ -11,4 +11,4 @@ solver:
 
 n-repetitions: 1
 max-runs: 200
-timeout: 10800
+timeout: 27000
