@@ -4,7 +4,6 @@ objective-filter:
 dataset:
   - cifar-100[random_state=42,with_validation=False]
   - CIFAR[random_state=42,with_validation=False]
-  - MNIST[random_state=42,with_validation=False]
   - SVHN[random_state=42,with_validation=False]
 
 solver:
