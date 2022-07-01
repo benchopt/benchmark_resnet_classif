@@ -28,5 +28,6 @@ class Dataset(MultiFrameworkDataset):
     )
 
     torch_ds_klass = datasets.ImageNet
+    torch_split_kwarg = 'split'
 
     tf_ds_name = 'imagenet2012'
