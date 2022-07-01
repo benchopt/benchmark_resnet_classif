@@ -6,9 +6,9 @@ with safe_import_context() as import_ctx:
 
 
 WRN_map = {
-    '40-8': wrn.wrn40_8_cifar10,
-    '28-10': wrn.wrn28_10_cifar10,
-    '16-10': wrn.wrn16_10_cifar10,
+    '40_8': wrn.wrn40_8_cifar10,
+    '28_10': wrn.wrn28_10_cifar10,
+    '16_10': wrn.wrn16_10_cifar10,
 }
 
 

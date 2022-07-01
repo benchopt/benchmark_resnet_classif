@@ -44,9 +44,9 @@ with safe_import_context() as import_ctx:
             '50': TFResNet50,
         },
         'wide-resnet': {
-            '40-8': get_wrn_klass_tf('40-8'),
-            '28-10': get_wrn_klass_tf('28-10'),
-            '16-10': get_wrn_klass_tf('16-10'),
+            '40_8': get_wrn_klass_tf('40_8'),
+            '28_10': get_wrn_klass_tf('28_10'),
+            '16_10': get_wrn_klass_tf('16_10'),
         },
         'vgg': {
             '16': tf.keras.applications.vgg16.VGG16,
@@ -60,9 +60,9 @@ with safe_import_context() as import_ctx:
             '50': models.resnet50,
         },
         'wide-resnet': {
-            '40-8': get_wrn_klass_torch('40-8'),
-            '28-10': get_wrn_klass_torch('28-10'),
-            '16-10': get_wrn_klass_torch('16-10'),
+            '40_8': get_wrn_klass_torch('40_8'),
+            '28_10': get_wrn_klass_torch('28_10'),
+            '16_10': get_wrn_klass_torch('16_10'),
         },
         'vgg': {
             '16': models.vgg16,
@@ -93,9 +93,9 @@ class Objective(BaseObjective):
             ('resnet', '18'),
             ('resnet', '34'),
             ('resnet', '50'),
-            ('wide-resnet', '40-8'),
-            ('wide-resnet', '28-10'),
-            ('wide-resnet', '16-10'),
+            ('wide-resnet', '40_8'),
+            ('wide-resnet', '28_10'),
+            ('wide-resnet', '16_10'),
             ('vgg', '16'),
         ]
     }
