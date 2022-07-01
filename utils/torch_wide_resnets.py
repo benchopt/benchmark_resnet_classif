@@ -14,7 +14,7 @@ WRN_map = {
 def get_wrn_klass(model_size):
     def wrn(num_classes=10):
         model = WRN_map[model_size](
-            classes=num_classes,
+            num_classes=num_classes,
         )
         return model
     return wrn
