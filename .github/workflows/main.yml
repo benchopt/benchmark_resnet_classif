@@ -146,7 +146,7 @@ jobs:
         pip install -U git+https://github.com/$user/benchopt@$branch
         conda install -c conda-forge mamba
 
-    - name: Install missing lib
+    - name: Install missing libstdc lib
       if:
         - matrix.os == 'ubuntu-latest'
       run: |
