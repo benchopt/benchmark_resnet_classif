@@ -21,6 +21,7 @@ with safe_import_context() as import_ctx:
 
 class MultiFrameworkDataset(BaseDataset, ABC):
     torch_split_kwarg = "train"
+    torch_dl = True
 
     parameters = {
         # WARNING: this order is very important
@@ -87,16 +88,17 @@ class MultiFrameworkDataset(BaseDataset, ABC):
             **self.ds_description,
         )
         for key, split in zip(["dataset", "test_dataset"], splits):
-            split_kwarg = {self.torch_split_kwarg: split}
+            kwargs = {self.torch_split_kwarg: split}
+            if self.torch_dl:
+                kwargs["download"] = True
             transform_list = [transforms.ToTensor()]
             if key != "dataset":
                 transform_list.append(normalization_transform)
             transform = transforms.Compose(transform_list)
             data_dict[key] = self.torch_ds_klass(
                 root="./data",
-                download=True,
                 transform=transform,
-                **split_kwarg,
+                **kwargs,
             )
         if self.with_validation:
             train_idx, val_idx = self.get_train_val_indices()
