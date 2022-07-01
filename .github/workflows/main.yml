@@ -103,7 +103,7 @@ jobs:
       BENCHOPT_BRANCH: benchopt:main
       BENCHOPT_DEBUG: 1
       BENCHOPT_CONDA_CMD: mamba
-      LD_LIBRARY_PATH: ~/anaconda3/lib:${LD_LIBRARY_PATH}
+      LD_LIBRARY_PATH: /usr/share/miniconda3/lib:${LD_LIBRARY_PATH}
 
     defaults:
       run:
