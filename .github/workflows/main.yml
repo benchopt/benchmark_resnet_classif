@@ -103,6 +103,7 @@ jobs:
       BENCHOPT_BRANCH: benchopt:main
       BENCHOPT_DEBUG: 1
       BENCHOPT_CONDA_CMD: mamba
+      LD_LIBRARY_PATH: ~/anaconda3/lib:${LD_LIBRARY_PATH}
 
     defaults:
       run:
@@ -151,9 +152,6 @@ jobs:
         mamba install -c conda-forge --file=test_torch_requirements.txt
         pip install -r test_tf_requirements.txt
 
-    - name: correct LD_LIBRARY_PATH
-      run: |
-        export LD_LIBRARY_PATH=~/anaconda3/lib:$LD_LIBRARY_PATH
     - name: Test
       run: |
         pytest
