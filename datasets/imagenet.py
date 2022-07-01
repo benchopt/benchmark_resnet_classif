@@ -19,8 +19,8 @@ class Dataset(MultiFrameworkDataset):
     normalization_std = (0.229, 0.224, 0.225)
 
     ds_description = dict(
-        n_samples_train=1_281_167 - 50_000,
-        n_samples_val=50_000,
+        n_samples_train=1_281_167,
+        n_samples_val=0,
         n_samples_test=50_000,
         image_width=None,
         n_classes=1000,
