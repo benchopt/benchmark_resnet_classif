@@ -147,8 +147,7 @@ jobs:
         conda install -c conda-forge mamba
 
     - name: Install missing libstdc lib
-      if:
-        - matrix.os == 'ubuntu-latest'
+      if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get install libstdc++6
 
