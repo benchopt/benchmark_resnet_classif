@@ -1,5 +1,5 @@
 objective-filter:
-  - ConvNet classification fitting[model_type=wide-resnet,model_size=28-10]
+  - ConvNet classification fitting[model_type=wide-resnet,model_size='28-10']
 
 dataset:
   - cifar-100[random_state=42,with_validation=False]
