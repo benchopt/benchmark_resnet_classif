@@ -146,16 +146,14 @@ jobs:
         pip install -U git+https://github.com/$user/benchopt@$branch
         conda install -c conda-forge mamba
 
-    - name: Install missing libstdc lib
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        sudo apt-get install libstdc++6
-
     - name: install test dependencies
       run: |
         mamba install -c conda-forge --file=test_torch_requirements.txt
         pip install -r test_tf_requirements.txt
 
+    - name: correct LD_LIBRARY_PATH
+      run: |
+        export LD_LIBRARY_PATH=~/anaconda3/lib:$LD_LIBRARY_PATH
     - name: Test
       run: |
         pytest

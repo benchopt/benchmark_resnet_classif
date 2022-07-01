@@ -1,6 +1,5 @@
 pytest
 pytorch
 pytorch-lightning
-libgcc
 scikit-learn
 torchvision
