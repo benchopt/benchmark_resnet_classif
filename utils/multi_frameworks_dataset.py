@@ -22,6 +22,9 @@ with safe_import_context() as import_ctx:
 class MultiFrameworkDataset(BaseDataset, ABC):
     torch_split_kwarg = "train"
     torch_dl = True
+    extra_torch_test_transforms = None
+
+    tf_test_image_processing = None
 
     parameters = {
         # WARNING: this order is very important
@@ -68,6 +71,9 @@ class MultiFrameworkDataset(BaseDataset, ABC):
         )
         return normalization_transform
 
+    def get_torch_splits(self):
+        return ["train", "test"]
+
     def get_torch_data(self):
 
         # Data preprocessing steps
@@ -77,7 +83,7 @@ class MultiFrameworkDataset(BaseDataset, ABC):
         if self.torch_split_kwarg == "train":
             splits = [True, False]
         elif self.torch_split_kwarg == "split":
-            splits = ["train", "test"]
+            splits = self.get_torch_splits()
         else:
             raise ValueError(f"unknown split_kwargs {self.torch_split_kwarg}")
 
@@ -93,6 +99,11 @@ class MultiFrameworkDataset(BaseDataset, ABC):
                 kwargs["download"] = True
             transform_list = [transforms.ToTensor()]
             if key != "dataset":
+                if self.extra_torch_test_transforms is not None:
+                    transform_list = (
+                        self.extra_torch_test_transforms
+                        + transform_list
+                    )
                 transform_list.append(normalization_transform)
             transform = transforms.Compose(transform_list)
             data_dict[key] = self.torch_ds_klass(
@@ -140,9 +151,13 @@ class MultiFrameworkDataset(BaseDataset, ABC):
                 as_supervised=True,
             )
             if key != "dataset":
+                if self.tf_test_image_processing is None:
+                    test_image_processing = image_preprocessing
+                else:
+                    test_image_processing = self.tf_test_image_processing
                 ds = ds.map(
                     lambda x, y: (
-                        image_preprocessing(x),
+                        test_image_processing(x),
                         y,
                     ),
                     num_parallel_calls=tf.data.experimental.AUTOTUNE,
