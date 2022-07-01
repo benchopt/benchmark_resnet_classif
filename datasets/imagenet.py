@@ -1,7 +1,9 @@
 from benchopt import safe_import_context
 
 with safe_import_context() as import_ctx:
+    import tensorflow as tf
     import torchvision.datasets as datasets
+    from torchvision import transforms
 
     MultiFrameworkDataset = import_ctx.import_from(
         'multi_frameworks_dataset',
@@ -36,5 +38,20 @@ class Dataset(MultiFrameworkDataset):
     torch_ds_klass = datasets.ImageNet
     torch_split_kwarg = 'split'
     torch_dl = False
+    extra_torch_test_transforms = [
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
+    ]
 
     tf_ds_name = 'imagenet2012'
+
+    def get_torch_splits(self):
+        return ["train", "val"]
+
+    def tf_test_image_processing(self, image):
+        normalization = self.get_tf_preprocessing_step()
+        image = normalization(image)
+        # resize to 256x256 and center crop to 224x224
+        image = tf.image.resize(image, [256, 256])
+        image = tf.image.central_crop(image, central_fraction=0.875)
+        return image
