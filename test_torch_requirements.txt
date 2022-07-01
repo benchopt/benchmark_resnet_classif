@@ -1,3 +1,4 @@
+libgcc
 pytest
 pytorch
 pytorch-lightning
