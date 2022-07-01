@@ -146,9 +146,14 @@ jobs:
         pip install -U git+https://github.com/$user/benchopt@$branch
         conda install -c conda-forge mamba
 
+    - name: Install missing lib
+      if:
+        - matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get install libstdc++6
+
     - name: install test dependencies
       run: |
-        sudo apt-get install gcc-4.9 libstdc++6
         mamba install -c conda-forge --file=test_torch_requirements.txt
         pip install -r test_tf_requirements.txt
 
