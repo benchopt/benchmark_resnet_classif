@@ -30,7 +30,9 @@ class Dataset(MultiFrameworkDataset):
         n_samples_train=1_281_167,
         n_samples_val=0,
         n_samples_test=50_000,
-        image_width=224,  # as in https://github.com/pytorch/examples/blob/main/imagenet/main.py#L217
+        # as in
+        # https://github.com/pytorch/examples/blob/main/imagenet/main.py#L217
+        image_width=224,
         n_classes=1000,
         symmetry='horizontal',
     )
