@@ -46,6 +46,7 @@ class Dataset(MultiFrameworkDataset):
     ]
 
     tf_ds_name = 'imagenet2012'
+    tf_splits = ['validation', 'train']
 
     def get_torch_splits(self):
         return ["train", "val"]

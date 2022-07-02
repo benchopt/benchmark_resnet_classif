@@ -25,6 +25,7 @@ class MultiFrameworkDataset(BaseDataset, ABC):
     extra_torch_test_transforms = None
 
     tf_test_image_processing = None
+    tf_splits = ['test', 'train']
 
     parameters = {
         # WARNING: this order is very important
@@ -142,9 +143,8 @@ class MultiFrameworkDataset(BaseDataset, ABC):
             normalization=image_preprocessing,
             **self.ds_description,
         )
-        splits = ["test", "train"]
         datasets = ["test_dataset", "dataset"]
-        for key, split in zip(datasets, splits):
+        for key, split in zip(datasets, self.tf_splits):
             ds = tfds.load(
                 self.tf_ds_name,
                 split=split,
