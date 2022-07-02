@@ -11,6 +11,9 @@ with safe_import_context() as import_ctx:
     LRWDSchedulerCallback = import_ctx.import_from(
         'tf_helper', 'LRWDSchedulerCallback'
     )
+    RandomResizedCrop = import_ctx.import_from(
+        'tf_helper', 'RandomResizedCrop'
+    )
     apply_coupled_weight_decay = import_ctx.import_from(
         'tf_helper', 'apply_coupled_weight_decay'
     )
@@ -112,12 +115,21 @@ class TFSolver(BaseSolver):
         self.image_width = image_width
 
         if self.data_aug:
-            data_aug_list = [
-                tf.keras.layers.ZeroPadding2D(padding=4),
-                tf.keras.layers.RandomCrop(
+            if self.image_width < 128:
+                crop = tf.keras.layers.RandomCrop(
                     height=self.image_width,
                     width=self.image_width,
-                ),
+                )
+            else:
+                # random resize crop equivalent in tf
+                crop = RandomResizedCrop(
+                    scale=(0.08, 1.0),
+                    ratio=(0.75, 1.33),
+                    height=self.image_width,
+                )
+            data_aug_list = [
+                tf.keras.layers.ZeroPadding2D(padding=4),
+                crop,
             ]
             if self.symmetry is not None and 'horizontal' in self.symmetry:
                 data_aug_list.append(tf.keras.layers.RandomFlip('horizontal'))
