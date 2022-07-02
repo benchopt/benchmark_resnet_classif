@@ -70,15 +70,14 @@ with safe_import_context() as import_ctx:
     class RandomResizedCrop(tf.keras.layers.Layer):
         # taken from
         # https://keras.io/examples/vision/nnclr/#random-resized-crops
-        def __init__(self, scale, ratio):
+        def __init__(self, scale, ratio, crop_shape):
             super(RandomResizedCrop, self).__init__()
             self.scale = scale
             self.log_ratio = (tf.math.log(ratio[0]), tf.math.log(ratio[1]))
+            self.crop_shape = crop_shape
 
         def call(self, images):
             batch_size = tf.shape(images)[0]
-            height = tf.shape(images)[1]
-            width = tf.shape(images)[2]
 
             random_scales = tf.random.uniform(
                 (batch_size,),
@@ -122,7 +121,10 @@ with safe_import_context() as import_ctx:
                 axis=1,
             )
             images = tf.image.crop_and_resize(
-                images, bounding_boxes, tf.range(batch_size), (height, width)
+                images,
+                bounding_boxes,
+                tf.range(batch_size),
+                self.crop_shape,
             )
             return images
 
