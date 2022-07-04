@@ -8,6 +8,7 @@ with safe_import_context() as import_ctx:
     import numpy as np
     import tensorflow as tf
     from tensorflow.keras import backend
+    import tf2cv.models.wrn_cifar as wrn
 
     class BenchoptCallback(tf.keras.callbacks.Callback):
         def __init__(self, callback):
@@ -67,6 +68,10 @@ with safe_import_context() as import_ctx:
                     self.model.optimizer.weight_decay,
                 )
 
+    CUSTOM_TF_OBJECTS = {
+        'CIFARWRN': wrn.CIFARWRN,
+    }
+
 
 def filter_ds_on_indices(ds, indices):
     """Filter a tensorflow dataset on a list of indices
@@ -123,7 +128,10 @@ def apply_coupled_weight_decay(model, wd):
     model.save_weights(tmp_weights_path)
 
     # load the model from the config
-    model = tf.keras.models.model_from_json(model_json)
+    model = tf.keras.models.model_from_json(
+        model_json,
+        custom_objects=CUSTOM_TF_OBJECTS,
+    )
 
     # Reload the model weights
     model.load_weights(tmp_weights_path, by_name=True)
