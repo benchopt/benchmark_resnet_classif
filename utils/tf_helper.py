@@ -124,8 +124,10 @@ def apply_coupled_weight_decay(model, wd):
     model_json = model.to_json()
 
     # Save the weights before reloading the model.
-    tmp_weights_path = Path(tempfile.gettempdir()) / 'tmp_weights.h5'
-    model.save_weights(tmp_weights_path)
+    model_pre_built = model.built
+    if model_pre_built:
+        tmp_weights_path = Path(tempfile.gettempdir()) / 'tmp_weights.h5'
+        model.save_weights(tmp_weights_path)
 
     # load the model from the config
     model = tf.keras.models.model_from_json(
@@ -134,5 +136,6 @@ def apply_coupled_weight_decay(model, wd):
     )
 
     # Reload the model weights
-    model.load_weights(tmp_weights_path, by_name=True)
+    if model_pre_built:
+        model.load_weights(tmp_weights_path, by_name=True)
     return model
