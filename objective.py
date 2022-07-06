@@ -27,15 +27,26 @@ with safe_import_context() as import_ctx:
     change_classification_head_torch = import_ctx.import_from(
         'torch_vgg', 'change_classification_head'
     )
+    get_wrn_klass_torch = import_ctx.import_from(
+        'torch_wide_resnets', 'get_wrn_klass'
+    )
     TFResNet18 = import_ctx.import_from('tf_resnets', 'ResNet18')
     TFResNet34 = import_ctx.import_from('tf_resnets', 'ResNet34')
     TFResNet50 = import_ctx.import_from('tf_resnets', 'ResNet50')
+    get_wrn_klass_tf = import_ctx.import_from(
+        'tf_wide_resnets', 'get_wrn_klass'
+    )
 
     TF_MODEL_MAP = {
         'resnet': {
             '18': TFResNet18,
             '34': TFResNet34,
             '50': TFResNet50,
+        },
+        'wide-resnet': {
+            '40_8': get_wrn_klass_tf('40_8'),
+            '28_10': get_wrn_klass_tf('28_10'),
+            '16_10': get_wrn_klass_tf('16_10'),
         },
         'vgg': {
             '16': tf.keras.applications.vgg16.VGG16,
@@ -47,6 +58,11 @@ with safe_import_context() as import_ctx:
             '18': models.resnet18,
             '34': models.resnet34,
             '50': models.resnet50,
+        },
+        'wide-resnet': {
+            '40_8': get_wrn_klass_torch('40_8'),
+            '28_10': get_wrn_klass_torch('28_10'),
+            '16_10': get_wrn_klass_torch('16_10'),
         },
         'vgg': {
             '16': models.vgg16,
@@ -65,6 +81,7 @@ class Objective(BaseObjective):
     install_cmd = 'conda'
     requirements = [
         'pip:torch', 'pip:torchvision', 'pip:pytorch-lightning ',
+        'pip:tf2cv', 'pip:pytorchcv',
         # TODO: rm below, and fix tests
         'pip:tensorflow-datasets', 'pip:tensorflow-addons',
         "scikit-learn",
@@ -76,6 +93,9 @@ class Objective(BaseObjective):
             ('resnet', '18'),
             ('resnet', '34'),
             ('resnet', '50'),
+            ('wide-resnet', '40_8'),
+            ('wide-resnet', '28_10'),
+            ('wide-resnet', '16_10'),
             ('vgg', '16'),
         ]
     }

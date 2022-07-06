@@ -1,3 +1,5 @@
 tensorflow-addons
 tensorflow>=2.8.0
 tensorflow-datasets
+pytorchcv
+tf2cv

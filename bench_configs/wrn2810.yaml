@@ -1,0 +1,14 @@
+objective-filter:
+  - ConvNet classification fitting[model_type=wide-resnet,model_size='28_10']
+
+dataset:
+  - cifar-100[random_state=42,with_validation=False]
+  - CIFAR[random_state=42,with_validation=False]
+  - SVHN[random_state=42,with_validation=False]
+
+solver:
+  - sgd-torch[batch_size=128,data_aug=True,lr_schedule=cosine,momentum=0.9,nesterov=False,weight_decay=0.0005]
+
+n-repetitions: 1
+max-runs: 200
+timeout: 27000
