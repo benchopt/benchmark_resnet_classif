@@ -104,7 +104,8 @@ class Objective(BaseObjective):
         input_width = self.width
         if self.model_type == 'resnet':
             add_kwargs['use_bias'] = False
-            add_kwargs['dense_init'] = 'torch'
+            # for now deactivating
+            # add_kwargs['dense_init'] = 'torch'
 
             # For now 128 is an arbitrary number
             # to differentiate big and small images
