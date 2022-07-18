@@ -164,33 +164,24 @@ class TFSolver(BaseSolver):
         return stop_val + 1
 
     def run(self, callback):
-        print('Starting run')
         self.model = self.model_init_fn()
-        print('Finished initializing')
         max_epochs = callback.stopping_criterion.max_runs
-        print('Starting cback config')
         lr_wd_cback = self.get_lr_wd_cback(max_epochs)
-        print('Finished cback config')
-        print('Initializing optimizer')
         self.optimizer = self.optimizer_klass(
             # this scaling is needed as in TF the weight decay is
             # not multiplied by the learning rate
             weight_decay=self.decoupled_wd*self.lr,
             **self.optimizer_kwargs,
         )
-        print('Finished initializing optimizer')
         if self.coupled_wd:
             # this is equivalent to adding L2 regularization to all
             # the weights and biases of the model (even if adding
             # weight decay to the biases is not recommended), of a factor
             # halved
-            print('Adding L2 regularization')
             self.model = apply_coupled_weight_decay(
                 self.model,
                 self.coupled_wd,
             )
-            print('Finished adding L2 regularization')
-        print('Starting compiling model')
         self.model.compile(
             optimizer=self.optimizer,
             loss='sparse_categorical_crossentropy',
@@ -201,7 +192,6 @@ class TFSolver(BaseSolver):
             # each batch.
             metrics='accuracy',
         )
-        print('Finished compiling model')
 
         cback_list = tf.keras.callbacks.CallbackList(
             [BenchoptCallback(callback), lr_wd_cback],
@@ -212,18 +202,14 @@ class TFSolver(BaseSolver):
         # training and using a progressbar
 
         # Initial evaluation
-        print('Starting initial evaluation')
         callback(self.model)
-        print('Finished initial evaluation')
         # Launch training
-        print('Starting training')
         self.model.fit(
             self.dataset,
             callbacks=cback_list,
             epochs=MAX_EPOCHS,
             verbose=0,
         )
-        print('Finished training')
 
     def get_result(self):
         return self.model
