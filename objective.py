@@ -92,6 +92,7 @@ class Objective(BaseObjective):
         n_classes,
         framework,
         normalization,
+        extra_test_transform,
         symmetry,
     ):
         if framework == 'tensorflow' and image_width < 32:
