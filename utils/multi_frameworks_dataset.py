@@ -92,6 +92,9 @@ class MultiFrameworkDataset(BaseDataset, ABC):
         data_dict = dict(
             framework=self.framework,
             normalization=normalization_transform,
+            extra_test_transform=transforms.Compose(
+                self.extra_torch_test_transforms,
+            ),
             **self.ds_description,
         )
         for key, split in zip(["dataset", "test_dataset"], splits):
@@ -141,6 +144,7 @@ class MultiFrameworkDataset(BaseDataset, ABC):
         data_dict = dict(
             framework=self.framework,
             normalization=image_preprocessing,
+            extra_test_transform=self.tf_test_image_processing,
             **self.ds_description,
         )
         datasets = ["test_dataset", "dataset"]
