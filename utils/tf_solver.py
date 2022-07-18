@@ -11,6 +11,9 @@ with safe_import_context() as import_ctx:
     LRWDSchedulerCallback = import_ctx.import_from(
         'tf_helper', 'LRWDSchedulerCallback'
     )
+    RandomResizedCrop = import_ctx.import_from(
+        'tf_helper', 'RandomResizedCrop'
+    )
     apply_coupled_weight_decay = import_ctx.import_from(
         'tf_helper', 'apply_coupled_weight_decay'
     )
@@ -112,12 +115,21 @@ class TFSolver(BaseSolver):
         self.image_width = image_width
 
         if self.data_aug:
-            data_aug_list = [
-                tf.keras.layers.ZeroPadding2D(padding=4),
-                tf.keras.layers.RandomCrop(
+            if self.image_width < 128:
+                crop = tf.keras.layers.RandomCrop(
                     height=self.image_width,
                     width=self.image_width,
-                ),
+                )
+            else:
+                # random resize crop equivalent in tf
+                crop = RandomResizedCrop(
+                    scale=(0.08, 1.0),
+                    ratio=(0.75, 1.33),
+                    crop_shape=(self.image_width, self.image_width),
+                )
+            data_aug_list = [
+                tf.keras.layers.ZeroPadding2D(padding=4),
+                crop,
             ]
             if self.symmetry is not None and 'horizontal' in self.symmetry:
                 data_aug_list.append(tf.keras.layers.RandomFlip('horizontal'))
@@ -181,10 +193,6 @@ class TFSolver(BaseSolver):
             metrics='accuracy',
         )
 
-        cback_list = tf.keras.callbacks.CallbackList(
-            [BenchoptCallback(callback), lr_wd_cback],
-            model=self.model,
-        )
         # It's important to create the callback list ourselves in order
         # to avoid the overhead of having to store a history of the
         # training and using a progressbar
@@ -194,9 +202,9 @@ class TFSolver(BaseSolver):
         # Launch training
         self.model.fit(
             self.dataset,
-            callbacks=cback_list,
+            callbacks=[BenchoptCallback(callback), lr_wd_cback],
             epochs=MAX_EPOCHS,
-            verbose=0,
+            verbose=1,
         )
 
     def get_result(self):

@@ -92,6 +92,7 @@ class Objective(BaseObjective):
         n_classes,
         framework,
         normalization,
+        extra_test_transform,
         symmetry,
     ):
         if framework == 'tensorflow' and image_width < 32:
@@ -104,7 +105,8 @@ class Objective(BaseObjective):
         input_width = self.width
         if self.model_type == 'resnet':
             add_kwargs['use_bias'] = False
-            add_kwargs['dense_init'] = 'torch'
+            # for now deactivating
+            # add_kwargs['dense_init'] = 'torch'
 
             # For now 128 is an arbitrary number
             # to differentiate big and small images
@@ -176,6 +178,7 @@ class Objective(BaseObjective):
         n_classes,
         framework,
         normalization,
+        extra_test_transform,
         symmetry,
     ):
         self.dataset = dataset
@@ -189,6 +192,7 @@ class Objective(BaseObjective):
         self.n_classes = n_classes
         self.framework = framework
         self.normalization = normalization
+        self.extra_test_transform = extra_test_transform
         self.symmetry = symmetry
 
         # Get the model initializer
@@ -217,12 +221,19 @@ class Objective(BaseObjective):
             datasets.append(self.val_dataset)
         for dataset_name, data in zip(dataset_name, datasets):
             if self.framework == 'tensorflow':
-                ds = data.batch(test_batch_size)
+                ds = data
                 if dataset_name == 'train':
-                    ds = ds.map(
-                        lambda x, y: (self.normalization(x), y),
-                        num_parallel_calls=tf.data.experimental.AUTOTUNE,
-                    )
+                    if self.extra_test_transform is not None:
+                        ds = ds.map(
+                            lambda x, y: (self.extra_test_transform(x), y),
+                            num_parallel_calls=tf.data.experimental.AUTOTUNE,
+                        )
+                    else:
+                        ds = ds.map(
+                            lambda x, y: (self.normalization(x), y),
+                            num_parallel_calls=tf.data.experimental.AUTOTUNE,
+                        )
+                ds = ds.batch(test_batch_size)
                 self._datasets[dataset_name] = ds
             elif self.framework in ['lightning', 'pytorch']:
                 # Don't use multiple workers on OSX as this leads to deadlock
@@ -234,7 +245,11 @@ class Objective(BaseObjective):
                 persistent_workers = num_workers > 0
 
                 if dataset_name == 'train':
-                    data = AugmentedDataset(data, None, self.normalization)
+                    data = AugmentedDataset(
+                        data,
+                        self.extra_test_transform,
+                        self.normalization,
+                    )
                 self._datasets[dataset_name] = DataLoader(
                     data, batch_size=test_batch_size,
                     num_workers=num_workers,

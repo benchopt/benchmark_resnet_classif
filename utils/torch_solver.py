@@ -66,8 +66,12 @@ class TorchSolver(BaseSolver):
         self.image_width = image_width
 
         if self.data_aug:
+            if self.image_width < 128:
+                crop = transforms.RandomCrop(self.image_width, padding=4)
+            else:
+                crop = transforms.RandomResizedCrop(self.image_width),
             data_aug_list = [
-                transforms.RandomCrop(self.image_width, padding=4),
+                crop,
             ]
             if self.symmetry is not None and 'horizontal' in self.symmetry:
                 data_aug_list.append(transforms.RandomHorizontalFlip())
