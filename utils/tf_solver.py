@@ -125,7 +125,7 @@ class TFSolver(BaseSolver):
                 crop = RandomResizedCrop(
                     scale=(0.08, 1.0),
                     ratio=(0.75, 1.33),
-                    height=self.image_width,
+                    shape=(self.image_width, self.image_width),
                 )
             data_aug_list = [
                 tf.keras.layers.ZeroPadding2D(padding=4),
