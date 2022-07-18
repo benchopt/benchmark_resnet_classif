@@ -193,10 +193,6 @@ class TFSolver(BaseSolver):
             metrics='accuracy',
         )
 
-        cback_list = tf.keras.callbacks.CallbackList(
-            [BenchoptCallback(callback), lr_wd_cback],
-            model=self.model,
-        )
         # It's important to create the callback list ourselves in order
         # to avoid the overhead of having to store a history of the
         # training and using a progressbar
@@ -206,7 +202,7 @@ class TFSolver(BaseSolver):
         # Launch training
         self.model.fit(
             self.dataset,
-            callbacks=cback_list,
+            callbacks=[BenchoptCallback(callback), lr_wd_cback],
             epochs=MAX_EPOCHS,
             verbose=0,
         )
