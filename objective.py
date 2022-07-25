@@ -212,7 +212,7 @@ class Objective(BaseObjective):
         )
 
         # Set the batch size for the test dataloader
-        test_batch_size = 100
+        test_batch_size = 128
         self._datasets = {}
         dataset_name = ['train', 'test']
         datasets = [self.dataset, self.test_dataset]
