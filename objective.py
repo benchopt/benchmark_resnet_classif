@@ -233,7 +233,12 @@ class Objective(BaseObjective):
                             lambda x, y: (self.normalization(x), y),
                             num_parallel_calls=tf.data.experimental.AUTOTUNE,
                         )
-                ds = ds.batch(test_batch_size)
+                ds = ds.batch(
+                    test_batch_size,
+                    num_parallel_calls=tf.data.experimental.AUTOTUNE,
+                ).prefetch(
+                    buffer_size=tf.data.experimental.AUTOTUNE,
+                )
                 self._datasets[dataset_name] = ds
             elif self.framework in ['lightning', 'pytorch']:
                 # Don't use multiple workers on OSX as this leads to deadlock
