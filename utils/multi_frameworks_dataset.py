@@ -94,7 +94,7 @@ class MultiFrameworkDataset(BaseDataset, ABC):
             normalization=normalization_transform,
             extra_test_transform=transforms.Compose(
                 self.extra_torch_test_transforms,
-            ),
+            ) if self.extra_torch_test_transforms else None,
             **self.ds_description,
         )
         for key, split in zip(["dataset", "test_dataset"], splits):
