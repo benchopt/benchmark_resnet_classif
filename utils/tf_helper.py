@@ -76,57 +76,45 @@ with safe_import_context() as import_ctx:
             self.log_ratio = (tf.math.log(ratio[0]), tf.math.log(ratio[1]))
             self.crop_shape = crop_shape
 
+        def get_crop_params(self, images):
+            # reusing code from
+            # https://github.com/pytorch/vision/blob/main/torchvision/transforms/transforms.py#L911
+            height = tf.shape(images)[1]
+            width = tf.shape(images)[2]
+            area = height * width
+            for _ in range(10):
+                target_area = area * tf.random.uniform((1,), *self.scale)
+                aspect_ratio = tf.exp(tf.random.uniform((1,), *self.log_ratio))
+
+                w = tf.sqrt(target_area * aspect_ratio).astype(tf.int32)
+                h = tf.sqrt(target_area / aspect_ratio).astype(tf.int32)
+
+                if 0 < w <= width and 0 < h <= height:
+                    return h, w
+
+            # Fallback to central crop
+            ratio = tf.exp(self.log_ratio)
+            in_ratio = float(width) / float(height)
+            if in_ratio < tf.minimum(ratio):
+                w = width
+                h = (w / tf.minimum(ratio)).astype(tf.int32)
+            elif in_ratio > tf.maximum(ratio):
+                h = height
+                w = (h * tf.maximum(ratio)).astype(tf.int32)
+            else:  # whole image
+                w = width
+                h = height
+            return h, w
+
         def call(self, images):
             batch_size = tf.shape(images)[0]
+            tf.assert_equal(batch_size, 1)  # for now we will make this op work
+            # only with one image since we select only one crop region
 
-            random_scales = tf.random.uniform(
-                (batch_size,),
-                self.scale[0],
-                self.scale[1]
-            )
-            random_ratios = tf.exp(tf.random.uniform(
-                (batch_size,),
-                self.log_ratio[0],
-                self.log_ratio[1]
-            ))
-
-            new_heights = tf.clip_by_value(
-                tf.sqrt(random_scales / random_ratios),
-                0,
-                1,
-            )
-            new_widths = tf.clip_by_value(
-                tf.sqrt(random_scales * random_ratios),
-                0,
-                1,
-            )
-            height_offsets = tf.random.uniform(
-                (batch_size,),
-                0,
-                1 - new_heights,
-            )
-            width_offsets = tf.random.uniform(
-                (batch_size,),
-                0,
-                1 - new_widths,
-            )
-
-            bounding_boxes = tf.stack(
-                [
-                    height_offsets,
-                    width_offsets,
-                    height_offsets + new_heights,
-                    width_offsets + new_widths,
-                ],
-                axis=1,
-            )
-            images = tf.image.crop_and_resize(
-                images,
-                bounding_boxes,
-                tf.range(batch_size),
-                self.crop_shape,
-            )
-            return images
+            h, w = self.get_crop_params(images)
+            cropped_images = tf.image.random_crop(images, [h, w, 3])
+            resized_images = tf.image.resize(cropped_images, self.crop_shape)
+            return resized_images
 
 
 def filter_ds_on_indices(ds, indices):
