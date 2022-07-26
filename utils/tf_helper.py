@@ -81,13 +81,13 @@ with safe_import_context() as import_ctx:
             # https://github.com/pytorch/vision/blob/main/torchvision/transforms/transforms.py#L911
             height = tf.shape(images)[1]
             width = tf.shape(images)[2]
-            area = height * width
+            area = tf.cast(height * width, tf.float32)
             for _ in range(10):
                 target_area = area * tf.random.uniform((1,), *self.scale)
                 aspect_ratio = tf.exp(tf.random.uniform((1,), *self.log_ratio))
 
-                w = tf.sqrt(target_area * aspect_ratio).astype(tf.int32)
-                h = tf.sqrt(target_area / aspect_ratio).astype(tf.int32)
+                w = tf.cast(tf.sqrt(target_area * aspect_ratio), tf.int32)
+                h = tf.cast(tf.sqrt(target_area / aspect_ratio), tf.int32)
 
                 if 0 < w <= width and 0 < h <= height:
                     return h, w
@@ -97,10 +97,10 @@ with safe_import_context() as import_ctx:
             in_ratio = float(width) / float(height)
             if in_ratio < tf.minimum(ratio):
                 w = width
-                h = (w / tf.minimum(ratio)).astype(tf.int32)
+                h = tf.cast(w / tf.minimum(ratio), tf.int32)
             elif in_ratio > tf.maximum(ratio):
                 h = height
-                w = (h * tf.maximum(ratio)).astype(tf.int32)
+                w = tf.cast(h * tf.maximum(ratio), tf.int32)
             else:  # whole image
                 w = width
                 h = height
@@ -112,7 +112,7 @@ with safe_import_context() as import_ctx:
             # only with one image since we select only one crop region
 
             h, w = self.get_crop_params(images)
-            cropped_images = tf.image.random_crop(images, [h, w, 3])
+            cropped_images = tf.image.random_crop(images, [1, h[0], w[0], 3])
             resized_images = tf.image.resize(cropped_images, self.crop_shape)
             return resized_images
 
