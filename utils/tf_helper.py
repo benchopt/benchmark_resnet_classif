@@ -76,6 +76,7 @@ with safe_import_context() as import_ctx:
             self.log_ratio = (tf.math.log(ratio[0]), tf.math.log(ratio[1]))
             self.crop_shape = crop_shape
 
+        @tf.function(input_signature=[1, None, None, 3], jit_compile=True)
         def get_crop_params(self, images):
             # reusing code from
             # https://github.com/pytorch/vision/blob/main/torchvision/transforms/transforms.py#L911
