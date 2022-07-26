@@ -107,9 +107,9 @@ def test_datasets_consistency(dataset_module_name, dataset_type):
         tf_normalization = tf_data['normalization']
         torch_normalization = torch_data['normalization']
 
-        if tf_dataset['extra_test_transform'] is not None:
+        if tf_data['extra_test_transform'] is not None:
             tf_dataset = tf_dataset.map(
-                lambda x, y: (tf_dataset['extra_test_transform'](x), y),
+                lambda x, y: (tf_data['extra_test_transform'](x), y),
                 num_parallel_calls=tf.data.experimental.AUTOTUNE,
             )
         else:
