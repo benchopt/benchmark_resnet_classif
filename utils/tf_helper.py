@@ -76,35 +76,25 @@ with safe_import_context() as import_ctx:
             self.log_ratio = (tf.math.log(ratio[0]), tf.math.log(ratio[1]))
             self.crop_shape = crop_shape
 
-        @tf.function(input_signature=[1, None, None, 3], jit_compile=True)
+        @tf.function(
+            input_signature=[tf.TensorSpec([1, None, None, 3])],
+            jit_compile=True,
+        )
         def get_crop_params(self, images):
             # reusing code from
             # https://github.com/pytorch/vision/blob/main/torchvision/transforms/transforms.py#L911
+            # simplified (and probably made too simple) by clipping
             height = tf.shape(images)[1]
             width = tf.shape(images)[2]
             area = tf.cast(height * width, tf.float32)
-            for _ in range(10):
-                target_area = area * tf.random.uniform((1,), *self.scale)
-                aspect_ratio = tf.exp(tf.random.uniform((1,), *self.log_ratio))
+            target_area = area * tf.random.uniform((1,), *self.scale)
+            aspect_ratio = tf.exp(tf.random.uniform((1,), *self.log_ratio))
 
-                w = tf.cast(tf.sqrt(target_area * aspect_ratio), tf.int32)
-                h = tf.cast(tf.sqrt(target_area / aspect_ratio), tf.int32)
+            w = tf.cast(tf.sqrt(target_area * aspect_ratio), tf.int32)
+            w = tf.clip_by_value(w, 1, width)
+            h = tf.cast(tf.sqrt(target_area / aspect_ratio), tf.int32)
+            h = tf.clip_by_value(h, 1, height)
 
-                if 0 < w <= width and 0 < h <= height:
-                    return h, w
-
-            # Fallback to central crop
-            ratio = tf.exp(self.log_ratio)
-            in_ratio = float(width) / float(height)
-            if in_ratio < tf.minimum(ratio):
-                w = width
-                h = tf.cast(w / tf.minimum(ratio), tf.int32)
-            elif in_ratio > tf.maximum(ratio):
-                h = height
-                w = tf.cast(h * tf.maximum(ratio), tf.int32)
-            else:  # whole image
-                w = width
-                h = height
             return h, w
 
         def call(self, images):
