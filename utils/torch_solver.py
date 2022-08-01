@@ -69,7 +69,7 @@ class TorchSolver(BaseSolver):
             if self.image_width < 128:
                 crop = transforms.RandomCrop(self.image_width, padding=4)
             else:
-                crop = transforms.RandomResizedCrop(self.image_width),
+                crop = transforms.RandomResizedCrop(self.image_width)
             data_aug_list = [
                 crop,
             ]
