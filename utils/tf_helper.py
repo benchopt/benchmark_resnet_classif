@@ -18,7 +18,8 @@ with safe_import_context() as import_ctx:
             self.model.stop_training = not self.cb_(self.model)
 
     class LRWDSchedulerCallback(tf.keras.callbacks.LearningRateScheduler):
-        """Callback that schedules jointly the learning rate and the weight decay
+        """Callback that schedules jointly the learning rate and the weight
+        decay
 
         This is necessary as in TensorFlow, the decoupled weight decay is not
         multiplied by the learning rate.
