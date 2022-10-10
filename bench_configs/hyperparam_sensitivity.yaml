@@ -2,7 +2,7 @@ objective-filter:
   - ConvNet classification fitting[model_type=resnet,model_size=18]
 
 dataset:
-  - cifar-100[random_state=42,with_validation=False,framework=pytorch]
+  - cifar-10[random_state=42,with_validation=False,framework=pytorch]
 
 solver:
   # lr sensitivity
@@ -16,4 +16,4 @@ n-repetitions: 1
 max-runs: 200
 timeout: 7200
 
-output: resnet_grid_neurips
+output: resnet_grid_neurips_cifar10
