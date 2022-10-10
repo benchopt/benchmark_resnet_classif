@@ -224,8 +224,8 @@ if __name__ == "__main__":
         },
     ]
 
-    # datasets = ['cifar', 'svhn', 'mnist']
-    datasets = ['svhn', 'mnist']
+    datasets = ['cifar', 'svhn', 'mnist']
+    # datasets = ['svhn', 'mnist']
     dataset_repr = {
         'mnist': 'MNIST',
         'cifar': 'CIFAR-10',
