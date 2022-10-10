@@ -202,18 +202,18 @@ if __name__ == "__main__":
             'label': 'Best SGD',
         },
         {
-            'id': 'Adam-torch[batch_size=128,coupled_weight_decay=0.0,data_aug=True,decoupled_weight_decay=0.02,lr=0.001,lr_schedule=cosine]',
-            'color': CMAP(5),
-            'marker': markers[5],
-            'alpha': 1.0,
-            'label': 'Best Adam',
-        },
-        {
             'id': 'SGD-tf[batch_size=128,coupled_weight_decay=0.0005,data_aug=True,decoupled_weight_decay=0.0,lr=0.1,lr_schedule=cosine,momentum=0.9,nesterov=True]',
             'color': CMAP(6),
             'marker': markers[6],
             'alpha': 1.0,
             'label': 'Best SGD (TF/Keras)',
+        },
+        {
+            'id': 'Adam-torch[batch_size=128,coupled_weight_decay=0.0,data_aug=True,decoupled_weight_decay=0.02,lr=0.001,lr_schedule=cosine]',
+            'color': CMAP(5),
+            'marker': markers[5],
+            'alpha': 1.0,
+            'label': 'Best Adam',
         },
         {
             'id': 'Lookahead-torch[base_optimizer=sgd,batch_size=128,data_aug=True,gamma=0.2,la_alpha=0.8,la_steps=5,lr=0.1,lr_schedule=cosine,momentum=0.9,pullback_momentum=none,steps=[0.3, 0.6, 0.8],weight_decay=0.0005]',
@@ -224,7 +224,8 @@ if __name__ == "__main__":
         },
     ]
 
-    datasets = ['cifar', 'svhn', 'mnist']
+    # datasets = ['cifar', 'svhn', 'mnist']
+    datasets = ['svhn', 'mnist']
     dataset_repr = {
         'mnist': 'MNIST',
         'cifar': 'CIFAR-10',
@@ -276,7 +277,11 @@ if __name__ == "__main__":
     ax_example = axs[0]  # we take the cifar axis
     leg_fig, ax2 = plt.subplots(1, 1, figsize=(20, 4))
     n_col = 3
-    lines_ordered = list(itertools.chain(*[ax_example.lines[i::n_col] for i in range(n_col)]))
+    lines_ordered = []
+    for solver in solvers:
+        for line in ax_example.lines:
+            if solver['label'] == line.get_label():
+                lines_ordered.append(line)
     legend = ax2.legend(
         lines_ordered, [line.get_label() for line in lines_ordered], ncol=n_col,
         loc="upper center")
