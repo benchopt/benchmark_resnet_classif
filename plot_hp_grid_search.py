@@ -165,65 +165,6 @@ def plot_objective_curve(
 
 if __name__ == "__main__":
     markers = {i: v for i, v in enumerate(list(plt.Line2D.markers)[:-4])}
-    solvers = [
-        {
-            'id': 'SGD-torch[batch_size=128,data_aug=False,lr=0.1,lr_schedule=None,momentum=0,nesterov=False,weight_decay=0.0]',
-            'color': CMAP(0),
-            'marker': markers[0],
-            'alpha': 0.3,
-            'label': 'Vanilla SGD',
-        },
-        {
-            'id': 'SGD-torch[batch_size=128,data_aug=True,lr=0.1,lr_schedule=None,momentum=0,nesterov=False,weight_decay=0.0]',
-            'color': CMAP(1),
-            'marker': markers[1],
-            'alpha': 0.4,
-            'label': 'SGD + data aug.',
-        },
-        {
-            'id': 'SGD-torch[batch_size=128,data_aug=True,lr=0.1,lr_schedule=None,momentum=0.9,nesterov=False,weight_decay=0.0]',
-            'color': CMAP(2),
-            'marker': markers[2],
-            'alpha': 0.6,
-            'label': 'SGD + data aug. + momentum',
-        },
-        {
-            'id': 'SGD-torch[batch_size=128,data_aug=True,lr=0.1,lr_schedule=cosine,momentum=0.9,nesterov=False,weight_decay=0.0]',
-            'color': CMAP(3),
-            'marker': markers[3],
-            'alpha': 0.8,
-            'label': 'SGD + data aug. + momentum + cosine LR sched.',
-        },
-        {
-            'id': 'SGD-torch[batch_size=128,data_aug=True,lr=0.1,lr_schedule=cosine,momentum=0.9,nesterov=False,weight_decay=0.0005]',
-            'color': CMAP(4),
-            'marker': markers[4],
-            'alpha': 1.0,
-            'label': 'Best SGD',
-        },
-        {
-            'id': 'SGD-tf[batch_size=128,coupled_weight_decay=0.0005,data_aug=True,decoupled_weight_decay=0.0,lr=0.1,lr_schedule=cosine,momentum=0.9,nesterov=True]',
-            'color': CMAP(6),
-            'marker': markers[6],
-            'alpha': 1.0,
-            'label': 'Best SGD (TF/Keras)',
-        },
-        {
-            'id': 'Adam-torch[batch_size=128,coupled_weight_decay=0.0,data_aug=True,decoupled_weight_decay=0.02,lr=0.001,lr_schedule=cosine]',
-            'color': CMAP(5),
-            'marker': markers[5],
-            'alpha': 1.0,
-            'label': 'Best Adam',
-        },
-        {
-            'id': 'Lookahead-torch[base_optimizer=sgd,batch_size=128,data_aug=True,gamma=0.2,la_alpha=0.8,la_steps=5,lr=0.1,lr_schedule=cosine,momentum=0.9,pullback_momentum=none,steps=[0.3, 0.6, 0.8],weight_decay=0.0005]',
-            'color': CMAP(7),
-            'marker': markers[7],
-            'alpha': 1.0,
-            'label': 'Lookahead',
-        },
-    ]
-
     sota_resnet = {
         'mnist': 0.09,  # from papers with code
         'cifar': 100 - 95.27,  # from lookahead
@@ -231,54 +172,56 @@ if __name__ == "__main__":
     }
     optimizers = ['SGD', 'Adam']
     hyperparameters = ['lr', 'wd']
+    hyperparameter_key_per_optimizer = {
+        'lr': {'Adam': 'lr', 'SGD': 'lr'},
+        'wd': {'Adam': 'coupled_weight_decay', 'SGD': 'weight_decay'},
+    }
+    hyperparameter_repr = {
+        'lr': 'Learning rate',
+        'wd': 'Weight decay',
+    }
+    default_hp_values_per_optimizer = {
+        'lr': {'Adam': 0.001, 'SGD': 0.1},
+        'wd': {'Adam': 0.02, 'SGD': 0.0005},
+    }
+    results_file = 'outputs/resnet_grid_neurips.csv'
+    df = pd.read_csv(results_file)
     fig, axs = plt.subplots(2, 2, figsize=[11, 1+2*1], constrained_layout=True)
-    for i_d, dataset in enumerate(datasets):
-        print('='*20)
-        print(dataset)
-        for tf in [False, True]:
-            if tf:
-                if dataset == 'mnist':
-                    continue
-                results_file = Path("outputs") / f"bench_{dataset}_tf.csv"
-            else:
-                results_file = Path("outputs") / f"bench_{dataset}_no_val.csv"
-            df = pd.read_csv(results_file)
-            if not tf:
-                df = df.append(pd.read_csv(Path("outputs") / f"bench_lookahead_{dataset}.csv"))
+    for i_optimizer, optimizer in enumerate(optimizers):
+        for i_hyperparameter, hyperparameter in enumerate(hyperparameters):
+            print('='*20)
+            print(optimizer, hyperparameter)
             ylim = {
                 'svhn': [0.023, 0.08],
                 'cifar': [0.04, 0.2],
                 'mnist': [0., 0.03],
-            }[dataset]
-            ax = axs[i_d]
+            }['cifar']
+            ax = axs[i_optimizer, i_hyperparameter]
             ax.tick_params(axis='both', which='major', labelsize=labelsize)
+            constant_hp = 'lr' if hyperparameter == 'wd' else 'wd'
+            constant_hp_repr = hyperparameter_key_per_optimizer[constant_hp][optimizer]
+            constant_hp_value = default_hp_values_per_optimizer[constant_hp][optimizer]
             plot_objective_curve(
                 df,
                 ax,
                 obj_col='objective_test_err',
-                solvers=solvers,
-                title=dataset_repr[dataset],
-                ylabel='Test error' if i_d == 0 else None,
+                solver_filters=[optimizer, f'{constant_hp_repr}={constant_hp_value}'],
+                title=f"{optimizer} - {hyperparameter_repr[hyperparameter]}",
+                ylabel='Test error' if i_optimizer == 0 else None,
                 y_lim=ylim,
                 percent=True,
             )
-            if not tf:
-                sota = sota_resnet[dataset]
-                if sota is not None:
-                    ax.axhline(sota, color='k', linestyle='--')
-    plt.savefig('resnet18_sgd_torch.pdf', dpi=300)
-    plt.savefig('resnet18_sgd_torch.svg', dpi=300)
+            sota = sota_resnet['cifar']
+            if sota is not None:
+                ax.axhline(sota, color='k', linestyle='--')
+    plt.savefig('cifar_hp_sens.pdf', dpi=300)
+    plt.savefig('cifar_hp_sens.svg', dpi=300)
 
-    ax_example = axs[0]  # we take the cifar axis
+    ax_example = axs[0, 0]  # we take the cifar axis
     leg_fig, ax2 = plt.subplots(1, 1, figsize=(20, 4))
     n_col = 3
-    lines_ordered = []
-    for solver in solvers:
-        for line in ax_example.lines:
-            if solver['label'] == line.get_label():
-                lines_ordered.append(line)
     legend = ax2.legend(
-        lines_ordered, [line.get_label() for line in lines_ordered], ncol=n_col,
+        ax_example.lines, [line.get_label() for line in ax_example.lines], ncol=n_col,
         loc="upper center")
     leg_fig.canvas.draw()
     leg_fig.tight_layout()
@@ -286,8 +229,8 @@ if __name__ == "__main__":
     height = legend.get_window_extent().height
     leg_fig.set_size_inches((width / 80,  max(height / 80, 0.5)))
     plt.axis('off')
-    fig2_name = "resnet18_sgd_torch_legend.pdf"
+    fig2_name = "cifar_hp_sens_legend.pdf"
     leg_fig.savefig(fig2_name, dpi=300)
     os.system(f"pdfcrop {fig2_name} {fig2_name}")
-    leg_fig.savefig("resnet18_sgd_torch_legend.svg", dpi=300)
+    leg_fig.savefig("cifar_hp_sens_legend.svg", dpi=300)
 
