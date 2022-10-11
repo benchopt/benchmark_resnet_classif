@@ -148,7 +148,7 @@ def plot_objective_curve(
     if percent:
         y_lim = [y * 100 for y in y_lim]
     ax.set_ylim(y_lim)
-    ax.set_xlabel("Time (s)", fontsize=labelsize)
+    # ax.set_xlabel("Time (s)", fontsize=labelsize)
     if ylabel is not None:
         if percent:
             ylabel += ' (\%)'
@@ -168,8 +168,10 @@ if __name__ == "__main__":
     sota_resnet = {
         'mnist': 0.09,  # from papers with code
         'cifar': 100 - 95.27,  # from lookahead
+        'cifar100': 100 - 78.49,
         'svhn': 2.95,  # from AMP, with pre act
     }
+    dataset = 'cifar100'
     optimizers = ['SGD', 'Adam']
     hyperparameters = ['lr', 'wd']
     hyperparameter_key_per_optimizer = {
@@ -184,9 +186,12 @@ if __name__ == "__main__":
         'lr': {'Adam': 0.001, 'SGD': 0.1},
         'wd': {'Adam': 0.02, 'SGD': 0.0005},
     }
-    results_file = 'outputs/resnet_grid_neurips.csv'
+    if dataset == 'cifar':
+        results_file = 'outputs/resnet_grid_neurips_cifar10.csv'
+    elif dataset == 'cifar100':
+        results_file = 'outputs/resnet_grid_neurips.csv'
     df = pd.read_csv(results_file)
-    fig, axs = plt.subplots(2, 2, figsize=[11, 1+2*1], constrained_layout=True)
+    fig, axs = plt.subplots(2, 2, figsize=[11, 1+2*1], constrained_layout=True, sharey=True, sharex=True)
     for i_optimizer, optimizer in enumerate(optimizers):
         for i_hyperparameter, hyperparameter in enumerate(hyperparameters):
             print('='*20)
@@ -194,8 +199,9 @@ if __name__ == "__main__":
             ylim = {
                 'svhn': [0.023, 0.08],
                 'cifar': [0.04, 0.2],
+                'cifar100': [0.2, 1],
                 'mnist': [0., 0.03],
-            }['cifar']
+            }[dataset]
             ax = axs[i_optimizer, i_hyperparameter]
             ax.tick_params(axis='both', which='major', labelsize=labelsize)
             constant_hp = 'lr' if hyperparameter == 'wd' else 'wd'
@@ -207,15 +213,17 @@ if __name__ == "__main__":
                 obj_col='objective_test_err',
                 solver_filters=[optimizer, f'{constant_hp_repr}={constant_hp_value}'],
                 title=f"{optimizer} - {hyperparameter_repr[hyperparameter]}",
-                ylabel='Test error' if i_optimizer == 0 else None,
+                ylabel=None,
                 y_lim=ylim,
                 percent=True,
             )
-            sota = sota_resnet['cifar']
-            if sota is not None:
-                ax.axhline(sota, color='k', linestyle='--')
-    plt.savefig('cifar_hp_sens.pdf', dpi=300)
-    plt.savefig('cifar_hp_sens.svg', dpi=300)
+            sota = sota_resnet[dataset]
+            ax.axhline(sota, color='k', linestyle='--')
+    plt.subplots_adjust(hspace=0.6)
+    fig.supylabel('Test error (\%)', fontsize=labelsize, x=0.05)
+    fig.supxlabel("Time (s)", fontsize=labelsize, y=-0.01)
+    plt.savefig(f'{dataset}_hp_sens.pdf', dpi=300)
+    plt.savefig(f'{dataset}_hp_sens.svg', dpi=300)
 
     ax_example = axs[0, 0]  # we take the cifar axis
     leg_fig, ax2 = plt.subplots(1, 1, figsize=(20, 4))
@@ -229,8 +237,8 @@ if __name__ == "__main__":
     height = legend.get_window_extent().height
     leg_fig.set_size_inches((width / 80,  max(height / 80, 0.5)))
     plt.axis('off')
-    fig2_name = "cifar_hp_sens_legend.pdf"
+    fig2_name = f"{dataset}_hp_sens_legend.pdf"
     leg_fig.savefig(fig2_name, dpi=300)
     os.system(f"pdfcrop {fig2_name} {fig2_name}")
-    leg_fig.savefig("cifar_hp_sens_legend.svg", dpi=300)
+    leg_fig.savefig(f"{dataset}_hp_sens_legend.svg", dpi=300)
 
