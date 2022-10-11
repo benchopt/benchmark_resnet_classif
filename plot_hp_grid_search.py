@@ -201,9 +201,8 @@ if __name__ == "__main__":
     }
     results_file = f'outputs/resnet_grid_neurips_{dataset}.csv'
     df = pd.read_csv(results_file)
-    fig, axs = plt.subplots(2, 2, figsize=[11, 1+2*1], constrained_layout=True, sharey=True, sharex=True)
-    fig = plt.figure(figsize=[11, 1+2*1], constrained_layout=True)
-    outer_gs = fig.add_gridspec(2, 2, hspace=0.6)
+    fig = plt.figure(figsize=[11, 1+2*1.5])
+    outer_gs = fig.add_gridspec(2, 2, hspace=0.8)
     ref_ax = None
     for i_optimizer, optimizer in enumerate(optimizers):
         for i_hyperparameter, hyperparameter in enumerate(hyperparameters):
@@ -211,7 +210,7 @@ if __name__ == "__main__":
                 nrows=2,
                 ncols=2,
                 height_ratios=[0.1, 2],
-                hspace=-0.1,
+                hspace=0.3,
             )
             print('='*20)
             print(optimizer, hyperparameter)
@@ -250,13 +249,14 @@ if __name__ == "__main__":
                 ncol=4,
                 handlelength=1.5,
                 handletextpad=.2,
+                frameon=False,
             )
             ax_title = fig.add_subplot(outer_gs[i_optimizer, i_hyperparameter])
             ax_title.axis('off')
             ax_title.set_title(
                 f"{optimizer} - {hyperparameter_repr[hyperparameter]}",
                 fontsize=labelsize,
-
+                y=1.08,
             )
     fig.supylabel('Test error (\%)', fontsize=labelsize, x=0.05)
     fig.supxlabel("Time (s)", fontsize=labelsize, y=-0.01)
