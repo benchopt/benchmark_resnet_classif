@@ -259,9 +259,9 @@ if __name__ == "__main__":
                 y=1.08,
             )
     fig.supylabel('Test error (\%)', fontsize=labelsize, x=0.05)
-    fig.supxlabel("Time (s)", fontsize=labelsize, y=-0.01)
-    plt.savefig(f'{dataset}_hp_sens.pdf', dpi=300)
-    plt.savefig(f'{dataset}_hp_sens.svg', dpi=300)
+    fig.supxlabel("Time (s)", fontsize=labelsize, y=-0.03)
+    plt.savefig(f'{dataset}_hp_sens.pdf', dpi=300, bbox_inches='tight')
+    plt.savefig(f'{dataset}_hp_sens.svg', dpi=300, bbox_inches='tight')
 
     # ax_example = axs[0, 0]  # we take the cifar axis
     # leg_fig, ax2 = plt.subplots(1, 1, figsize=(20, 4))
