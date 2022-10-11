@@ -1,7 +1,3 @@
-import itertools
-import os
-from pathlib import Path
-
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import rc
@@ -24,7 +20,7 @@ params = {'axes.labelsize': fontsize,
 plt.rcParams.update(params)
 sns.set_palette('colorblind')
 sns.set_style("ticks")
-CMAP = plt.get_cmap('tab20')
+CMAP = plt.get_cmap('viridis')
 
 titlesize = 22
 ticksize = 16
@@ -63,6 +59,7 @@ def plot_objective_curve(
     ylabel=None,
     percent=False,
     y_lim=None,
+    sort_fn=None,
 ):
     """Plot objective curve for a given benchmark and dataset.
     Plot the objective value F(x) as a function of the time.
@@ -103,6 +100,8 @@ def plot_objective_curve(
         if len(df) == 0:
             raise ValueError(f"No solvers after filters '{solver_filters}'")
     solver_names = df['solver_name'].unique()
+    if sort_fn is not None:
+        solver_names = sorted(solver_names, key=sort_fn)
 
     if df[obj_col].count() == 0:  # missing values
         ax.text(0.5, 0.5, "Not Available")
@@ -122,7 +121,7 @@ def plot_objective_curve(
             alpha = solver_dict['alpha']
             linestyle = solver_dict.get('linestyle', '-')
         else:
-            color = CMAP(i % CMAP.N)
+            color = CMAP((i * 60))
             marker = markers[i % len(markers)]
             label = solver_name
             alpha = 1.0
@@ -170,10 +169,18 @@ def extract_hp_value_from_solver_name(solver_name, hp_name):
             # if float use the scientific notation
             try:
                 hp_value = float(hp_value)
-                hp_value = f'{hp_value:.1e}'
             except ValueError:
                 pass
             return hp_value
+
+
+def extract_hp_repr_from_solver_name(solver_name, hp_name):
+    hp_value = extract_hp_value_from_solver_name(solver_name, hp_name)
+    try:
+        hp_value = f'{hp_value:.1e}'
+    except TypeError:
+        pass
+    return hp_value
 
 
 if __name__ == "__main__":
@@ -184,7 +191,7 @@ if __name__ == "__main__":
         'cifar100': 100 - 78.49,
         'svhn': 2.95,  # from AMP, with pre act
     }
-    dataset = 'svhn'
+    dataset = 'cifar'
     optimizers = ['SGD', 'Adam']
     hyperparameters = ['lr', 'wd']
     hyperparameter_key_per_optimizer = {
@@ -225,6 +232,7 @@ if __name__ == "__main__":
             constant_hp = 'lr' if hyperparameter == 'wd' else 'wd'
             constant_hp_repr = hyperparameter_key_per_optimizer[constant_hp][optimizer]
             constant_hp_value = default_hp_values_per_optimizer[constant_hp][optimizer]
+            hp_repr = hyperparameter_key_per_optimizer[hyperparameter][optimizer]
             _, handles, labels = plot_objective_curve(
                 df,
                 ax,
@@ -234,14 +242,14 @@ if __name__ == "__main__":
                 ylabel=None,
                 y_lim=ylim,
                 percent=True,
+                sort_fn=lambda solver_name: extract_hp_value_from_solver_name(solver_name, hp_repr),
             )
             sota = sota_resnet[dataset]
             ax.axhline(sota, color='k', linestyle='--')
             ax_legend = fig.add_subplot(inner_gs[0, :])
             ax_legend.axis('off')
-            hp_repr = hyperparameter_key_per_optimizer[hyperparameter][optimizer]
-            extracted_labels = [extract_hp_value_from_solver_name(label, hp_repr) for label in labels]
-            sorted_handles, sorted_labels = zip(*sorted(zip(handles, extracted_labels), key=lambda x: x[1]))
+            extracted_labels = [extract_hp_repr_from_solver_name(label, hp_repr) for label in labels]
+            sorted_handles, sorted_labels = handles, extracted_labels
             ax_legend.legend(
                 sorted_handles,
                 sorted_labels,
@@ -262,21 +270,3 @@ if __name__ == "__main__":
     fig.supxlabel("Time (s)", fontsize=labelsize, y=-0.03)
     plt.savefig(f'{dataset}_hp_sens.pdf', dpi=300, bbox_inches='tight')
     plt.savefig(f'{dataset}_hp_sens.svg', dpi=300, bbox_inches='tight')
-
-    # ax_example = axs[0, 0]  # we take the cifar axis
-    # leg_fig, ax2 = plt.subplots(1, 1, figsize=(20, 4))
-    # n_col = 3
-    # legend = ax2.legend(
-    #     ax_example.lines, [line.get_label() for line in ax_example.lines], ncol=n_col,
-    #     loc="upper center")
-    # leg_fig.canvas.draw()
-    # leg_fig.tight_layout()
-    # width = legend.get_window_extent().width
-    # height = legend.get_window_extent().height
-    # leg_fig.set_size_inches((width / 80,  max(height / 80, 0.5)))
-    # plt.axis('off')
-    # fig2_name = f"{dataset}_hp_sens_legend.pdf"
-    # leg_fig.savefig(fig2_name, dpi=300)
-    # os.system(f"pdfcrop {fig2_name} {fig2_name}")
-    # leg_fig.savefig(f"{dataset}_hp_sens_legend.svg", dpi=300)
-
