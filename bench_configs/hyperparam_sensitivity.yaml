@@ -6,7 +6,7 @@ dataset:
 
 solver:
   # lr sensitivity
-  - sgd-torch[batch_size=128,data_aug=True,lr_schedule=cosine,momentum=0.9,nesterov=False,weight_decay=0.0005, lr=[0.1, 0.005, 0.01, 0.001]]
+  - sgd-torch[batch_size=128,data_aug=True,lr_schedule=cosine,momentum=0.9,nesterov=False,weight_decay=0.0005, lr=[0.5, 0.1, 0.01, 0.001]]
   - adam-torch[batch_size=128,data_aug=True,lr_schedule=cosine,decoupled_weight_decay=0.02, lr=[0.01, 0.005, 0.001, 0.0001]]
   # wd sensitivity
   - sgd-torch[batch_size=128,data_aug=True,lr_schedule=cosine,momentum=0.9,nesterov=False,weight_decay=[0.0005, 0.005, 0.001, 0.00005]]
