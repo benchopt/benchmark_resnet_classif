@@ -87,7 +87,7 @@ For example, to implement a new PyTorch-based solver with the Adam optimizer, yo
          while callback(model):
             for X, y in self.dataloader:
                   if torch.cuda.is_available():
-                     X, y = X.cuda(), y.cuda()
+                     X, y = X.cuda(non_blocking=True), y.cuda(non_blocking=True)
                   optimizer.zero_grad()
                   loss = criterion(model(X), y)
                   loss.backward()

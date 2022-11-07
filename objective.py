@@ -292,7 +292,7 @@ class Objective(BaseObjective):
         with torch.no_grad():
             for X, y in tqdm(dataloader):
                 if torch.cuda.is_available():
-                    X, y = X.cuda(), y.cuda()
+                    X, y = X.cuda(non_blocking=True), y.cuda(non_blocking=True)
                 res['n_samples'] += len(X)
                 y_proba = model(X)
                 res['loss'] += criterion(y_proba, y).item()
