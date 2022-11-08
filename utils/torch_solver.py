@@ -139,6 +139,7 @@ class TorchSolver(BaseSolver):
         # Initial evaluation
         while callback(model):
             for X, y in tqdm(self.dataloader):
+                torch.cuda.empty_cache()
                 if torch.cuda.is_available():
                     X, y = X.cuda(non_blocking=True), y.cuda(non_blocking=True)
                 optimizer.zero_grad()
