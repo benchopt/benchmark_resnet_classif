@@ -259,7 +259,8 @@ class Objective(BaseObjective):
                     data, batch_size=test_batch_size,
                     num_workers=num_workers,
                     persistent_workers=persistent_workers,
-                    pin_memory=True
+                    pin_memory=True,
+                    prefetch_factor=3,
                 )
 
     def compute(self, model):

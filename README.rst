@@ -69,6 +69,7 @@ For example, to implement a new PyTorch-based solver with the Adam optimizer, yo
             persistent_workers=True,
             pin_memory=True,
             shuffle=True,
+            prefetch_factor=3,
          )
 
       @staticmethod
