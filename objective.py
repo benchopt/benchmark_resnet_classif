@@ -272,6 +272,7 @@ class Objective(BaseObjective):
             elif self.framework == 'lightning':
                 metrics = self.trainer.test(model, dataloaders=dataset)[0]
             elif self.framework == 'pytorch':
+                torch.cuda.empty_cache()
                 metrics = self.eval_torch(model, dataloader=dataset)
 
             results[dataset_name + "_loss"] = metrics["loss"]
@@ -292,7 +293,6 @@ class Objective(BaseObjective):
         res = {'loss': 0., 'acc': 0, 'n_samples': 0}
         with torch.no_grad():
             for X, y in tqdm(dataloader):
-                torch.cuda.empty_cache()
                 if torch.cuda.is_available():
                     X, y = X.cuda(non_blocking=True), y.cuda(non_blocking=True)
                 res['n_samples'] += len(X)
