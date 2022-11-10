@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 import tensorflow as tf
 from torch.utils.data import DataLoader, Dataset
+from torchvision import transforms
 
 from benchopt.utils.safe_import import set_benchmark
 
@@ -46,6 +47,7 @@ class AugmentedDataset(Dataset):
         super().__init__()
         self.dataset = dataset
         self.transform = transform
+        self.to_tensor = transforms.ToTensor()
         self.normalization = normalization
 
     def __len__(self):

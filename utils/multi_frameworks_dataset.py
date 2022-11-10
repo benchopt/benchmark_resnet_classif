@@ -101,13 +101,11 @@ class MultiFrameworkDataset(BaseDataset, ABC):
             kwargs = {self.torch_split_kwarg: split}
             if self.torch_dl:
                 kwargs["download"] = True
-            transform_list = [transforms.ToTensor()]
+            transform_list = []
             if key != "dataset":
                 if self.extra_torch_test_transforms is not None:
-                    transform_list = (
-                        self.extra_torch_test_transforms
-                        + transform_list
-                    )
+                    transform_list = self.extra_torch_test_transforms
+                transform_list.append(transforms.ToTensor())
                 transform_list.append(normalization_transform)
             transform = transforms.Compose(transform_list)
             data_dict[key] = self.torch_ds_klass(
