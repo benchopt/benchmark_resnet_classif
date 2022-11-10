@@ -57,6 +57,7 @@ class AugmentedDataset(Dataset):
         x, y = self.dataset[idx]
         if self.transform:
             x = self.transform(x)
+        x = self.to_tensor(x)
         if self.normalization:
             x = self.normalization(x)
         return x, y
