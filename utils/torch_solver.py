@@ -101,7 +101,7 @@ class TorchSolver(BaseSolver):
         system = os.environ.get('RUNNER_OS', sys.platform)
         is_mac = system in ['darwin', 'macOS']
         num_workers = min(10, joblib.cpu_count()) if not is_mac else 0
-        persistent_workers = num_workers > 0 and shuffle
+        persistent_workers = num_workers > 0
         self.dataloader = torch.utils.data.DataLoader(
             self.dataset, batch_size=self.batch_size,
             num_workers=num_workers,
