@@ -155,7 +155,7 @@ class TorchSolver(BaseSolver):
             for X, y in tqdm(self.dataloader):
                 if torch.cuda.is_available():
                     X, y = X.cuda(non_blocking=True), y.cuda(non_blocking=True)
-                optimizer.zero_grad()
+                optimizer.zero_grad(set_to_none=True)
                 loss = criterion(model(X), y)
                 loss.backward()
 
