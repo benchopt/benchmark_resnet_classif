@@ -85,6 +85,7 @@ class TorchSolver(BaseSolver):
                 data_aug_transform,
                 self.normalization,
             )
+            shuffle = True
         else:
             # this relies on the assumption that the iterable
             # dataset supports transforms
@@ -93,6 +94,7 @@ class TorchSolver(BaseSolver):
                 transforms.ToTensor(),
                 self.normalization,
             ])
+            shuffle = False
 
         # TODO: num_worker should not be hard coded. Finding a sensible way to
         # set this value is necessary here.
@@ -104,7 +106,7 @@ class TorchSolver(BaseSolver):
             self.dataset, batch_size=self.batch_size,
             num_workers=num_workers,
             persistent_workers=persistent_workers,
-            pin_memory=True, shuffle=True,
+            pin_memory=True, shuffle=shuffle,
             prefetch_factor=3,
         )
 
