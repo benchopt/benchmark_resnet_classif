@@ -2,7 +2,7 @@ from benchopt import safe_import_context
 
 with safe_import_context() as import_ctx:
     import tensorflow as tf
-    import torchvision.datasets as datasets
+    from timm.data import create_dataset
     from torchvision import transforms
 
     MultiFrameworkDataset = import_ctx.import_from(
@@ -21,6 +21,10 @@ class Dataset(MultiFrameworkDataset):
         'with_validation': [False],
     }
 
+    requirements = MultiFrameworkDataset.requirements + [
+        'timm',
+    ]
+
     # from
     # https://github.com/pytorch/examples/blob/main/imagenet/main.py#L211-L212
     normalization_mean = (0.485, 0.456, 0.406)
@@ -37,7 +41,6 @@ class Dataset(MultiFrameworkDataset):
         symmetry='horizontal',
     )
 
-    torch_ds_klass = datasets.ImageNet
     torch_split_kwarg = 'split'
     torch_dl = False
     extra_torch_test_transforms = [
@@ -49,7 +52,7 @@ class Dataset(MultiFrameworkDataset):
     tf_splits = ['validation', 'train']
 
     def get_torch_splits(self):
-        return ["train", "val"]
+        return ["train", "validation"]
 
     def tf_test_image_processing(self, image):
         normalization = self.get_tf_preprocessing_step()
@@ -58,3 +61,12 @@ class Dataset(MultiFrameworkDataset):
         image = tf.image.resize(image, [256, 256])
         image = tf.image.central_crop(image, central_fraction=0.875)
         return image
+
+    def torch_ds_klass(self, **kwargs):
+        return create_dataset(
+            name='tfds/imagenet2012',
+            is_training=kwargs['split'] == 'train',
+            batch_size=128,  # this is just used for distributed mode, so we might have
+            # to think about how we set this when distributed
+            **kwargs,
+        )
