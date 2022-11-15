@@ -10,6 +10,7 @@ with safe_import_context() as import_ctx:
     import tensorflow as tf
     from tqdm import tqdm
     import torchvision.models as models
+    from torchvision import transforms
     from torch.utils.data import DataLoader
     from pytorch_lightning import Trainer
     from pytorch_lightning.utilities.seed import seed_everything
@@ -250,11 +251,18 @@ class Objective(BaseObjective):
                 persistent_workers = num_workers > 0
 
                 if dataset_name == 'train':
-                    data = AugmentedDataset(
-                        data,
-                        self.extra_test_transform,
-                        self.normalization,
-                    )
+                    if isinstance(data, torch.utils.data.IterableDataset):
+                        data.transform = transforms.Compose([
+                            self.extra_test_transform,
+                            transforms.ToTensor(),
+                            self.normalization,
+                        ])
+                    else:
+                        data = AugmentedDataset(
+                            data,
+                            self.extra_test_transform,
+                            self.normalization,
+                        )
                 self._datasets[dataset_name] = DataLoader(
                     data, batch_size=test_batch_size,
                     num_workers=num_workers,
