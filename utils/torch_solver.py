@@ -78,11 +78,21 @@ class TorchSolver(BaseSolver):
             data_aug_transform = transforms.Compose(data_aug_list)
         else:
             data_aug_transform = None
-        self.dataset = AugmentedDataset(
-            self.dataset,
-            data_aug_transform,
-            self.normalization,
-        )
+
+        if not isinstance(self.dataset, torch.utils.data.IterableDataset):
+            self.dataset = AugmentedDataset(
+                self.dataset,
+                data_aug_transform,
+                self.normalization,
+            )
+        else:
+            # this relies on the assumption that the iterable
+            # dataset supports transforms
+            self.dataset.transform = transforms.Compose([
+                data_aug_transform,
+                transforms.ToTensor(),
+                self.normalization,
+            ])
 
         # TODO: num_worker should not be hard coded. Finding a sensible way to
         # set this value is necessary here.
