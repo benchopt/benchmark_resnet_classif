@@ -78,6 +78,7 @@ class Dataset(BaseDataset):
             image_width=self.img_size,
             n_classes=self.n_classes,
             symmetry=None,
+            extra_test_transform=None,
         )
 
         # inputs are channel first

@@ -5,6 +5,7 @@ with safe_import_context() as import_ctx:
     import torch
     from torch.nn import functional as F
     from torch.utils.data import Dataset
+    from torchvision import transforms
 
     from torchmetrics import Accuracy
     from pytorch_lightning import LightningModule
@@ -63,6 +64,7 @@ class AugmentedDataset(Dataset):
         super().__init__()
         self.dataset = dataset
         self.transform = transform
+        self.to_tensor = transforms.ToTensor()
         self.normalization = normalization
 
     def __len__(self):
@@ -72,6 +74,10 @@ class AugmentedDataset(Dataset):
         x, y = self.dataset[idx]
         if self.transform:
             x = self.transform(x)
+        try:
+            x = self.to_tensor(x)
+        except TypeError:
+            pass
         if self.normalization:
             x = self.normalization(x)
         return x, y

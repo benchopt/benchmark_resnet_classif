@@ -68,6 +68,42 @@ with safe_import_context() as import_ctx:
                     self.model.optimizer.weight_decay,
                 )
 
+    class RandomResizedCrop(tf.keras.layers.Layer):
+        # taken from
+        # https://keras.io/examples/vision/nnclr/#random-resized-crops
+        def __init__(self, scale, ratio, crop_shape):
+            super(RandomResizedCrop, self).__init__()
+            self.scale = scale
+            self.log_ratio = (tf.math.log(ratio[0]), tf.math.log(ratio[1]))
+            self.crop_shape = crop_shape
+
+        def get_crop_params(self, images):
+            # reusing code from
+            # https://github.com/pytorch/vision/blob/main/torchvision/transforms/transforms.py#L911
+            # simplified (and probably made too simple) by clipping
+            height = tf.shape(images)[1]
+            width = tf.shape(images)[2]
+            area = tf.cast(height * width, tf.float32)
+            target_area = area * tf.random.uniform((1,), *self.scale)
+            aspect_ratio = tf.exp(tf.random.uniform((1,), *self.log_ratio))
+
+            w = tf.cast(tf.sqrt(target_area * aspect_ratio), tf.int32)
+            w = tf.clip_by_value(w, 1, width)
+            h = tf.cast(tf.sqrt(target_area / aspect_ratio), tf.int32)
+            h = tf.clip_by_value(h, 1, height)
+
+            return h, w
+
+        def call(self, images):
+            batch_size = tf.shape(images)[0]
+            tf.assert_equal(batch_size, 1)  # for now we will make this op work
+            # only with one image since we select only one crop region
+
+            h, w = self.get_crop_params(images)
+            cropped_images = tf.image.random_crop(images, [1, h[0], w[0], 3])
+            resized_images = tf.image.resize(cropped_images, self.crop_shape)
+            return resized_images
+
 
 def filter_ds_on_indices(ds, indices):
     """Filter a tensorflow dataset on a list of indices

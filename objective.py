@@ -10,6 +10,7 @@ with safe_import_context() as import_ctx:
     import tensorflow as tf
     from tqdm import tqdm
     import torchvision.models as models
+    from torchvision import transforms
     from torch.utils.data import DataLoader
     from pytorch_lightning import Trainer
     from pytorch_lightning.utilities.seed import seed_everything
@@ -77,7 +78,8 @@ class Objective(BaseObjective):
             ('resnet', '34'),
             ('resnet', '50'),
             ('vgg', '16'),
-        ]
+        ],
+        'train_metrics': [True],
     }
 
     def skip(
@@ -92,6 +94,7 @@ class Objective(BaseObjective):
         n_classes,
         framework,
         normalization,
+        extra_test_transform,
         symmetry,
     ):
         if framework == 'tensorflow' and image_width < 32:
@@ -104,7 +107,8 @@ class Objective(BaseObjective):
         input_width = self.width
         if self.model_type == 'resnet':
             add_kwargs['use_bias'] = False
-            add_kwargs['dense_init'] = 'torch'
+            # for now deactivating
+            # add_kwargs['dense_init'] = 'torch'
 
             # For now 128 is an arbitrary number
             # to differentiate big and small images
@@ -176,6 +180,7 @@ class Objective(BaseObjective):
         n_classes,
         framework,
         normalization,
+        extra_test_transform,
         symmetry,
     ):
         self.dataset = dataset
@@ -189,6 +194,7 @@ class Objective(BaseObjective):
         self.n_classes = n_classes
         self.framework = framework
         self.normalization = normalization
+        self.extra_test_transform = extra_test_transform
         self.symmetry = symmetry
 
         # Get the model initializer
@@ -208,21 +214,37 @@ class Objective(BaseObjective):
         )
 
         # Set the batch size for the test dataloader
-        test_batch_size = 100
+        test_batch_size = 128
         self._datasets = {}
-        dataset_name = ['train', 'test']
-        datasets = [self.dataset, self.test_dataset]
+        if self.train_metrics:
+            dataset_name = ['train', 'test']
+            datasets = [self.dataset, self.test_dataset]
+        else:
+            dataset_name = ['test']
+            datasets = [self.test_dataset]
         if self.with_validation:
             dataset_name.append('val')
             datasets.append(self.val_dataset)
         for dataset_name, data in zip(dataset_name, datasets):
             if self.framework == 'tensorflow':
-                ds = data.batch(test_batch_size)
+                ds = data
                 if dataset_name == 'train':
-                    ds = ds.map(
-                        lambda x, y: (self.normalization(x), y),
-                        num_parallel_calls=tf.data.experimental.AUTOTUNE,
-                    )
+                    if self.extra_test_transform is not None:
+                        ds = ds.map(
+                            lambda x, y: (self.extra_test_transform(x), y),
+                            num_parallel_calls=tf.data.experimental.AUTOTUNE,
+                        )
+                    else:
+                        ds = ds.map(
+                            lambda x, y: (self.normalization(x), y),
+                            num_parallel_calls=tf.data.experimental.AUTOTUNE,
+                        )
+                ds = ds.batch(
+                    test_batch_size,
+                    num_parallel_calls=tf.data.experimental.AUTOTUNE,
+                ).prefetch(
+                    buffer_size=tf.data.experimental.AUTOTUNE,
+                )
                 self._datasets[dataset_name] = ds
             elif self.framework in ['lightning', 'pytorch']:
                 # Don't use multiple workers on OSX as this leads to deadlock
@@ -234,12 +256,24 @@ class Objective(BaseObjective):
                 persistent_workers = num_workers > 0
 
                 if dataset_name == 'train':
-                    data = AugmentedDataset(data, None, self.normalization)
+                    if isinstance(data, torch.utils.data.IterableDataset):
+                        data.transform = transforms.Compose([
+                            self.extra_test_transform,
+                            transforms.ToTensor(),
+                            self.normalization,
+                        ])
+                    else:
+                        data = AugmentedDataset(
+                            data,
+                            self.extra_test_transform,
+                            self.normalization,
+                        )
                 self._datasets[dataset_name] = DataLoader(
                     data, batch_size=test_batch_size,
                     num_workers=num_workers,
                     persistent_workers=persistent_workers,
-                    pin_memory=True
+                    pin_memory=True,
+                    prefetch_factor=3 if num_workers > 0 else 2,
                 )
 
     def compute(self, model):
@@ -251,6 +285,7 @@ class Objective(BaseObjective):
             elif self.framework == 'lightning':
                 metrics = self.trainer.test(model, dataloaders=dataset)[0]
             elif self.framework == 'pytorch':
+                torch.cuda.empty_cache()
                 metrics = self.eval_torch(model, dataloader=dataset)
 
             results[dataset_name + "_loss"] = metrics["loss"]
@@ -260,7 +295,10 @@ class Objective(BaseObjective):
         if self.with_validation:
             value_key = "val_err"
         else:
-            value_key = "train_loss"
+            if self.train_metrics:
+                value_key = "train_loss"
+            else:
+                value_key = "test_loss"
         results["value"] = results[value_key]
         return results
 
@@ -272,7 +310,7 @@ class Objective(BaseObjective):
         with torch.no_grad():
             for X, y in tqdm(dataloader):
                 if torch.cuda.is_available():
-                    X, y = X.cuda(), y.cuda()
+                    X, y = X.cuda(non_blocking=True), y.cuda(non_blocking=True)
                 res['n_samples'] += len(X)
                 y_proba = model(X)
                 res['loss'] += criterion(y_proba, y).item()

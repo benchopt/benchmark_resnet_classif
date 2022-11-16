@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 import tensorflow as tf
 from torch.utils.data import DataLoader, Dataset
+from torchvision import transforms
 
 from benchopt.utils.safe_import import set_benchmark
 
@@ -46,6 +47,7 @@ class AugmentedDataset(Dataset):
         super().__init__()
         self.dataset = dataset
         self.transform = transform
+        self.to_tensor = transforms.ToTensor()
         self.normalization = normalization
 
     def __len__(self):
@@ -55,6 +57,10 @@ class AugmentedDataset(Dataset):
         x, y = self.dataset[idx]
         if self.transform:
             x = self.transform(x)
+        try:
+            x = self.to_tensor(x)
+        except TypeError:
+            pass
         if self.normalization:
             x = self.normalization(x)
         return x, y
@@ -96,7 +102,7 @@ def test_datasets_consistency(dataset_module_name, dataset_type):
 
     for k in torch_data:
         if k not in ['dataset', 'val_dataset', 'test_dataset',
-                     'framework', 'normalization']:
+                     'framework', 'normalization', 'extra_test_transform']:
             assert torch_data[k] == tf_data[k], (
                 f"ds_description do not match between framework for key {k}"
             )
@@ -106,13 +112,20 @@ def test_datasets_consistency(dataset_module_name, dataset_type):
     if dataset_type == 'dataset':
         tf_normalization = tf_data['normalization']
         torch_normalization = torch_data['normalization']
-        tf_dataset = tf_dataset.map(
-            lambda x, y: (tf_normalization(x), y),
-            num_parallel_calls=tf.data.experimental.AUTOTUNE,
-        )
+
+        if tf_data['extra_test_transform'] is not None:
+            tf_dataset = tf_dataset.map(
+                lambda x, y: (tf_data['extra_test_transform'](x), y),
+                num_parallel_calls=tf.data.experimental.AUTOTUNE,
+            )
+        else:
+            tf_dataset = tf_dataset.map(
+                lambda x, y: (tf_normalization(x), y),
+                num_parallel_calls=tf.data.experimental.AUTOTUNE,
+            )
         torch_dataset = AugmentedDataset(
             torch_dataset,
-            None,
+            torch_data['extra_test_transform'],
             normalization=torch_normalization,
         )
 

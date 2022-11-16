@@ -66,19 +66,35 @@ class TorchSolver(BaseSolver):
         self.image_width = image_width
 
         if self.data_aug:
+            if self.image_width < 128:
+                crop = transforms.RandomCrop(self.image_width, padding=4)
+            else:
+                crop = transforms.RandomResizedCrop(self.image_width)
             data_aug_list = [
-                transforms.RandomCrop(self.image_width, padding=4),
+                crop,
             ]
             if self.symmetry is not None and 'horizontal' in self.symmetry:
                 data_aug_list.append(transforms.RandomHorizontalFlip())
             data_aug_transform = transforms.Compose(data_aug_list)
         else:
             data_aug_transform = None
-        self.dataset = AugmentedDataset(
-            self.dataset,
-            data_aug_transform,
-            self.normalization,
-        )
+
+        if not isinstance(self.dataset, torch.utils.data.IterableDataset):
+            self.dataset = AugmentedDataset(
+                self.dataset,
+                data_aug_transform,
+                self.normalization,
+            )
+            shuffle = True
+        else:
+            # this relies on the assumption that the iterable
+            # dataset supports transforms
+            self.dataset.transform = transforms.Compose([
+                data_aug_transform,
+                transforms.ToTensor(),
+                self.normalization,
+            ])
+            shuffle = False
 
         # TODO: num_worker should not be hard coded. Finding a sensible way to
         # set this value is necessary here.
@@ -90,7 +106,8 @@ class TorchSolver(BaseSolver):
             self.dataset, batch_size=self.batch_size,
             num_workers=num_workers,
             persistent_workers=persistent_workers,
-            pin_memory=True, shuffle=True
+            pin_memory=True, shuffle=shuffle,
+            prefetch_factor=3 if num_workers > 0 else 2,
         )
 
     def set_lr_schedule_and_optimizer(self, model, max_epochs=200):
@@ -134,10 +151,11 @@ class TorchSolver(BaseSolver):
         )
         # Initial evaluation
         while callback(model):
+            torch.cuda.empty_cache()
             for X, y in tqdm(self.dataloader):
                 if torch.cuda.is_available():
-                    X, y = X.cuda(), y.cuda()
-                optimizer.zero_grad()
+                    X, y = X.cuda(non_blocking=True), y.cuda(non_blocking=True)
+                optimizer.zero_grad(set_to_none=True)
                 loss = criterion(model(X), y)
                 loss.backward()
 
