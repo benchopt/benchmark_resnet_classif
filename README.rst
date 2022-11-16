@@ -86,8 +86,8 @@ For example, to implement a new PyTorch-based solver with the Adam optimizer, yo
          optimizer = torch.optim.Adam(model.parameters(), lr=self.lr)
          # Initial evaluation
          while callback(model):
+            torch.cuda.empty_cache()
             for X, y in self.dataloader:
-                  torch.cuda.empty_cache()
                   if torch.cuda.is_available():
                      X, y = X.cuda(non_blocking=True), y.cuda(non_blocking=True)
                   optimizer.zero_grad()
