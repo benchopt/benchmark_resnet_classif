@@ -107,7 +107,7 @@ class TorchSolver(BaseSolver):
             num_workers=num_workers,
             persistent_workers=persistent_workers,
             pin_memory=True, shuffle=shuffle,
-            prefetch_factor=3,
+            prefetch_factor=3 if num_workers > 0 else 0,
         )
 
     def set_lr_schedule_and_optimizer(self, model, max_epochs=200):
