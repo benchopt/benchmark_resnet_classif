@@ -78,7 +78,8 @@ class Objective(BaseObjective):
             ('resnet', '34'),
             ('resnet', '50'),
             ('vgg', '16'),
-        ]
+        ],
+        'train_metrics': [True],
     }
 
     def skip(
@@ -215,8 +216,12 @@ class Objective(BaseObjective):
         # Set the batch size for the test dataloader
         test_batch_size = 128
         self._datasets = {}
-        dataset_name = ['train', 'test']
-        datasets = [self.dataset, self.test_dataset]
+        if self.train_metrics:
+            dataset_name = ['train', 'test']
+            datasets = [self.dataset, self.test_dataset]
+        else:
+            dataset_name = ['test']
+            datasets = [self.test_dataset]
         if self.with_validation:
             dataset_name.append('val')
             datasets.append(self.val_dataset)
@@ -290,7 +295,10 @@ class Objective(BaseObjective):
         if self.with_validation:
             value_key = "val_err"
         else:
-            value_key = "train_loss"
+            if self.train_metrics:
+                value_key = "train_loss"
+            else:
+                value_key = "test_loss"
         results["value"] = results[value_key]
         return results
 
