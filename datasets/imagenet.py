@@ -66,7 +66,8 @@ class Dataset(MultiFrameworkDataset):
         return create_dataset(
             name='tfds/imagenet2012',
             is_training=kwargs['split'] == 'train',
-            batch_size=128,  # this is just used for distributed mode, so we might have
+            batch_size=128,  # this is just used for distributed mode,
+            # so we might have
             # to think about how we set this when distributed
             **kwargs,
         )
