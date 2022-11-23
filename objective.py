@@ -55,6 +55,7 @@ with safe_import_context() as import_ctx:
 
 
 class Objective(BaseObjective):
+    min_benchopt_version = "1.3"
     """Classification objective"""
 
     name = "ConvNet classification fitting"
@@ -283,7 +284,7 @@ class Objective(BaseObjective):
         model.train()
         return res
 
-    def to_dict(self):
+    def get_objective(self):
         return dict(
             model_init_fn=self.get_one_solution,
             dataset=self.dataset,
