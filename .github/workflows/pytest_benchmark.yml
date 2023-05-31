@@ -14,6 +14,8 @@ on:
     # Run every day at 5:42am UTC.
     - cron:  '42 5 * * *'
 
+
+jobs:
   pytest:
     runs-on: ${{ matrix.os }}
     strategy:
