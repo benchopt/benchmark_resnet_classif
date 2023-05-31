@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 import pytest
 import torch
@@ -238,7 +236,7 @@ def test_model_consistency(optimizer, extra_solver_kwargs, inference_mode):
     if optimizer == 'adam' and inference_mode == 'train':
         pytest.xfail('Adam is not yet aligned')
     if (optimizer == 'sgd' and inference_mode == 'eval' and wd == 5e-1):
-        pytest.xfail('eval tests not working because of batch norm discrepancy')
+        pytest.xfail('eval tests fail because of batch norm discrepancy')
     np.random.seed(2)
     batch_size = 16
     rand_image = np.random.normal(
