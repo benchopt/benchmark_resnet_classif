@@ -17,16 +17,10 @@ on:
 
 jobs:
   pytest:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-          - os: macos-latest
+    runs-on: ubuntu-latest
     env:
       CONDA_ENV: 'test_env'
-      VERSION_PYTHON: ${{ matrix.version_python }}
-      BENCHOPT_CONDA_CMD: mamba
+      VERSION_PYTHON: "3.10"
       LD_LIBRARY_PATH: /usr/share/miniconda3/lib:/usr/share/miniconda3/envs/test_env/lib:$LD_LIBRARY_PATH
 
     defaults:
