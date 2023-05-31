@@ -1,9 +1,9 @@
 from benchopt import safe_import_context
 
+from benchmark_utils.torch_solver import TorchSolver
+
 with safe_import_context() as import_ctx:
     from torch.optim import SGD
-
-TorchSolver = import_ctx.import_from('torch_solver', 'TorchSolver')
 
 
 class Solver(TorchSolver):
@@ -16,8 +16,6 @@ class Solver(TorchSolver):
         'nesterov, momentum': [(False, 0), (False, 0.9), (True, 0.9)],
         'lr': [1e-1],
         'weight_decay': [0.0, 5e-4],
-        'steps': [[1/2, 3/4]],
-        'gamma': [0.1],
     }
 
     def set_objective(self, **kwargs):

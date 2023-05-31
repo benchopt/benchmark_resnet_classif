@@ -5,15 +5,10 @@ import warnings
 with safe_import_context() as import_ctx:
     import tensorflow as tf
     from tensorflow_addons.optimizers import extend_with_decoupled_weight_decay
-    BenchoptCallback = import_ctx.import_from(
-        'tf_helper', 'BenchoptCallback'
-    )
-    LRWDSchedulerCallback = import_ctx.import_from(
-        'tf_helper', 'LRWDSchedulerCallback'
-    )
-    apply_coupled_weight_decay = import_ctx.import_from(
-        'tf_helper', 'apply_coupled_weight_decay'
-    )
+
+    from benchmark_utils.tf_helper import BenchoptCallback
+    from benchmark_utils.tf_helper import LRWDSchedulerCallback
+    from benchmark_utils.tf_helper import apply_coupled_weight_decay
 
 MAX_EPOCHS = int(1e9)
 

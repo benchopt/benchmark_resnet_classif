@@ -2,6 +2,7 @@ from collections import defaultdict
 
 from benchopt import safe_import_context
 
+from benchmark_utils.torch_solver import TorchSolver
 
 with safe_import_context() as import_ctx:
     # this is taken from the official implementation
@@ -130,8 +131,6 @@ with safe_import_context() as import_ctx:
                                 torch.zeros_like(p.data)
 
             return loss
-
-TorchSolver = import_ctx.import_from('torch_solver', 'TorchSolver')
 
 
 class Solver(TorchSolver):

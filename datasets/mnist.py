@@ -1,15 +1,12 @@
 from benchopt import safe_import_context
 
+from benchmark_utils.multi_frameworks_dataset import MultiFrameworkDataset
+
 with safe_import_context() as import_ctx:
     import numpy as np
     import tensorflow as tf
     from torchvision import transforms
     import torchvision.datasets as datasets
-
-    MultiFrameworkDataset = import_ctx.import_from(
-        'multi_frameworks_dataset',
-        'MultiFrameworkDataset',
-    )
 
 
 def grayscale_to_rbg_torch(image):

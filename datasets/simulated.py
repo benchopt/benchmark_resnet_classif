@@ -6,11 +6,6 @@ with safe_import_context() as import_ctx:
     import torch
     from torch.utils.data import TensorDataset
 
-    MultiFrameworkDataset = import_ctx.import_from(
-        "multi_frameworks_dataset",
-        "MultiFrameworkDataset",
-    )
-
 
 def make_channels_last(images):
     return np.transpose(images, (0, 2, 3, 1))

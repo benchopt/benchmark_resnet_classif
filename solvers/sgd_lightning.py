@@ -1,9 +1,9 @@
 from benchopt import safe_import_context
 
+from benchmark_utils.lightning_solver import LightningSolver
+
 with safe_import_context() as import_ctx:
     from torch.optim import SGD
-
-LightningSolver = import_ctx.import_from('lightning_solver', 'LightningSolver')
 
 
 class Solver(LightningSolver):

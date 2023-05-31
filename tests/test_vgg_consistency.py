@@ -3,9 +3,9 @@ import pytest
 import tensorflow as tf
 import torch
 
-from benchopt.utils.safe_import import set_benchmark
+from benchopt.utils.safe_import import set_benchmark_module
 
-set_benchmark('./')
+set_benchmark_module('./')
 
 tf_to_torch_vgg_conv_map = {
     (1, 1): 0,
@@ -109,11 +109,8 @@ def generate_output_from_rand_image(
     from solvers.sgd_tf import Solver as TFSGDSolver
     from solvers.adam_torch import Solver as TorchAdamSolver
     from solvers.sgd_torch import Solver as TorchSGDSolver
-    from benchopt import safe_import_context
-    with safe_import_context() as import_ctx:
-        apply_coupled_weight_decay = import_ctx.import_from(
-            'tf_helper', 'apply_coupled_weight_decay'
-        )
+
+    from benchmark_utils.tf_helper import apply_coupled_weight_decay
 
     bench_dataset = Dataset.get_instance(framework=framework)
     bench_objective = Objective.get_instance(

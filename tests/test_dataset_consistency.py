@@ -5,10 +5,10 @@ import pytest
 import tensorflow as tf
 from torch.utils.data import DataLoader, Dataset
 
-from benchopt.utils.safe_import import set_benchmark
+from benchopt.utils.safe_import import set_benchmark_module
 
 # this means this test has to be run from the root
-set_benchmark('.')
+set_benchmark_module('.')
 
 CI = os.environ.get('CI', False)
 
