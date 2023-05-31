@@ -7,10 +7,10 @@ with safe_import_context() as import_ctx:
     from torch.utils.data import Dataset
 
     from torchmetrics import Accuracy
-    from pytorch_lightning import LightningModule
+    from lightning import LightningModule
     from pytorch_lightning.callbacks import Callback
-    from pytorch_lightning.strategies import SingleDeviceStrategy
-    from pytorch_lightning.strategies import StrategyRegistry
+    from lightning.pytorch.strategies import StrategyRegistry
+    from lightning.pytorch.strategies import SingleDeviceStrategy
 
 
 # Convert benchopt benchmark into a lightning callback, used to monitor the

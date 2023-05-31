@@ -9,7 +9,7 @@ with safe_import_context() as import_ctx:
     import joblib
     import torch
     from torchvision import transforms
-    from pytorch_lightning import Trainer
+    from lightning import Trainer
 
     from benchmark_utils.lightning_helper import AugmentedDataset
     from benchmark_utils.lightning_helper import BenchoptCallback

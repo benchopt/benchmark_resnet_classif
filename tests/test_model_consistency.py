@@ -2,14 +2,12 @@ import os
 
 import numpy as np
 import pytest
-import tensorflow as tf
 import torch
+import tensorflow as tf
 
 from benchopt.utils.safe_import import set_benchmark_module
 
 set_benchmark_module('./')
-
-CI = os.environ.get('CI', False)
 
 
 def apply_torch_weights_to_tf(model, torch_weights_map):
@@ -236,10 +234,11 @@ def generate_output_from_rand_image(
     'inference_mode', ['train', 'eval'],
 )
 def test_model_consistency(optimizer, extra_solver_kwargs, inference_mode):
-    if optimizer == 'adam' and CI:
-        pytest.skip('Adam is not yet aligned')
-    if optimizer is not None and CI and inference_mode == 'eval':
-        pytest.skip('eval tests not working because of batch norm discrepancy')
+    wd = extra_solver_kwargs.get('weight_decay', 0)
+    if optimizer == 'adam' and inference_mode == 'train':
+        pytest.xfail('Adam is not yet aligned')
+    if (optimizer == 'sgd' and inference_mode == 'eval' and wd == 5e-1):
+        pytest.xfail('eval tests not working because of batch norm discrepancy')
     np.random.seed(2)
     batch_size = 16
     rand_image = np.random.normal(

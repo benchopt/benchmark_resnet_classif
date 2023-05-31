@@ -106,11 +106,10 @@ you can subclass the `TorchSolver <utils/torch_solver.py>`_ class we provide:
 
    from benchopt import safe_import_context
 
+   from benchmark_utils.torch_solver import TorchSolver
 
    with safe_import_context() as import_ctx:
       from torch.optim import Adam
-
-   TorchSolver = import_ctx.import_from('torch_solver', 'TorchSolver')
 
 
    class Solver(TorchSolver):

@@ -3,7 +3,7 @@ from benchopt import safe_import_context
 from benchmark_utils.tf_solver import TFSolver
 
 with safe_import_context() as import_ctx:
-    from tensorflow.keras.optimizers import Adam
+    from tensorflow.keras.optimizers.legacy import Adam
 
 
 class Solver(TFSolver):

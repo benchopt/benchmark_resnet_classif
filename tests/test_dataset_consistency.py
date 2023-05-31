@@ -2,8 +2,8 @@ import os
 
 import numpy as np
 import pytest
-import tensorflow as tf
 from torch.utils.data import DataLoader, Dataset
+import tensorflow as tf
 
 from benchopt.utils.safe_import import set_benchmark_module
 

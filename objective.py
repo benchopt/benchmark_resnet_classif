@@ -10,8 +10,8 @@ with safe_import_context() as import_ctx:
     import tensorflow as tf
     from tqdm import tqdm
     from torch.utils.data import DataLoader
-    from pytorch_lightning import Trainer
-    from pytorch_lightning.utilities.seed import seed_everything
+    from lightning import Trainer
+    from lightning.pytorch import seed_everything
 
     from benchmark_utils.lightning_helper import BenchPLModule
     from benchmark_utils.lightning_helper import AugmentedDataset
@@ -59,7 +59,7 @@ class Objective(BaseObjective):
 
     install_cmd = 'conda'
     requirements = [
-        'pip:torch', 'pip:torchvision', 'pip:pytorch-lightning ',
+        'pip:torch', 'pip:torchvision', 'lightning ',
         # TODO: rm below, and fix tests
         'pip:tensorflow-datasets', 'pip:tensorflow-addons',
         "scikit-learn",
