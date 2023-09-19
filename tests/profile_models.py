@@ -3,9 +3,9 @@ import time
 import torch
 from torchsummary import summary
 
-from benchopt.utils.safe_import import set_benchmark
+from benchopt.utils.safe_import import set_benchmark_module
 
-set_benchmark('./')
+set_benchmark_module('./')
 
 
 def profile(framework, n_runs=100, verbose=1):

@@ -9,27 +9,22 @@ with safe_import_context() as import_ctx:
     import torch
     import tensorflow as tf
     from tqdm import tqdm
-    import torchvision.models as models
     from torch.utils.data import DataLoader
-    from pytorch_lightning import Trainer
-    from pytorch_lightning.utilities.seed import seed_everything
+    from lightning import Trainer
+    from lightning.pytorch import seed_everything
 
-    BenchPLModule = import_ctx.import_from("lightning_helper", "BenchPLModule")
-    AugmentedDataset = import_ctx.import_from(
-        'lightning_helper', 'AugmentedDataset'
-    )
-    change_classification_head_tf = import_ctx.import_from(
-        'tf_vgg', 'change_classification_head'
-    )
-    remove_initial_downsample = import_ctx.import_from(
-        'torch_resnets', 'remove_initial_downsample'
-    )
-    change_classification_head_torch = import_ctx.import_from(
-        'torch_vgg', 'change_classification_head'
-    )
-    TFResNet18 = import_ctx.import_from('tf_resnets', 'ResNet18')
-    TFResNet34 = import_ctx.import_from('tf_resnets', 'ResNet34')
-    TFResNet50 = import_ctx.import_from('tf_resnets', 'ResNet50')
+    from benchmark_utils.lightning_helper import BenchPLModule
+    from benchmark_utils.lightning_helper import AugmentedDataset
+
+    import torchvision.models as models
+    from benchmark_utils.torch_resnets import remove_initial_downsample
+
+    from benchmark_utils.tf_vgg import change_classification_head as change_classification_head_tf  # noqa: E501
+    from benchmark_utils.torch_vgg import change_classification_head as change_classification_head_torch  # noqa: E501
+
+    from benchmark_utils.tf_resnets import ResNet18 as TFResNet18
+    from benchmark_utils.tf_resnets import ResNet34 as TFResNet34
+    from benchmark_utils.tf_resnets import ResNet50 as TFResNet50
 
     TF_MODEL_MAP = {
         'resnet': {
@@ -64,7 +59,7 @@ class Objective(BaseObjective):
 
     install_cmd = 'conda'
     requirements = [
-        'pip:torch', 'pip:torchvision', 'pip:pytorch-lightning ',
+        'pip:torch', 'pip:torchvision', 'lightning ',
         # TODO: rm below, and fix tests
         'pip:tensorflow-datasets', 'pip:tensorflow-addons',
         "scikit-learn",
@@ -79,6 +74,8 @@ class Objective(BaseObjective):
             ('vgg', '16'),
         ]
     }
+
+    min_benchopt_version = '1.5'
 
     def skip(
         self,
@@ -154,15 +151,15 @@ class Objective(BaseObjective):
             return BenchPLModule(model)
         return _model_init_fn
 
-    def get_model_init_fn(self, framework):
-        if framework == 'tensorflow':
+    def get_one_result(self):
+        if self.framework == 'tensorflow':
             return self.get_tf_model_init_fn()
-        elif framework == 'lightning':
+        elif self.framework == 'lightning':
             return self.get_lightning_model_init_fn()
-        elif framework == 'pytorch':
+        elif self.framework == 'pytorch':
             return self.get_torch_model_init_fn()
         else:
-            raise ValueError(f"No framework named {framework}")
+            raise ValueError(f"No framework named {self.framework}")
 
     def set_data(
         self,
@@ -190,9 +187,6 @@ class Objective(BaseObjective):
         self.framework = framework
         self.normalization = normalization
         self.symmetry = symmetry
-
-        # Get the model initializer
-        self.get_one_solution = self.get_model_init_fn(framework)
 
         # seeding for the models
         # XXX: This should be changed once benchopt/benchopt#342 is merged
@@ -242,7 +236,7 @@ class Objective(BaseObjective):
                     pin_memory=True
                 )
 
-    def compute(self, model):
+    def evaluate_result(self, model):
         results = dict()
         for dataset_name, dataset in self._datasets.items():
 
@@ -283,7 +277,7 @@ class Objective(BaseObjective):
         model.train()
         return res
 
-    def to_dict(self):
+    def get_objective(self):
         return dict(
             model_init_fn=self.get_one_solution,
             dataset=self.dataset,

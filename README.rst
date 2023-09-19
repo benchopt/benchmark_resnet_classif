@@ -78,26 +78,24 @@ For example, to implement a new PyTorch-based solver with the Adam optimizer, yo
 
       def run(self, callback):
          # model weight initialization
-         model = self.model_init_fn()
+         self.model = self.model_init_fn()
          criterion = torch.nn.CrossEntropyLoss()
 
          max_epochs = callback.stopping_criterion.max_runs
-         optimizer = torch.optim.Adam(model.parameters(), lr=self.lr)
+         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
          # Initial evaluation
-         while callback(model):
+         while callback(self.model):
             for X, y in self.dataloader:
                   if torch.cuda.is_available():
                      X, y = X.cuda(), y.cuda()
                   optimizer.zero_grad()
-                  loss = criterion(model(X), y)
+                  loss = criterion(self.model(X), y)
                   loss.backward()
 
                   optimizer.step()
 
-         self.model = model
-
       def get_result(self):
-         return self.model
+         return dict(model=self.model)
 
 If you want to use a more complex solver, using a learning rate scheduler, as well as data augmentation,
 you can subclass the `TorchSolver <utils/torch_solver.py>`_ class we provide:
@@ -106,11 +104,10 @@ you can subclass the `TorchSolver <utils/torch_solver.py>`_ class we provide:
 
    from benchopt import safe_import_context
 
+   from benchmark_utils.torch_solver import TorchSolver
 
    with safe_import_context() as import_ctx:
       from torch.optim import Adam
-
-   TorchSolver = import_ctx.import_from('torch_solver', 'TorchSolver')
 
 
    class Solver(TorchSolver):

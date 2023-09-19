@@ -1,12 +1,9 @@
 from benchopt import safe_import_context
 
+from benchmark_utils.multi_frameworks_dataset import MultiFrameworkDataset
+
 with safe_import_context() as import_ctx:
     import torchvision.datasets as datasets
-
-    MultiFrameworkDataset = import_ctx.import_from(
-        'multi_frameworks_dataset',
-        'MultiFrameworkDataset',
-    )
 
 
 class Dataset(MultiFrameworkDataset):

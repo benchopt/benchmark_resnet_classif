@@ -1,10 +1,9 @@
 from benchopt import safe_import_context
 
+from benchmark_utils.tf_solver import TFSolver
 
 with safe_import_context() as import_ctx:
-    from tensorflow.keras.optimizers import SGD
-
-TFSolver = import_ctx.import_from('tf_solver', 'TFSolver')
+    from tensorflow.keras.optimizers.legacy import SGD
 
 
 class Solver(TFSolver):
@@ -18,7 +17,6 @@ class Solver(TFSolver):
         'lr': [1e-1],
         'decoupled_weight_decay': [0.0, 5e-4],
         'coupled_weight_decay': [0.0, 5e-4],
-        # 'weight_decay': [0.0, 5e-4],
     }
 
     def set_objective(self, **kwargs):

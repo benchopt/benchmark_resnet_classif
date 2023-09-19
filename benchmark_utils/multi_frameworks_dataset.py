@@ -11,12 +11,8 @@ with safe_import_context() as import_ctx:
     from torchvision import transforms
     from torch.utils.data import Subset
 
-    AugmentedDataset = import_ctx.import_from(
-        "lightning_helper", "AugmentedDataset"
-    )
-    filter_ds_on_indices = import_ctx.import_from(
-        "tf_helper", "filter_ds_on_indices"
-    )
+    from benchmark_utils.tf_helper import filter_ds_on_indices
+    from benchmark_utils.lightning_helper import AugmentedDataset
 
 
 class MultiFrameworkDataset(BaseDataset, ABC):

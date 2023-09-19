@@ -1,15 +1,11 @@
-import os
-
 import numpy as np
 import pytest
-import tensorflow as tf
 import torch
+import tensorflow as tf
 
-from benchopt.utils.safe_import import set_benchmark
+from benchopt.utils.safe_import import set_benchmark_module
 
-set_benchmark('./')
-
-CI = os.environ.get('CI', False)
+set_benchmark_module('./')
 
 
 def apply_torch_weights_to_tf(model, torch_weights_map):
@@ -103,6 +99,7 @@ def generate_output_from_rand_image(
     batch_size=1,
     **extra_solver_kwargs,
 ):
+
     from datasets.cifar import Dataset
     from objective import Objective
     from solvers.adam_tf import Solver as TFAdamSolver
@@ -111,11 +108,8 @@ def generate_output_from_rand_image(
     from solvers.adam_torch import Solver as TorchAdamSolver
     from solvers.lookahead_torch import Solver as TorchLookaheadSolver
     from solvers.sgd_torch import Solver as TorchSGDSolver
-    from benchopt import safe_import_context
-    with safe_import_context() as import_ctx:
-        apply_coupled_weight_decay = import_ctx.import_from(
-            'tf_helper', 'apply_coupled_weight_decay'
-        )
+
+    from benchmark_utils.tf_helper import apply_coupled_weight_decay
 
     bench_dataset = Dataset.get_instance(framework=framework)
     bench_objective = Objective.get_instance(
@@ -238,10 +232,11 @@ def generate_output_from_rand_image(
     'inference_mode', ['train', 'eval'],
 )
 def test_model_consistency(optimizer, extra_solver_kwargs, inference_mode):
-    if optimizer == 'adam' and CI:
-        pytest.skip('Adam is not yet aligned')
-    if optimizer is not None and CI and inference_mode == 'eval':
-        pytest.skip('eval tests not working because of batch norm discrepancy')
+    wd = extra_solver_kwargs.get('weight_decay', 0)
+    if optimizer == 'adam' and inference_mode == 'train':
+        pytest.xfail('Adam is not yet aligned')
+    if (optimizer == 'sgd' and inference_mode == 'eval' and wd == 5e-1):
+        pytest.xfail('eval tests fail because of batch norm discrepancy')
     np.random.seed(2)
     batch_size = 16
     rand_image = np.random.normal(
