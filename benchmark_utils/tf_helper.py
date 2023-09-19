@@ -15,7 +15,7 @@ with safe_import_context() as import_ctx:
             self.cb_ = callback
 
         def on_epoch_end(self, epoch, logs=None):
-            self.model.stop_training = not self.cb_(self.model)
+            self.model.stop_training = not self.cb_()
 
     class LRWDSchedulerCallback(tf.keras.callbacks.LearningRateScheduler):
         """Callback that schedules jointly the learning rate and the weight

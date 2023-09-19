@@ -185,7 +185,7 @@ class TFSolver(BaseSolver):
         # training and using a progressbar
 
         # Initial evaluation
-        callback(self.model)
+        callback()
         # Launch training
         self.model.fit(
             self.dataset,
@@ -195,4 +195,4 @@ class TFSolver(BaseSolver):
         )
 
     def get_result(self):
-        return self.model
+        return dict(model=self.model)

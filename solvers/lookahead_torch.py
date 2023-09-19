@@ -197,28 +197,26 @@ class Solver(TorchSolver):
 
     def run(self, callback):
         # model weight initialization
-        model = self.model_init_fn()
+        self.model = self.model_init_fn()
         criterion = torch.nn.CrossEntropyLoss()
 
         # optimizer and lr schedule init
         max_epochs = callback.stopping_criterion.max_runs
         optimizer, lr_schedule = self.set_lr_schedule_and_optimizer(
-            model,
+            self.model,
             max_epochs,
         )
         # Initial evaluation
         optimizer._backup_and_load_cache()
-        while callback(model):
+        while callback():
             optimizer._clear_and_load_backup()
             for X, y in tqdm(self.dataloader):
                 if torch.cuda.is_available():
                     X, y = X.cuda(), y.cuda()
                 optimizer.zero_grad()
-                loss = criterion(model(X), y)
+                loss = criterion(self.model(X), y)
                 loss.backward()
 
                 optimizer.step()
             lr_schedule.step()
             optimizer._backup_and_load_cache()
-
-        self.model = model

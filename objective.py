@@ -75,6 +75,8 @@ class Objective(BaseObjective):
         ]
     }
 
+    min_benchopt_version = '1.5'
+
     def skip(
         self,
         dataset,
@@ -149,15 +151,15 @@ class Objective(BaseObjective):
             return BenchPLModule(model)
         return _model_init_fn
 
-    def get_model_init_fn(self, framework):
-        if framework == 'tensorflow':
+    def get_one_result(self):
+        if self.framework == 'tensorflow':
             return self.get_tf_model_init_fn()
-        elif framework == 'lightning':
+        elif self.framework == 'lightning':
             return self.get_lightning_model_init_fn()
-        elif framework == 'pytorch':
+        elif self.framework == 'pytorch':
             return self.get_torch_model_init_fn()
         else:
-            raise ValueError(f"No framework named {framework}")
+            raise ValueError(f"No framework named {self.framework}")
 
     def set_data(
         self,
@@ -185,9 +187,6 @@ class Objective(BaseObjective):
         self.framework = framework
         self.normalization = normalization
         self.symmetry = symmetry
-
-        # Get the model initializer
-        self.get_one_solution = self.get_model_init_fn(framework)
 
         # seeding for the models
         # XXX: This should be changed once benchopt/benchopt#342 is merged
@@ -237,7 +236,7 @@ class Objective(BaseObjective):
                     pin_memory=True
                 )
 
-    def compute(self, model):
+    def evaluate_result(self, model):
         results = dict()
         for dataset_name, dataset in self._datasets.items():
 
@@ -278,7 +277,7 @@ class Objective(BaseObjective):
         model.train()
         return res
 
-    def to_dict(self):
+    def get_objective(self):
         return dict(
             model_init_fn=self.get_one_solution,
             dataset=self.dataset,

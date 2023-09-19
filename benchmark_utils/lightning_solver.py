@@ -124,7 +124,7 @@ class LightningSolver(BaseSolver):
         max_epochs = callback.stopping_criterion.max_runs
         self.set_lr_schedule_and_optimizer(max_epochs)
         # Initial evaluation
-        callback(self.model)
+        callback()
 
         # Setup the trainer
         # TODO: for now, we are limited to 1 device due to pytorch_lightning
@@ -139,4 +139,4 @@ class LightningSolver(BaseSolver):
         trainer.fit(self.model, train_dataloaders=self.dataloader)
 
     def get_result(self):
-        return self.model
+        return dict(model=self.model)
