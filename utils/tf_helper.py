@@ -8,6 +8,7 @@ with safe_import_context() as import_ctx:
     import numpy as np
     import tensorflow as tf
     from tensorflow.keras import backend
+    import tf2cv.models.wrn_cifar as wrn
 
     class BenchoptCallback(tf.keras.callbacks.Callback):
         def __init__(self, callback):
@@ -68,6 +69,10 @@ with safe_import_context() as import_ctx:
                     self.model.optimizer.weight_decay,
                 )
 
+    CUSTOM_TF_OBJECTS = {
+        'CIFARWRN': wrn.CIFARWRN,
+    }
+
 
 def filter_ds_on_indices(ds, indices):
     """Filter a tensorflow dataset on a list of indices
@@ -93,20 +98,36 @@ def filter_ds_on_indices(ds, indices):
     return ds
 
 
-def set_regularizer_model(model, regularizer):
+def has_layers(obj):
+    return hasattr(obj, 'layers')
+
+
+def set_regularizer_layer(layer, regularizer):
     target_regularizers = [
         'kernel_regularizer',
         'bias_regularizer',
         'beta_regularizer',
         'gamma_regularizer',
     ]
+    for attr in dir(layer):
+        try:
+            obj = getattr(layer, attr)
+        except AttributeError:
+            continue
+        if attr in target_regularizers:
+            setattr(layer, attr, regularizer)
+        elif isinstance(obj, tf.keras.layers.Layer):
+            set_regularizer_layer(obj, regularizer)
+        elif has_layers(obj):
+            set_regularizer_model(obj, regularizer)
+
+
+def set_regularizer_model(model, regularizer):
     for layer in model.layers:
-        if isinstance(layer, tf.keras.models.Model):
+        if has_layers(layer):
             set_regularizer_model(layer, regularizer)
         else:
-            for attr in target_regularizers:
-                if hasattr(layer, attr):
-                    setattr(layer, attr, regularizer)
+            set_regularizer_layer(layer, regularizer)
 
 
 def apply_coupled_weight_decay(model, wd):
@@ -115,17 +136,21 @@ def apply_coupled_weight_decay(model, wd):
     # https://sthalles.github.io/keras-regularizer/
     regularizer = tf.keras.regularizers.l2(l2_reg_factor)
     set_regularizer_model(model, regularizer)
-    # When we change the layers attributes, the change only happens
-    #  in the model config file
-    model_json = model.to_json()
+    if model.built:
+        # When we change the layers attributes, the change only happens
+        #  in the model config file
+        model_json = model.to_json()
 
-    # Save the weights before reloading the model.
-    tmp_weights_path = Path(tempfile.gettempdir()) / 'tmp_weights.h5'
-    model.save_weights(tmp_weights_path)
+        # Save the weights before reloading the model.
+        tmp_weights_path = Path(tempfile.gettempdir()) / 'tmp_weights.h5'
+        model.save_weights(tmp_weights_path)
 
-    # load the model from the config
-    model = tf.keras.models.model_from_json(model_json)
+        # load the model from the config
+        model = tf.keras.models.model_from_json(
+            model_json,
+            custom_objects=CUSTOM_TF_OBJECTS,
+        )
 
-    # Reload the model weights
-    model.load_weights(tmp_weights_path, by_name=True)
+        # Reload the model weights
+        model.load_weights(tmp_weights_path, by_name=True)
     return model
